@@ -26,7 +26,7 @@
 
           <div class="button-group">
             <ion-button expand="block">Register</ion-button>
-            <ion-button expand="block" class="google-btn">
+            <ion-button expand="block" class="google-btn" @click="loginWithGoogle">
               <ion-icon :icon="logoGoogle" slot="start"></ion-icon>
               Login with Google
             </ion-button>
@@ -43,11 +43,21 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { IonPage, IonContent, IonButton, IonItem, IonInput, IonIcon } from '@ionic/vue';
 import { arrowBack, logoGoogle } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+import { auth, signInWithCredential, GoogleAuthProvider, signInWithEmailAndPassword } from "../config/firebase";
+import { useAuthStore } from '../stores/authStore';
 
 const router = useRouter();
+const authStore = useAuthStore();
+const loading = ref(false);
+const error = ref('');
+
+const email = ref('');
+const password = ref('');
 
 // Register components
 defineOptions({
@@ -64,6 +74,31 @@ defineOptions({
 const goToHome = () => {
   router.push({ name: 'Home' });
 };
+const loginWithGoogle = async () => {
+  try {
+    loading.value = true;
+    error.value = '';
+
+    const { authentication: { idToken } } = await GoogleAuth.signIn();
+    const { user: firebaseUser } = await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
+
+    if (firebaseUser) {
+      await authStore.setUser({
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        name: firebaseUser.displayName,
+        photoUrl: firebaseUser.photoURL,
+      });
+      await authStore.registerUser();
+      router.replace({ name: 'home' });
+    }
+  } catch (err) {
+    console.error("Google Sign-In Error:", err);
+    error.value = 'Failed to sign in. Please try again.';
+  } finally {
+    loading.value = false;
+  }
+}
 </script>
 
 <style scoped>

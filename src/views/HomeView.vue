@@ -159,10 +159,7 @@ ion-content {
   --background: transparent;
 }
 
-.cake-carousel {
-  height: 20vh;
-  min-height: 200px;
-}
+
 
 :deep(.swiper) {
   height: 100%;
@@ -249,7 +246,7 @@ ion-row {
 
 .cake-card {
   margin: 0;
-  border-radius: 12px;
+
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   transition: transform 0.2s ease;

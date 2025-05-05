@@ -45,19 +45,19 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('../views/Account/AccountView.vue'),
         meta: { requiresAuth: true },
       },
-      {
-        path: '/account/edit',
-        name: 'accountEdit',
-        component: () => import('../views/Account/AccountEditView.vue'),
-        meta: { requiresAuth: true },
-      },
-      {
-        path: '/account/message',
-        name: 'accountMessage',
-        component: () => import('../views/Account/AccountMessageView.vue'),
-        meta: { requiresAuth: true },
-      },
     ],
+  },
+  {
+    path: '/account/edit',
+    name: 'accountEdit',
+    component: () => import('../views/Account/AccountEditView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/account/message',
+    name: 'accountMessage',
+    component: () => import('../views/Account/AccountMessageView.vue'),
+    meta: { requiresAuth: true },
   },
 ];
 
