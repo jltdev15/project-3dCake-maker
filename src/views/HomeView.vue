@@ -1,10 +1,15 @@
 <template>
   <ion-page>
     <ion-content>
+      <div class="top-text">
+        <p class="text-4xl">PSALM</p>
+        <p  class="text-4xl">Cakes</p>
+        <p class="italic text-xl">Customized</p>
+      </div>
       <img src="/images/top-cake.png" alt="Cake at top" class="cake-top" />
       <div class="container flex flex-col items-center justify-center">
         <div class="logo-container">
-          <img src="/images/logo.webp" alt="Cake Logo" class="rounded-full h-54 mb-9 w-auto mx-auto">
+          <img src="/images/logo.webp" alt="Cake Logo" class="rounded-full h-48 mb-9 w-auto mx-auto">
         </div>
         <div class="auth-panel ">
 
@@ -14,8 +19,8 @@
           </div>
 
           <div class="button-group">
-            <ion-button expand="block" router-link="/signup">Sign Up</ion-button>
-            <ion-button expand="block" router-link="/login">Log In</ion-button>
+            <ion-button expand="block" :router-link="{name: 'Register'}">Sign Up</ion-button>
+            <ion-button expand="block" :router-link="{name: 'Login'}">Log In</ion-button>
           </div>
         </div>
       </div>
@@ -120,5 +125,14 @@ ion-button {
   z-index: -999;
   pointer-events: none; /* Allows clicks to pass through */
   opacity: 0.7; /* Added opacity */
+}
+.top-text {
+  position: absolute;
+  left: 25%;
+  top: 3%;
+  transform: translateX(-50%);
+  color: #58091F;
+
+  font-weight: 600;
 }
 </style>
