@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "843645413677",
+    "firebase_url": "https://project-3dcake-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "project-3dcake",
+    "storage_bucket": "project-3dcake.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:843645413677:android:03b1b69eb47d51f66bcba4",
+        "android_client_info": {
+          "package_name": "com.tgsolutions.cakemaker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "843645413677-nt8srrqhjstsq40ac7dnqado9r6i5ne9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tgsolutions.cakemaker",
+            "certificate_hash": "167bbe3131a61e03cd552a5dffb5df122ab49dc1"
+          }
+        },
+        {
+          "client_id": "843645413677-kkvo0ccvqdacfk1u1vpicp3eokv8h812.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtGXh3EA5mBJD8lqcbtmDxEokDWkUagrs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "843645413677-kkvo0ccvqdacfk1u1vpicp3eokv8h812.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
