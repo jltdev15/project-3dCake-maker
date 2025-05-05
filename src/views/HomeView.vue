@@ -4,7 +4,7 @@
       <img src="/images/top-cake.png" alt="Cake at top" class="cake-top" />
       <div class="container flex flex-col items-center justify-center">
         <div class="logo-container">
-          <img src="/images/logo.webp" alt="Cake Logo" class="rounded-full h-64 mb-9 w-auto mx-auto">
+          <img src="/images/logo.webp" alt="Cake Logo" class="rounded-full h-54 mb-9 w-auto mx-auto">
         </div>
         <div class="auth-panel ">
 
@@ -109,14 +109,16 @@ ion-button {
   width: 250px; /* Adjust as needed */
   z-index: -999;
   pointer-events: none; /* Allows clicks to pass through */
+  opacity: 0.7; /* Added opacity */
 }
 .cake-top {
   position: absolute;
   right: 10%;
   top: 0;
   transform: translateX(50%);
-  width: 250px; /* Adjust as needed */
+  width: 300px; /* Adjust as needed */
   z-index: -999;
   pointer-events: none; /* Allows clicks to pass through */
+  opacity: 0.7; /* Added opacity */
 }
 </style>
