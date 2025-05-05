@@ -33,6 +33,7 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+                <meta-data android:name="com.google.android.gms.auth.api.signin" android:value="843645413677-kkvo0ccvqdacfk1u1vpicp3eokv8h812.apps.googleusercontent.com" />
     </application>
 
     <!-- Permissions -->

@@ -22,13 +22,15 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
-
+import { useAuthStore } from './stores/authStore';
 const app = createApp(App)
 
 app.use(createPinia())
 app.use(IonicVue)
 app.use(router)
-
+const authStore = useAuthStore();
+authStore.loadUser(); // Load user from storage
+authStore.initAuth();
 router.isReady().then(() => {
     app.mount('#app');
 });

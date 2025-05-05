@@ -4,4 +4,5 @@
     <string name="title_activity_main">3D Cake Maker</string>
     <string name="package_name">com.tgsolutions.cakemaker</string>
     <string name="custom_url_scheme">com.tgsolutions.cakemaker</string>
+    <string name="server_client_id">843645413677-kkvo0ccvqdacfk1u1vpicp3eokv8h812.apps.googleusercontent.com</string>
 </resources>

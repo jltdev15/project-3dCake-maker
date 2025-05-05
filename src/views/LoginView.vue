@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <ion-content>
+    <ion-content :fullscreen="true">
       <button fill="clear" class="flex items-center mt-3 ml-3" @click="goToHome">
         <ion-icon :icon="arrowBack" slot="start"></ion-icon>
         Back to Home
@@ -26,7 +26,7 @@
 
           <div class="button-group">
             <ion-button expand="block">Login</ion-button>
-            <ion-button expand="block" class="google-btn">
+            <ion-button @click="loginWithGoogle" expand="block" class="google-btn">
               <ion-icon :icon="logoGoogle" slot="start"></ion-icon>
               Login with Google
             </ion-button>
@@ -44,27 +44,54 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { IonPage, IonContent, IonButton, IonItem, IonInput, IonIcon } from '@ionic/vue';
 import { arrowBack, logoGoogle } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+import { auth, signInWithCredential, GoogleAuthProvider, signInWithEmailAndPassword } from "../config/firebase";
+import { useAuthStore } from '../stores/authStore';
 
 const router = useRouter();
+const authStore = useAuthStore();
+const loading = ref(false);
+const error = ref('');
 
-// Register components
-defineOptions({
-  components: {
-    IonPage,
-    IonContent,
-    IonButton,
-    IonItem,
-    IonInput,
-    IonIcon
+const email = ref('');
+const password = ref('');
+
+const goToHome = async () => {
+  try {
+    await router.replace('/');
+  } catch (error) {
+    console.error('Navigation error:', error);
   }
-});
-
-const goToHome = () => {
-  router.push({ name: 'Home' });
 };
+const loginWithGoogle = async () => {
+  try {
+    loading.value = true;
+    error.value = '';
+
+    const { authentication: { idToken } } = await GoogleAuth.signIn();
+    const { user: firebaseUser } = await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
+
+    if (firebaseUser) {
+      await authStore.setUser({
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        name: firebaseUser.displayName,
+        photoUrl: firebaseUser.photoURL,
+      });
+      await authStore.registerUser();
+      router.replace({ name: 'home' });
+    }
+  } catch (err) {
+    console.error("Google Sign-In Error:", err);
+    error.value = 'Failed to sign in. Please try again.';
+  } finally {
+    loading.value = false;
+  }
+}
 </script>
 
 <style scoped>

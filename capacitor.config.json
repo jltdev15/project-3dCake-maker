@@ -1,0 +1,20 @@
+{
+  "appId": "com.tgsolutions.cakemaker",
+  "appName": "3D Cake Maker",
+  "webDir": "dist",
+     "plugins": {
+        "SplashScreen": {
+      "launchShowDuration": 2000,
+      "launchAutoHide": true,
+      "androidScaleType": "CENTER_CROP"
+    },
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "serverClientId": "843645413677-kkvo0ccvqdacfk1u1vpicp3eokv8h812.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
+    },
+     "android": {
+      "fullscreen": false
+    }
+  }
+} 
