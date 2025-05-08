@@ -45,6 +45,7 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('../views/Orders/OrdersView.vue'),
         meta: { requiresAuth: true },
       },
+
       {
         path: '/cart',
         name: 'cart',
@@ -64,6 +65,12 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true },
       },
     ],
+  },
+  {
+    path: '/orders/:id',
+    name: 'orderDetails',
+    component: () => import('../views/Orders/OrderDetailsView.vue'),
+    meta: { requiresAuth: true },
   },
   {
     path: '/account/edit',

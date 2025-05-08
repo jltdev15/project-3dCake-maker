@@ -29,7 +29,7 @@
   </ion-page>
 </template>
 <script setup lang="ts">
-import { IonPage, IonContent, IonText, IonBackButton, IonButtons, IonItem, IonLabel, IonInput, IonIcon, IonButton } from '@ionic/vue';
+import { IonPage, IonContent, IonText, IonBackButton, IonButtons, IonItem, IonLabel, IonInput, IonIcon, IonButton, IonHeader, IonToolbar, IonTitle } from '@ionic/vue';
 import { ref } from 'vue';
 import { useAuthStore } from '../../stores/authStore';
 import { personOutline, mailOutline, saveOutline } from 'ionicons/icons';

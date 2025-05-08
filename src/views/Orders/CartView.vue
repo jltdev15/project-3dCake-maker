@@ -2,10 +2,7 @@
   <ion-page class="page-background">
     <ion-header>
       <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-back-button default-href="/home"></ion-back-button>
-        </ion-buttons>
-        <ion-title class="ion-text-center pr-12">Cake Basket</ion-title>
+        <ion-title class="ion-text-center ">Cake Cart</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -13,7 +10,7 @@
       <div v-if="cartStore.items.length === 0" class="empty-cart">
         <ion-icon :icon="cartOutline" class="empty-cart-icon"></ion-icon>
         <h2>Your cart is empty</h2>
-        <ion-button router-link="/home">Start Shopping</ion-button>
+        <ion-button router-link="/home" class="start-shopping-btn">Start Shopping</ion-button>
       </div>
 
       <div v-else class="cart-container">
@@ -119,7 +116,7 @@ const handleCheckout = async () => {
         color: 'success'
       });
       await toast.present();
-      router.push('/orders');
+      router.replace('/');
     }
   } catch (error) {
     console.error('Checkout error:', error);
@@ -188,5 +185,13 @@ ion-toolbar {
 .checkout-btn {
   margin-top: 16px;
   --background: #7A5C1E;
+}
+
+.start-shopping-btn {
+  --background: #7A5C1E;
+  --background-hover: #8B6B2A;
+  --background-activated: #6A4F18;
+  margin-top: 16px;
+  font-weight: 500;
 }
 </style>

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { database, ref as dbRef, set, get, remove, update, push } from '../config/firebase'
 import { useAuthStore } from './authStore'
+import { useOrderStore } from './orderStore'
 
 interface CartItem {
   id: string
@@ -90,6 +91,10 @@ export const useCartStore = defineStore('cart', () => {
       const cartRef = dbRef(database, `users/${authStore.user.uid}/cart`)
       await remove(cartRef)
       items.value = []
+
+      // Refresh orders list
+      const orderStore = useOrderStore()
+      await orderStore.loadOrders()
 
       return orderId
     } catch (error) {
