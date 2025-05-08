@@ -18,6 +18,7 @@ interface CartItem {
 interface Order {
   orderId: string
   userId: string
+  customerName: string
   items: CartItem[]
   totalAmount: number
   status: 'pending' | 'processing' | 'completed' | 'cancelled'
@@ -67,6 +68,7 @@ export const useCartStore = defineStore('cart', () => {
       const order: Order = {
         orderId,
         userId: authStore.user.uid,
+        customerName: authStore.user.name || 'Anonymous User',
         items: items.value,
         totalAmount: cartTotal.value,
         status: 'pending',
@@ -84,7 +86,8 @@ export const useCartStore = defineStore('cart', () => {
         orderId,
         type: 'non-custom',
         status: 'pending',
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        customerName: authStore.user.name || 'Anonymous User'
       })
 
       // Clear the cart

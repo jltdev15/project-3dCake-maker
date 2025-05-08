@@ -9,6 +9,8 @@ interface UserData {
   email: string | null;
   name: string | null;
   photoUrl: string | null;
+  status: string | null;
+  contact: string | null;
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -40,7 +42,9 @@ export const useAuthStore = defineStore('auth', () => {
                     uid: firebaseUser.uid,
                     email: firebaseUser.email,
                     name: firebaseUser.displayName,
-                    photoUrl: firebaseUser.photoURL
+                    photoUrl: firebaseUser.photoURL,
+                    contact: firebaseUser.phoneNumber,
+                    status: 'active'
                 };
                 await setUser(userData);
             } else {
@@ -65,7 +69,9 @@ export const useAuthStore = defineStore('auth', () => {
                     uid: user.value.uid,
                     email: user.value.email || null,
                     name: user.value.name || 'Anonymous User',
-                    photoUrl: user.value.photoUrl || null
+                    photoUrl: user.value.photoUrl || null,
+                    status: 'active',
+                    contact: null
                 };
                 operations.push(set(userRef, userData));
             }

@@ -33,7 +33,7 @@
                 <ion-icon :icon="addOutline"></ion-icon>
               </ion-button>
             </div>
-            <ion-button fill="clear" color="danger" @click="removeItem(item.id)">
+            <ion-button fill="clear" color="danger" @click="confirmRemoveItem(item.id)">
               <ion-icon :icon="trashOutline"></ion-icon>
             </ion-button>
           </ion-item>
@@ -55,12 +55,30 @@
             <span v-else>Proceed to Checkout</span>
           </ion-button>
         </div>
+
+        <ion-alert
+          :is-open="showDeleteAlert"
+          header="Remove Item"
+          message="Are you sure you want to remove this item from your cart?"
+          :buttons="[
+            {
+              text: 'Cancel',
+              role: 'cancel',
+            },
+            {
+              text: 'Remove',
+              role: 'destructive',
+              handler: removeItem
+            }
+          ]"
+          @didDismiss="showDeleteAlert = false"
+        ></ion-alert>
       </div>
     </ion-content>
   </ion-page>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { 
   IonPage, 
   IonHeader, 
@@ -76,10 +94,11 @@ import {
   IonBackButton,
   IonIcon,
   IonText,
-  IonSpinner
+  IonSpinner,
+  IonAlert
 } from '@ionic/vue';
 import { cartOutline, addOutline, removeOutline, trashOutline } from 'ionicons/icons';
-import { useCartStore } from '@/stores/cartStore';
+import { useCartStore } from '../../stores/cartStore';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { toastController } from '@ionic/vue';
@@ -87,19 +106,30 @@ import { toastController } from '@ionic/vue';
 const router = useRouter();
 const cartStore = useCartStore();
 const isCheckingOut = ref(false);
+const showDeleteAlert = ref(false);
+const itemToDelete = ref<string | null>(null);
 
 onMounted(async () => {
   await cartStore.loadCartItems();
 });
 
-const updateItemQuantity = async (id, newQuantity) => {
+const updateItemQuantity = async (id: string, newQuantity: number) => {
   if (newQuantity >= 1) {
     await cartStore.updateQuantity(id, newQuantity);
   }
 };
 
-const removeItem = async (id) => {
-  await cartStore.removeItem(id);
+const confirmRemoveItem = (itemId: string) => {
+  itemToDelete.value = itemId;
+  showDeleteAlert.value = true;
+};
+
+const removeItem = () => {
+  if (itemToDelete.value) {
+    cartStore.removeItem(itemToDelete.value);
+    itemToDelete.value = null;
+  }
+  showDeleteAlert.value = false;
 };
 
 const handleCheckout = async () => {

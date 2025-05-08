@@ -88,6 +88,8 @@ const loginWithGoogle = async () => {
         email: firebaseUser.email,
         name: firebaseUser.displayName,
         photoUrl: firebaseUser.photoURL,
+        status: 'active',
+        contact: firebaseUser.phoneNumber
       });
       await authStore.registerUser();
       router.replace({ name: 'home' });
