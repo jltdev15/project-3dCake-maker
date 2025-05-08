@@ -2,7 +2,10 @@
     <ion-page class="page-background">
         <ion-header>
             <ion-toolbar>
-                <ion-title class="ion-text-center">Notifications</ion-title>
+                <ion-buttons slot="start">
+                    <ion-back-button default-href="/" text=""></ion-back-button>
+                </ion-buttons>
+                <ion-title class="ion-text-center pr-12">Notifications</ion-title>
             </ion-toolbar>
         </ion-header>
         <ion-content class="ion-padding">
@@ -17,7 +20,7 @@
 </template>
 
 <script setup>
-import { IonPage, IonContent, IonText, IonHeader, IonToolbar, IonTitle } from '@ionic/vue';
+import { IonPage, IonContent, IonText, IonHeader, IonToolbar, IonTitle, IonButtons, IonBackButton } from '@ionic/vue';
 
 // Register components
 defineOptions({
@@ -27,7 +30,9 @@ defineOptions({
     IonText,
     IonHeader,
     IonToolbar,
-    IonTitle
+    IonTitle,
+    IonButtons,
+    IonBackButton
   }
 });
 </script>

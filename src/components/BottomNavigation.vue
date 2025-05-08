@@ -8,14 +8,18 @@
                     <ion-icon :icon="home" />
                     <ion-label>Home</ion-label>
                 </ion-tab-button>
-
-                <ion-tab-button tab="notification" href="/notification">
-                    <ion-icon :icon="notifications" />
-                    <ion-label>Notification</ion-label>
+                <ion-tab-button tab="cart" href="/cart">
+                    <ion-icon :icon="cart" />
+                    <ion-label>Cart</ion-label>
+                    <ion-badge v-if="cartStore.itemCount > 0" class="cart-badge">{{ cartStore.itemCount }}</ion-badge>
+                </ion-tab-button>
+                <ion-tab-button tab="orders" href="/orders">
+                    <ion-icon :icon="receipt" />
+                    <ion-label>Orders</ion-label>
                 </ion-tab-button>
 
                 <ion-tab-button tab="account" href="/account">
-                    <ion-icon :icon="people" />
+                    <ion-icon :icon="person" />
                     <ion-label>Me</ion-label>
                 </ion-tab-button>
             </ion-tab-bar>
@@ -27,6 +31,7 @@
 
 <script setup lang="ts">
 import { useRouter } from "vue-router";
+import { useCartStore } from '../stores/cartStore';
 import {
     IonPage,
     IonTabs,
@@ -38,11 +43,13 @@ import {
     IonIcon,
     IonFab,
     IonFabButton,
+    IonBadge
 } from "@ionic/vue";
 
-import { home, notifications, people, statsChart, add } from "ionicons/icons";
+import { home, notifications, people, statsChart, add, receipt, cart, person } from "ionicons/icons";
 
 const router = useRouter()
+const cartStore = useCartStore();
 </script>
 
 <style scoped>
@@ -50,12 +57,16 @@ ion-tab-bar {
     --background: #ffffff;
     --border: none;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    position: relative;
+    z-index: 2;
 }
 
 ion-tab-button {
     --color: #1b1b1b;
     --color-selected: #F0E68D;
     transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
 }
 
 ion-tab-button:hover {
@@ -105,5 +116,26 @@ ion-tab-button.tab-selected ion-icon {
     height: 60px;
     font-size: 40px !important;
     /* Increase icon size */
+}
+
+.cart-badge {
+    position: absolute;
+    transform: translateX(25%);
+    bottom: 0;
+    --background: #ff4961;
+    --color: white;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 28px;
+
+}
+
+ion-tabs {
+    position: relative;
+    z-index: 1;
 }
 </style>

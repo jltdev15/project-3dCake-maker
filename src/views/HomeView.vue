@@ -8,67 +8,35 @@
         <ion-title class="ion-text-center">
           PSALM CAKES CUSTOMIZED
         </ion-title>
+        <ion-buttons slot="end">
+          <ion-button @click="goToNotifications">
+            <ion-icon :icon="notificationsOutline" slot="icon-only"></ion-icon>
+          </ion-button>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="ion-padding-top">
-      <div class="cake-carousel">
-        <Swiper v-bind="swiperOptions" class="swiper">
-          <SwiperSlide v-for="(cake, idx) in [
-            { img: '/swiper/1.jpg', title: 'Happy Christening', name: 'Shania Rhae' },
-            { img: '/swiper/2.jpg', title: '18th Birthday', name: 'Alexa' },
-            { img: '/swiper/3.jpg', title: 'Wedding Cake', name: 'Mr & Mrs' },
-            { img: '/swiper/4.jpg', title: 'Strawberry Cake', name: '' },
-            { img: '/swiper/5.jpg', title: 'Vanilla Cake', name: '' }
-          ]" :key="idx">
-            <img :src="cake.img" alt="cake" class="carousel-img" />
-          </SwiperSlide>
-        </Swiper>
-      </div>
+    <ion-content class="">
 
-      <ion-grid class="">
+      <ion-grid>
         <ion-row class="ion-justify-content-center">
           <ion-col size="6" class="ion-padding">
-            <ion-card class="cake-card">
-              <img src="/swiper/5.jpg" alt="18th Birthday Cake" />
-              <div class="cake-label">18th Birthday Cake</div>
-            </ion-card>
-          </ion-col>
-          <ion-col size="6" class="ion-padding">
-            <ion-card class="cake-card">
-              <img src="/swiper/3.jpg" alt="Wedding Cake" />
-              <div class="cake-label">Wedding Cake</div>
-            </ion-card>
-          </ion-col>
-        </ion-row>
-        <ion-row class="ion-justify-content-center">
-          <ion-col size="6" class="ion-padding">
-            <ion-card class="cake-card">
-              <img src="/swiper/4.jpg" alt="Strawberry Cake" />
-              <div class="cake-label">Strawberry Cake</div>
-            </ion-card>
-          </ion-col>
-          <ion-col size="6" class="ion-padding">
-            <ion-card class="cake-card">
-              <img src="/swiper/5.jpg" alt="Vanilla Cake" />
-              <div class="cake-label">Vanilla Cake</div>
-            </ion-card>
-          </ion-col>
-        </ion-row>
-        <ion-row class="ion-justify-content-center">
-          <ion-col size="6" class="ion-padding">
-            <ion-card class="cake-card">
-              <img src="/swiper/2.jpg" alt="Number Cake" />
-              <div class="cake-label">Number Cake</div>
-            </ion-card>
-          </ion-col>
-          <ion-col size="6" class="ion-padding">
-            <div class="customize-card">
+            <div class="customize-card" @click="goToCustomize">
               <img src="/swiper/5.jpg" alt="Customize Cake" class="customize-img" />
               <div class="customize-text">STARTED CUSTOMIZE<br />YOUR DREAM CAKE!</div>
             </div>
           </ion-col>
         </ion-row>
+        <h2 class="category-title">Categories</h2>
+        <ion-row class="ion-justify-content-between">
+          <ion-col size="5" class="ion-padding" v-for="category in categories" :key="category.id">
+            <ion-card class="cake-card" @click="viewCategory(category.id)">
+              <img :src="category.imageUrl" :alt="category.name"  class="p-4"/>
+              <div class="cake-label">{{ category.name }}</div>
+            </ion-card>
+          </ion-col>
+        </ion-row>
+
       </ion-grid>
     </ion-content>
   </ion-page>
@@ -92,26 +60,34 @@ import {
   IonCol,
   IonIcon,
   IonButtons,
-  IonMenuButton
+  IonMenuButton,
+  toastController
 } from '@ionic/vue';
-import { createOutline, saveOutline } from 'ionicons/icons';
-import { Swiper, SwiperSlide } from 'swiper/vue';
-import { Autoplay, Pagination } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/pagination';
+import { createOutline, saveOutline, notificationsOutline } from 'ionicons/icons';
+import { useRouter } from 'vue-router';
+import { useCakeStore } from '@/stores/cakeStore';
+import { storeToRefs } from 'pinia';
 
-const swiperOptions = {
-  modules: [Autoplay, Pagination],
-  slidesPerView: 1,
-  spaceBetween: 30,
-  loop: false,
-  pagination: {
-    clickable: true,
-  },
-  autoplay: {
-    delay: 3000,
-    disableOnInteraction: false,
-  },
+const router = useRouter();
+const cakeStore = useCakeStore();
+const { categories } = storeToRefs(cakeStore);
+
+const goToNotifications = () => {
+  router.push('/notifications');
+};
+
+const viewCategory = (categoryId) => {
+  router.push(`/category/${categoryId}`);
+};
+
+const goToCustomize = async () => {
+  const toast = await toastController.create({
+    message: 'Customize feature is not available yet. Coming soon!',
+    duration: 2000,
+    position: 'bottom',
+    color: 'warning'
+  });
+  await toast.present();
 };
 </script>
 
@@ -246,13 +222,17 @@ ion-row {
 
 .cake-card {
   margin: 0;
-
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   transition: transform 0.2s ease;
   height: 100%;
   display: flex;
   flex-direction: column;
+  cursor: pointer;
+}
+
+.cake-card:hover {
+  transform: translateY(-5px);
 }
 
 .cake-card img {
@@ -302,5 +282,13 @@ ion-row {
 .cake-carousel {
   height: 15vh;
   min-height: 150px;
+}
+
+.category-title {
+  text-align: center;
+  color: #7A5C1E;
+  font-weight: 600;
+  margin: 20px 0;
+  font-size: 24px;
 }
 </style>

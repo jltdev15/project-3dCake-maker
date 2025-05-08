@@ -34,8 +34,26 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true },
       },
       {
-        path: '/notification',
-        name: 'notification',
+        path: '/category/:id',
+        name: 'category',
+        component: () => import('../views/CategoryView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/orders',
+        name: 'orders',
+        component: () => import('../views/Orders/OrdersView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/cart',
+        name: 'cart',
+        component: () => import('../views/Orders/CartView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/notifications',
+        name: 'notifications',
         component: () => import('@/views/NotificationView.vue'),
         meta: { requiresAuth: true },
       },
