@@ -11,6 +11,9 @@
         <ion-buttons slot="end">
           <ion-button @click="goToNotifications">
             <ion-icon :icon="notificationsOutline" slot="icon-only"></ion-icon>
+            <ion-badge v-if="orderNotification.unreadCount > 0" color="danger" class="notification-badge">
+              {{ orderNotification.unreadCount }}
+            </ion-badge>
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -61,16 +64,47 @@ import {
   IonIcon,
   IonButtons,
   IonMenuButton,
-  toastController
+  toastController,
+  IonBadge
 } from '@ionic/vue';
 import { createOutline, saveOutline, notificationsOutline } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 import { useCakeStore } from '@/stores/cakeStore';
 import { storeToRefs } from 'pinia';
+import { useOrderNotificationStore } from '@/stores/orderNotification';
+import { useAuthStore } from '@/stores/authStore';
+import { onMounted, onUnmounted, watch } from 'vue';
 
 const router = useRouter();
 const cakeStore = useCakeStore();
 const { categories } = storeToRefs(cakeStore);
+
+const orderNotification = useOrderNotificationStore();
+const auth = useAuthStore();
+let cleanup;
+
+// Watch for auth state changes to handle notifications
+watch(() => auth.user, (newUser) => {
+    if (newUser) {
+        // Clean up existing listener if any
+        if (cleanup) {
+            cleanup();
+        }
+        // Start listening to notifications
+        cleanup = orderNotification.listenToOrderNotifications(newUser);
+    } else {
+        // Clean up listener if user logs out
+        if (cleanup) {
+            cleanup();
+        }
+    }
+}, { immediate: true });
+
+onUnmounted(() => {
+    if (cleanup) {
+        cleanup();
+    }
+});
 
 const goToNotifications = () => {
   router.push('/notifications');
@@ -290,5 +324,19 @@ ion-row {
   font-weight: 600;
   margin: 20px 0;
   font-size: 24px;
+}
+
+.notification-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    transform: translate(25%, -25%);
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+ion-button {
+    position: relative;
 }
 </style>
