@@ -102,9 +102,12 @@ import { useCartStore } from '../../stores/cartStore';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { toastController } from '@ionic/vue';
+import { useAuthStore } from '../../stores/authStore';
+import { database, ref as dbRef, push, set } from '../../config/firebase';
 
 const router = useRouter();
 const cartStore = useCartStore();
+const authStore = useAuthStore();
 const isCheckingOut = ref(false);
 const showDeleteAlert = ref(false);
 const itemToDelete = ref<string | null>(null);
@@ -139,6 +142,20 @@ const handleCheckout = async () => {
   try {
     const orderId = await cartStore.checkout();
     if (orderId) {
+      // Create admin notification
+      const adminNotificationRef = dbRef(database, 'admin_notifications');
+      const newNotificationRef = push(adminNotificationRef);
+      await set(newNotificationRef, {
+        orderId,
+        userId: authStore.user?.uid,
+        customerName: authStore.user?.name || 'Anonymous User',
+        status: 'pending',
+        type: 'non-custom',
+        createdAt: Date.now(),
+        read: false,
+        message: `New order #${orderId} from ${authStore.user?.name || 'Anonymous User'}`
+      });
+
       const toast = await toastController.create({
         message: 'Order placed successfully!',
         duration: 2000,

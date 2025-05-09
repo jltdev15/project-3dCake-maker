@@ -135,11 +135,13 @@ import { computed, ref } from 'vue';
 import { cartOutline } from 'ionicons/icons';
 import { useCartStore } from '@/stores/cartStore';
 import { toastController } from '@ionic/vue';
+import { useAuthStore } from '@/stores/authStore';
 
 const route = useRoute();
 const router = useRouter();
 const cakeStore = useCakeStore();
 const cartStore = useCartStore();
+const authStore = useAuthStore();
 
 const category = computed(() => {
   return cakeStore.getCategoryById(route.params.id);
@@ -173,6 +175,16 @@ const totalPrice = computed(() => {
 });
 
 const addToCart = (cake) => {
+  if (authStore.user?.status === 'blocked') {
+    toastController.create({
+      message: 'Your account has been blocked. Please contact support.',
+      duration: 2000,
+      position: 'top',
+      color: 'danger'
+    }).then(toast => toast.present());
+    return;
+  }
+  
   selectedCake.value = cake;
   selectedSize.value = '';
   quantity.value = 1;
