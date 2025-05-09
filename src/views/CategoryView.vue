@@ -175,16 +175,6 @@ const totalPrice = computed(() => {
 });
 
 const addToCart = (cake) => {
-  if (authStore.user?.status === 'blocked') {
-    toastController.create({
-      message: 'Your account has been blocked. Please contact support.',
-      duration: 2000,
-      position: 'top',
-      color: 'danger'
-    }).then(toast => toast.present());
-    return;
-  }
-  
   selectedCake.value = cake;
   selectedSize.value = '';
   quantity.value = 1;
@@ -209,6 +199,18 @@ const decreaseQuantity = () => {
 };
 
 const confirmAddToCart = async () => {
+  const isActive = await cartStore.checkUserStatus();
+  if (!isActive) {
+    const toast = await toastController.create({
+      message: 'Your account has been blocked. Please contact support.',
+      duration: 2000,
+      position: 'top',
+      color: 'danger'
+    });
+    await toast.present();
+    return;
+  }
+
   if (selectedCake.value.sizes && !selectedSize.value) {
     const toast = await toastController.create({
       message: 'Please select a size',

@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { database, ref as dbRef, set, get, remove, update, push } from '../config/firebase'
+import { database, ref as dbRef, set, get, remove, update, push, onValue, off } from '../config/firebase'
 import { useAuthStore } from './authStore'
 import { useOrderStore } from './orderStore'
+import { toastController } from '@ionic/vue'
 
 interface CartItem {
   id: string
@@ -29,6 +30,49 @@ interface Order {
 export const useCartStore = defineStore('cart', () => {
   const items = ref<CartItem[]>([])
   const authStore = useAuthStore()
+  let userStatusUnsubscribe: (() => void) | null = null
+
+  const checkUserStatus = async () => {
+    if (!authStore.user?.uid) return false
+
+    try {
+      const userRef = dbRef(database, `users/${authStore.user.uid}`)
+      const snapshot = await get(userRef)
+      if (snapshot.exists()) {
+        const userData = snapshot.val()
+        return userData.status === 'active'
+      }
+      return false
+    } catch (error) {
+      console.error('Error checking user status:', error)
+      return false
+    }
+  }
+
+  const setupUserStatusListener = () => {
+    if (!authStore.user?.uid) return
+
+    const userRef = dbRef(database, `users/${authStore.user.uid}`)
+    userStatusUnsubscribe = onValue(userRef, async (snapshot) => {
+      if (snapshot.exists() && authStore.user?.uid) {
+        const userData = snapshot.val()
+        if (userData.status !== 'active' && items.value.length > 0) {
+          // Clear cart if user is blocked and has items
+          items.value = []
+          const cartRef = dbRef(database, `users/${authStore.user.uid}/cart`)
+          await remove(cartRef)
+          
+          const toast = await toastController.create({
+            message: 'Your account has been blocked. Cart has been cleared.',
+            duration: 3000,
+            position: 'top',
+            color: 'danger'
+          })
+          await toast.present()
+        }
+      }
+    })
+  }
 
   const loadCartItems = async () => {
     if (!authStore.user?.uid) return
@@ -50,6 +94,7 @@ export const useCartStore = defineStore('cart', () => {
   // Load cart items immediately if user is authenticated
   if (authStore.user?.uid) {
     loadCartItems()
+    setupUserStatusListener()
   }
 
   const generateOrderId = async () => {
@@ -165,6 +210,13 @@ export const useCartStore = defineStore('cart', () => {
     return items.value.reduce((count, item) => count + item.quantity, 0)
   })
 
+  const cleanup = () => {
+    if (userStatusUnsubscribe) {
+      userStatusUnsubscribe()
+      userStatusUnsubscribe = null
+    }
+  }
+
   return {
     items,
     addItem,
@@ -173,6 +225,8 @@ export const useCartStore = defineStore('cart', () => {
     cartTotal,
     itemCount,
     loadCartItems,
-    checkout
+    checkout,
+    cleanup,
+    checkUserStatus
   }
 }) 

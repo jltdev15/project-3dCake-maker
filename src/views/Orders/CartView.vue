@@ -99,7 +99,7 @@ import {
 } from '@ionic/vue';
 import { cartOutline, addOutline, removeOutline, trashOutline } from 'ionicons/icons';
 import { useCartStore } from '../../stores/cartStore';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { toastController } from '@ionic/vue';
 import { useAuthStore } from '../../stores/authStore';
@@ -114,6 +114,10 @@ const itemToDelete = ref<string | null>(null);
 
 onMounted(async () => {
   await cartStore.loadCartItems();
+});
+
+onUnmounted(() => {
+  cartStore.cleanup();
 });
 
 const updateItemQuantity = async (id: string, newQuantity: number) => {
