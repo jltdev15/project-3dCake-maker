@@ -3,15 +3,17 @@
         <ion-tabs>
             <ion-router-outlet></ion-router-outlet>
 
-            <ion-tab-bar slot="bottom" class="h-20">
+            <ion-tab-bar slot="bottom" class="nav-bar">
                 <ion-tab-button tab="home" href="/home">
                     <ion-icon :icon="home" />
                     <ion-label>Home</ion-label>
                 </ion-tab-button>
                 <ion-tab-button tab="cart" href="/cart">
-                    <ion-icon :icon="cart" />
-                    <ion-label>Cart</ion-label>
-                    <ion-badge v-if="cartStore.itemCount > 0" class="cart-badge">{{ cartStore.itemCount }}</ion-badge>
+                    <div class="cart-button-wrapper">
+                        <ion-icon :icon="cart" />
+                        <ion-label>Cart</ion-label>
+                        <ion-badge v-if="cartStore.itemCount > 0" class="cart-badge">{{ cartStore.itemCount }}</ion-badge>
+                    </div>
                 </ion-tab-button>
                 <ion-tab-button tab="orders" href="/orders">
                     <ion-icon :icon="receipt" />
@@ -35,43 +37,39 @@ import { useCartStore } from '../stores/cartStore';
 import {
     IonPage,
     IonTabs,
-    IonTab,
     IonRouterOutlet,
     IonTabBar,
     IonTabButton,
     IonLabel,
     IonIcon,
-    IonFab,
-    IonFabButton,
     IonBadge
 } from "@ionic/vue";
 
-import { home, notifications, people, statsChart, add, receipt, cart, person } from "ionicons/icons";
+import { home, receipt, cart, person } from "ionicons/icons";
 
 const router = useRouter()
 const cartStore = useCartStore();
 </script>
 
 <style scoped>
-ion-tab-bar {
-    --background: #ffffff;
+.nav-bar {
+    --background: rgba(255, 255, 255, 0.95);
     --border: none;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);
+    height: 70px;
+    padding: 8px 0;
     position: relative;
-    z-index: 2;
+    z-index: 1000;
 }
 
 ion-tab-button {
-    --color: #1b1b1b;
-    --color-selected: #F0E68D;
+    --color: #7A5C1E;
+    --color-selected: #7A5C1E;
+    --ripple-color: transparent;
     transition: all 0.3s ease;
     position: relative;
-    z-index: 1;
-}
-
-ion-tab-button:hover {
-    --color: #F0E68D;
-    transform: translateY(-2px);
+    overflow: visible;
 }
 
 ion-tab-button::before {
@@ -82,12 +80,22 @@ ion-tab-button::before {
     transform: translateX(-50%);
     width: 0;
     height: 3px;
-    background: #F0E68D;
+    background: #7A5C1E;
+    border-radius: 3px 3px 0 0;
     transition: width 0.3s ease;
 }
 
 ion-tab-button.tab-selected::before {
-    width: 30px;
+    width: 24px;
+}
+
+ion-tab-button.tab-selected {
+    --background: transparent;
+}
+
+ion-tab-button:hover {
+    --color: #8B6B2F;
+    transform: translateY(-2px);
 }
 
 ion-icon {
@@ -103,39 +111,60 @@ ion-tab-button.tab-selected ion-icon {
     transform: scale(1.1);
 }
 
-.fab-center {
-    left: 50%;
-    bottom: 5%;
-    transform: translateX(-50%);
-    z-index: 9999;
+ion-label {
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 4px;
 }
 
-.big-fab {
-    width: 60px;
-    /* Customize size */
-    height: 60px;
-    font-size: 40px !important;
-    /* Increase icon size */
+.cart-button-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .cart-badge {
     position: absolute;
-    transform: translateX(25%);
-    bottom: 0;
-    --background: #ff4961;
+    top: -4px;
+    right: -8px;
+    --background: #dc3545;
     --color: white;
-    font-size: 16px;
-    font-weight: bold;
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 28px;
-
+    padding: 0 6px;
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
 }
 
 ion-tabs {
     position: relative;
     z-index: 1;
+}
+
+@media (max-width: 360px) {
+    .nav-bar {
+        height: 60px;
+        padding: 4px 0;
+    }
+
+    ion-icon {
+        font-size: 20px;
+    }
+
+    ion-label {
+        font-size: 10px;
+    }
+
+    .cart-badge {
+        font-size: 10px;
+        min-width: 18px;
+        height: 18px;
+    }
 }
 </style>

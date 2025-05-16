@@ -1,62 +1,67 @@
 <template>
-  <ion-page class="page-background">
-    <ion-header>
+  <ion-page class="category-page">
+    <ion-header class="ion-no-border">
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-back-button default-href="/home"></ion-back-button>
+          <ion-back-button default-href="/home" class="back-button"></ion-back-button>
         </ion-buttons>
-        <ion-title class="ion-text-center pr-16">{{ category?.name }}</ion-title>
+        <ion-title class="category-title">{{ category?.name }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="">
+    <ion-content>
       <div v-if="category" class="category-container">
+        <div class="category-header">
+          <h2 class="cakes-title">Available Cakes</h2>
+          <p class="cakes-subtitle">Select from our delicious {{ category.name.toLowerCase() }} collection</p>
+        </div>
 
-
-        <h2 class="cakes-title">Available Cakes</h2>
-        <ion-grid>
-          <ion-row>
-            <ion-col size="6" v-for="cake in category.cakes" :key="cake.id" class="my-3 ">
-              <ion-card class="cake-card" @click="viewCakeDetails(cake.id)">
-                <img :src="cake.imageUrl" :alt="cake.name" class="p-4"/>
-                <div class="cake-info">
-                  <h3>{{ cake.name }}</h3>
-                  <p class="price" style="color: red;">
-                    ₱{{ typeof cake.price === 'number' 
-                      ? cake.price.toFixed(2) 
-                      : `${cake.price.min.toFixed(2)} - ${cake.price.max.toFixed(2)}` }}
-                  </p>
-                <ion-button  class="add-to-cart-btn" @click.stop="addToCart(cake)" color="danger">
-                  <ion-icon :icon="cartOutline" slot="start"></ion-icon>
-                  Add to Cart
-                </ion-button>
-                </div>
-              </ion-card>
-            </ion-col>
-          </ion-row>
-        </ion-grid>
+        <div class="cakes-grid">
+          <div v-for="cake in category.cakes" :key="cake.id" class="cake-card" @click="viewCakeDetails(cake.id)">
+            <div class="cake-image">
+              <img :src="cake.imageUrl" :alt="cake.name" />
+            </div>
+            <div class="cake-info">
+              <h3 class="cake-name">{{ cake.name }}</h3>
+              <p class="cake-price">
+                ₱{{ typeof cake.price === 'number' 
+                  ? cake.price.toFixed(2) 
+                  : `${cake.price.min.toFixed(2)} - ${cake.price.max.toFixed(2)}` }}
+              </p>
+              <ion-button class="add-to-cart-btn" @click.stop="addToCart(cake)" fill="solid">
+                <ion-icon :icon="cartOutline" slot="start"></ion-icon>
+                Add to Cart
+              </ion-button>
+            </div>
+          </div>
+        </div>
       </div>
     </ion-content>
 
-    <ion-modal :is-open="isModalOpen" @didDismiss="closeModal">
-      <ion-header>
+    <ion-modal :is-open="isModalOpen" @didDismiss="closeModal" class="cart-modal">
+      <ion-header class="ion-no-border">
         <ion-toolbar>
           <ion-title>Add to Cart</ion-title>
           <ion-buttons slot="end">
-            <ion-button @click="closeModal">Close</ion-button>
+            <ion-button @click="closeModal" class="close-button">
+              <ion-icon :icon="closeOutline"></ion-icon>
+            </ion-button>
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
       <ion-content class="ion-padding">
-        <div v-if="selectedCake">
-          <h2>{{ selectedCake.name }}</h2>
+        <div v-if="selectedCake" class="modal-content">
+          <div class="selected-cake-info">
+            <img :src="selectedCake.imageUrl" :alt="selectedCake.name" class="selected-cake-image" />
+            <h2 class="selected-cake-name">{{ selectedCake.name }}</h2>
+          </div>
           
           <div v-if="selectedCake.sizes" class="size-selection">
             <h3>Select Size</h3>
-            <ion-list>
-              <ion-item v-for="(price, size) in selectedCake.sizes" :key="size">
+            <ion-list class="size-list">
+              <ion-item v-for="(price, size) in selectedCake.sizes" :key="size" class="size-item">
                 <ion-radio-group v-model="selectedSize">
-                  <ion-item>
+                  <ion-item lines="none">
                     <ion-label>{{ size }} - ₱{{ price }}</ion-label>
                     <ion-radio :value="size"></ion-radio>
                   </ion-item>
@@ -67,37 +72,34 @@
 
           <div class="quantity-selection">
             <h3>Quantity</h3>
-            <ion-item>
-              <ion-label>Quantity</ion-label>
-              <ion-buttons slot="end">
-                <ion-button @click="decreaseQuantity" :disabled="quantity <= 1">-</ion-button>
-                <ion-text>{{ quantity }}</ion-text>
-                <ion-button @click="increaseQuantity">+</ion-button>
-              </ion-buttons>
-            </ion-item>
+            <div class="quantity-controls">
+              <ion-button fill="outline" @click="decreaseQuantity" :disabled="quantity <= 1">
+                <ion-icon :icon="removeOutline"></ion-icon>
+              </ion-button>
+              <span class="quantity-value">{{ quantity }}</span>
+              <ion-button fill="outline" @click="increaseQuantity">
+                <ion-icon :icon="addOutline"></ion-icon>
+              </ion-button>
+            </div>
           </div>
 
           <div class="price-summary">
             <h3>Price Summary</h3>
-            <ion-item lines="none">
-              <ion-label>Unit Price</ion-label>
-              <ion-text slot="end" color="danger">
-                ₱{{ unitPrice.toFixed(2) }}
-              </ion-text>
-            </ion-item>
-            <ion-item lines="none">
-              <ion-label>Quantity</ion-label>
-              <ion-text slot="end">{{ quantity }}</ion-text>
-            </ion-item>
-            <ion-item lines="none">
-              <ion-label><strong>Total Price</strong></ion-label>
-              <ion-text slot="end" color="danger">
-                <strong>₱{{ totalPrice.toFixed(2) }}</strong>
-              </ion-text>
-            </ion-item>
+            <div class="summary-item">
+              <span>Unit Price</span>
+              <span class="price-value">₱{{ unitPrice.toFixed(2) }}</span>
+            </div>
+            <div class="summary-item">
+              <span>Quantity</span>
+              <span class="quantity-value">{{ quantity }}</span>
+            </div>
+            <div class="summary-item total">
+              <span>Total Price</span>
+              <span class="total-price">₱{{ totalPrice.toFixed(2) }}</span>
+            </div>
           </div>
 
-          <ion-button expand="block" @click="confirmAddToCart" class="ion-margin-top" color="danger">
+          <ion-button expand="block" @click="confirmAddToCart" class="confirm-button" fill="solid">
             Add to Cart
           </ion-button>
         </div>
@@ -113,10 +115,6 @@ import {
   IonToolbar, 
   IonTitle, 
   IonContent,
-  IonCard,
-  IonGrid,
-  IonRow,
-  IonCol,
   IonButtons,
   IonBackButton,
   IonButton,
@@ -132,7 +130,7 @@ import {
 import { useRoute, useRouter } from 'vue-router';
 import { useCakeStore } from '@/stores/cakeStore';
 import { computed, ref } from 'vue';
-import { cartOutline } from 'ionicons/icons';
+import { cartOutline, closeOutline, addOutline, removeOutline } from 'ionicons/icons';
 import { useCartStore } from '@/stores/cartStore';
 import { toastController } from '@ionic/vue';
 import { useAuthStore } from '@/stores/authStore';
@@ -256,133 +254,258 @@ const confirmAddToCart = async () => {
 </script>
 
 <style scoped>
-.page-background {
-  background: linear-gradient(to bottom, #C8AD7E, #FFF7D0);
+.category-page {
+  --background: linear-gradient(135deg, #FFF7D0 0%, #C8AD7E 100%);
+}
+
+ion-header {
+  --background: transparent;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+ion-toolbar {
+  --background: #7A5C1E;
+  --border-width: 0;
+  padding: 8px 16px;
+}
+
+.back-button {
+  --color: #FFFFFF;
+}
+
+.category-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: 0.5px;
 }
 
 .category-container {
   padding: 16px;
+  padding-top: 80px;
 }
 
 .category-header {
-  margin-bottom: 24px;
-}
-
-.category-image {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-  border-radius: 12px;
-  margin-bottom: 16px;
-}
-
-.category-description {
-  color: #333;
-  font-size: 16px;
-  line-height: 1.5;
-  margin: 0;
+  text-align: center;
+  margin-bottom: 32px;
 }
 
 .cakes-title {
+  font-size: 2rem;
+  font-weight: 700;
   color: #7A5C1E;
-  font-weight: 600;
-  margin: 24px 0 16px;
-  font-size: 24px;
+  margin: 0 0 8px 0;
+}
+
+.cakes-subtitle {
+  font-size: 1rem;
+  color: #666;
+  margin: 0;
+}
+
+.cakes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  padding: 8px;
 }
 
 .cake-card {
-  margin: 0.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
   cursor: pointer;
-  transition: transform 0.2s ease;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
 }
 
 .cake-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-4px);
 }
 
-.cake-card img {
+.cake-image {
   width: 100%;
-  height: 120px;
+  height: 200px;
+  overflow: hidden;
+}
+
+.cake-image img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  padding: 0;
-  border-radius: 8px 8px 0 0;
+  transition: transform 0.3s ease;
+}
+
+.cake-card:hover .cake-image img {
+  transform: scale(1.05);
 }
 
 .cake-info {
-  padding: 8px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  padding: 16px;
 }
 
-.cake-info h3 {
-  margin: 0;
-  font-size: 14px;
-  color: #333;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.price {
-  color: #7a1e1e;
+.cake-name {
+  font-size: 1.2rem;
   font-weight: 600;
-  margin: 4px 0;
-  font-size: 14px;
+  color: #7A5C1E;
+  margin: 0 0 8px 0;
+}
+
+.cake-price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #7a1e1e;
+  margin: 0 0 16px 0;
 }
 
 .add-to-cart-btn {
-  --padding-start: 4px;
-  --padding-end: 4px;
-  --padding-top: 4px;
-  --padding-bottom: 4px;
-  margin: 0;
-  height: 32px;
-  font-size: 12px;
+  --background: #7A5C1E;
+  --background-hover: #8B6B2F;
+  --background-activated: #8B6B2F;
+  --border-radius: 12px;
+  --box-shadow: 0 4px 12px rgba(122, 92, 30, 0.2);
   width: 100%;
+  height: 48px;
+  font-weight: 600;
 }
 
-.add-to-cart-btn ion-icon {
-  font-size: 16px;
-  margin-right: 4px;
+/* Modal Styles */
+.cart-modal {
+  --height: 90%;
+  --border-radius: 24px 24px 0 0;
+}
+
+.modal-content {
+  padding: 16px;
+}
+
+.selected-cake-info {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.selected-cake-image {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 16px;
+  margin-bottom: 16px;
+}
+
+.selected-cake-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #7A5C1E;
+  margin: 0;
 }
 
 .size-selection, .quantity-selection {
-  margin: 16px 0;
+  margin: 24px 0;
 }
 
 h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
   color: #7A5C1E;
-  font-size: 16px;
+  margin-bottom: 16px;
+}
+
+.size-list {
+  background: transparent;
+}
+
+.size-item {
+  --background: rgba(255, 255, 255, 0.9);
+  --border-radius: 12px;
   margin-bottom: 8px;
 }
 
-ion-radio-group {
-  width: 100%;
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
 }
 
-ion-item {
-  --padding-start: 0;
+.quantity-value {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #7A5C1E;
+  min-width: 40px;
+  text-align: center;
 }
 
 .price-summary {
-  margin: 16px 0;
-  background: #f8f8f8;
-  border-radius: 8px;
-  padding: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 24px 0;
 }
 
-.price-summary ion-item {
-  --background: transparent;
-  --padding-start: 0;
-  --inner-padding-end: 0;
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  color: #666;
 }
 
-.price-summary ion-text {
-  font-size: 16px;
+.summary-item.total {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  font-weight: 600;
+  color: #7A5C1E;
+}
+
+.total-price {
+  color: #7a1e1e;
+  font-size: 1.2rem;
+}
+
+.confirm-button {
+  --background: #7A5C1E;
+  --background-hover: #8B6B2F;
+  --background-activated: #8B6B2F;
+  --border-radius: 12px;
+  --box-shadow: 0 4px 12px rgba(122, 92, 30, 0.2);
+  height: 56px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-top: 24px;
+}
+
+@media (max-width: 768px) {
+  .cakes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  .cake-image {
+    height: 180px;
+  }
+
+  .cakes-title {
+    font-size: 1.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .cakes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cake-image {
+    height: 200px;
+  }
+
+  .selected-cake-image {
+    width: 160px;
+    height: 160px;
+  }
 }
 </style> 

@@ -45,7 +45,6 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('../views/Orders/OrdersView.vue'),
         meta: { requiresAuth: true },
       },
-
       {
         path: '/cart',
         name: 'cart',
@@ -64,6 +63,7 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('../views/Account/AccountView.vue'),
         meta: { requiresAuth: true },
       },
+
     ],
   },
   {
@@ -82,6 +82,12 @@ const routes: Array<RouteRecordRaw> = [
     path: '/account/message',
     name: 'accountMessage',
     component: () => import('../views/Account/AccountMessageView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/customize-cake',
+    name: 'customizeCake',
+    component: () => import('../views/CustomizeCakeView.vue'),
     meta: { requiresAuth: true },
   },
 ];

@@ -1,35 +1,44 @@
 <template>
-  <ion-page class="page-background">
-    <ion-header>
+  <ion-page class="order-details-page">
+    <ion-header class="ion-no-border">
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-back-button default-href="/orders" ></ion-back-button>
+          <ion-back-button default-href="/orders" class="back-button"></ion-back-button>
         </ion-buttons>
-        <ion-title class="ion-text-center pr-12">Order Details</ion-title>
+        <ion-title class="details-title">Order Details</ion-title>
       </ion-toolbar>
     </ion-header>
+
     <ion-content>
-      <div class="order-details-container">
+      <div class="details-container">
         <div v-if="isLoading" class="loading-state">
           <ion-spinner name="crescent"></ion-spinner>
           <p>Loading order details...</p>
         </div>
         
         <div v-else-if="!order" class="error-state">
-          <ion-icon :icon="alertCircleOutline" size="large"></ion-icon>
-          <h2>Order Not Found</h2>
-          <p>The order you're looking for doesn't exist or has been removed.</p>
+          <div class="error-content">
+            <ion-icon :icon="alertCircleOutline" class="error-icon"></ion-icon>
+            <h2>Order Not Found</h2>
+            <p>The order you're looking for doesn't exist or has been removed.</p>
+            <ion-button router-link="/orders" class="back-to-orders-btn" fill="solid">
+              Back to Orders
+              <ion-icon :icon="arrowBack" slot="start"></ion-icon>
+            </ion-button>
+          </div>
         </div>
 
         <template v-else>
           <div class="order-header">
-            <h1>Order #{{ order.orderId }}</h1>
-            <span :class="['status-badge', order.status.toLowerCase()]">{{ order.status }}</span>
+            <div class="header-content">
+              <h1 class="order-number">Order #{{ order.orderId }}</h1>
+              <span :class="['status-badge', order.status.toLowerCase()]">{{ order.status }}</span>
+            </div>
           </div>
 
           <div class="order-info-card">
             <div class="info-section">
-              <h3>Order Information</h3>
+              <h3 class="section-title">Order Information</h3>
               <div class="info-grid">
                 <div class="info-item">
                   <ion-icon :icon="calendarOutline"></ion-icon>
@@ -49,22 +58,24 @@
                   <ion-icon :icon="cashOutline"></ion-icon>
                   <div class="info-content">
                     <span class="label">Total Amount</span>
-                    <span class="value">₱{{ order.totalAmount?.toFixed(2) || '0.00' }}</span>
+                    <span class="value price">₱{{ order.totalAmount?.toFixed(2) || '0.00' }}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             <div class="info-section">
-              <h3>Order Items</h3>
+              <h3 class="section-title">Order Items</h3>
               <div v-if="!order.items?.length" class="no-items">
                 <p>No items in this order</p>
               </div>
               <div v-else class="order-items">
                 <div v-for="(item, index) in order.items" :key="index" class="order-item">
+                  <div class="item-image">
+                    <img :src="item.imageUrl" :alt="item.name" />
+                  </div>
                   <div class="item-details">
-                    <h4>{{ item.productName || item.name || 'Unnamed Item' }}</h4>
-                    
+                    <h4 class="item-name">{{ item.productName || item.name || 'Unnamed Item' }}</h4>
                     <div class="item-meta">
                       <span class="quantity">Quantity: {{ item.quantity || 0 }}</span>
                       <span v-if="item.size" class="size">Size: {{ item.size }}</span>
@@ -82,8 +93,8 @@
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonButtons, IonBackButton, IonIcon, IonSpinner } from '@ionic/vue';
-import { calendarOutline, timeOutline, cashOutline, alertCircleOutline } from 'ionicons/icons';
+import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonButtons, IonBackButton, IonIcon, IonSpinner, IonButton } from '@ionic/vue';
+import { calendarOutline, timeOutline, cashOutline, alertCircleOutline, arrowBack } from 'ionicons/icons';
 import { useRoute, useRouter } from 'vue-router';
 import { useOrderStore } from '../../stores/orderStore';
 import { computed, ref, onMounted } from 'vue';
@@ -116,38 +127,62 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-background {
-  background: linear-gradient(135deg, #F5E6D3, #FFF7D0);
-  min-height: 100vh;
+.order-details-page {
+  --background: linear-gradient(135deg, #FFF7D0 0%, #C8AD7E 100%);
+}
+
+ion-header {
+  --background: #FFFFFF;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 ion-toolbar {
-  --background: linear-gradient(to right, #C8AD7E, #FFFFFF);
-  --border-color: transparent;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --background: #7A5C1E;
+  --border-width: 0;
+  padding: 8px 16px;
 }
 
-ion-content {
-  --background: transparent;
+.back-button {
+  --color: #FFFFFF;
 }
 
-.order-details-container {
+.details-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: 0.5px;
+}
+
+.details-container {
   padding: 16px;
+  padding-top: 80px;
   max-width: 800px;
   margin: 0 auto;
 }
 
 .order-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 24px;
 }
 
-.order-header h1 {
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.order-number {
+  font-size: 1.5rem;
+  font-weight: 700;
   color: #7A5C1E;
-  font-size: 1.75rem;
-  font-weight: 600;
   margin: 0;
 }
 
@@ -175,10 +210,10 @@ ion-content {
 }
 
 .order-info-card {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .info-section {
@@ -189,7 +224,7 @@ ion-content {
   margin-bottom: 0;
 }
 
-.info-section h3 {
+.section-title {
   color: #7A5C1E;
   font-size: 1.25rem;
   font-weight: 600;
@@ -211,7 +246,7 @@ ion-content {
 }
 
 .info-item ion-icon {
-  color: #C8AD7E;
+  color: #7A5C1E;
   font-size: 1.25rem;
   margin-top: 2px;
 }
@@ -232,6 +267,11 @@ ion-content {
   font-weight: 500;
 }
 
+.info-content .value.price {
+  color: #7a1e1e;
+  font-weight: 600;
+}
+
 .order-items {
   display: flex;
   flex-direction: column;
@@ -242,29 +282,42 @@ ion-content {
   background: #FFFFFF;
   border-radius: 12px;
   padding: 16px;
+  display: flex;
+  gap: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.item-details h4 {
+.item-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item-details {
+  flex: 1;
+}
+
+.item-name {
   color: #7A5C1E;
   font-size: 1.1rem;
   font-weight: 600;
   margin: 0 0 8px 0;
 }
 
-.item-description {
-  color: #666;
-  font-size: 0.9rem;
-  margin-bottom: 12px;
-}
-
 .item-meta {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
   color: #666;
   font-size: 0.9rem;
-  gap: 12px;
 }
 
 .size {
@@ -282,7 +335,7 @@ ion-content {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 60vh;
+  min-height: calc(100vh - 80px);
   gap: 16px;
 }
 
@@ -293,29 +346,47 @@ ion-content {
 
 .error-state {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 60vh;
-  text-align: center;
-  gap: 16px;
+  min-height: calc(100vh - 80px);
 }
 
-.error-state ion-icon {
+.error-content {
+  text-align: center;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 32px;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 100%;
+}
+
+.error-icon {
   font-size: 48px;
   color: #dc3545;
+  margin-bottom: 16px;
 }
 
 .error-state h2 {
   color: #333;
   font-size: 1.5rem;
-  margin: 0;
+  margin: 0 0 8px 0;
 }
 
 .error-state p {
   color: #666;
   font-size: 1.1rem;
-  max-width: 300px;
+  margin: 0 0 24px 0;
+}
+
+.back-to-orders-btn {
+  --background: #7A5C1E;
+  --background-hover: #8B6B2F;
+  --background-activated: #8B6B2F;
+  --border-radius: 12px;
+  --box-shadow: 0 4px 12px rgba(122, 92, 30, 0.2);
+  height: 48px;
+  font-weight: 600;
 }
 
 .no-items {
@@ -323,5 +394,36 @@ ion-content {
   padding: 24px;
   color: #666;
   font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .order-item {
+    flex-direction: column;
+  }
+
+  .item-image {
+    width: 100%;
+    height: 160px;
+  }
+}
+
+@media (max-width: 480px) {
+  .order-info-card {
+    padding: 16px;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .item-image {
+    height: 140px;
+  }
 }
 </style> 
