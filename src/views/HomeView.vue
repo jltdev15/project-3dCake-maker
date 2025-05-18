@@ -10,7 +10,7 @@
         </ion-title>
         <ion-buttons slot="end">
           <ion-button class="notification-button" @click="goToNotifications">
-            <ion-icon :icon="notificationsOutline"></ion-icon>
+            <ion-icon :icon="notifications" class="notification-icon"></ion-icon>
             <ion-badge v-if="orderNotification.unreadCount > 0" color="danger" class="notification-badge">
               {{ orderNotification.unreadCount }}
             </ion-badge>
@@ -21,21 +21,6 @@
 
     <ion-content>
       <div class="content-wrapper">
-        <!-- Hero Section -->
-        <div class="hero-section" @click="goToCustomize">
-          <div class="hero-content">
-            <h1 class="hero-title">Create Your Dream Cake</h1>
-            <p class="hero-subtitle">Start customizing your perfect cake today</p>
-            <ion-button class="customize-button" fill="solid">
-              Start Customizing
-              <ion-icon :icon="createOutline" slot="end"></ion-icon>
-            </ion-button>
-          </div>
-          <div class="hero-image">
-            <img src="/swiper/5.jpg" alt="Customize Cake" />
-          </div>
-        </div>
-
         <!-- Categories Section -->
         <div class="categories-section">
           <div class="section-header">
@@ -59,6 +44,12 @@
             </div>
           </div>
         </div>
+
+        <!-- Floating Action Button -->
+        <ion-button class="floating-customize-button" fill="solid" @click="goToCustomize">
+          <ion-icon :icon="createOutline" slot="start"></ion-icon>
+          Start Customizing
+        </ion-button>
       </div>
     </ion-content>
   </ion-page>
@@ -78,7 +69,7 @@ import {
   IonBadge,
   toastController
 } from '@ionic/vue';
-import { createOutline, notificationsOutline } from 'ionicons/icons';
+import { createOutline, notificationsOutline, notifications } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 import { useCakeStore } from '@/stores/cakeStore';
 import { storeToRefs } from 'pinia';
@@ -162,6 +153,15 @@ ion-toolbar {
   position: relative;
 }
 
+.notification-icon {
+  font-size: 24px;
+  transition: transform 0.2s ease;
+}
+
+.notification-button:hover .notification-icon {
+  transform: scale(1.1);
+}
+
 .notification-badge {
   position: absolute;
   top: 0;
@@ -174,69 +174,8 @@ ion-toolbar {
 
 .content-wrapper {
   padding: 16px;
-  padding-top: 80px;
-}
-
-/* Hero Section */
-.hero-section {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 20px;
-  padding: 12px;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: transform 0.3s ease;
-}
-
-.hero-section:hover {
-  transform: translateY(-3px);
-}
-
-.hero-content {
-  flex: 1;
-  padding-right: 12px;
-}
-
-.hero-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #7A5C1E;
-  margin: 0 0 6px 0;
-}
-
-.hero-subtitle {
-  font-size: 0.85rem;
-  color: #666;
-  margin: 0 0 12px 0;
-}
-
-.customize-button {
-  --background: #7A5C1E;
-  --background-hover: #8B6B2F;
-  --background-activated: #8B6B2F;
-  --border-radius: 8px;
-  --box-shadow: 0 3px 8px rgba(122, 92, 30, 0.2);
-  font-weight: 600;
-  height: 36px;
-  padding: 0 12px;
-  font-size: 0.9rem;
-}
-
-.hero-image {
-  flex: 1;
-  max-width: 200px;
-  height: 130px;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.hero-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  padding-top: 60px;
+  padding-bottom: 100px; /* Added padding for the floating button */
 }
 
 /* Categories Section */
@@ -264,8 +203,8 @@ ion-toolbar {
 
 .categories-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 24px;
   padding: 8px;
 }
 
@@ -284,7 +223,7 @@ ion-toolbar {
 
 .category-image {
   width: 100%;
-  height: 150px;
+  height: 380px;
   overflow: hidden;
 }
 
@@ -311,48 +250,70 @@ ion-toolbar {
   margin: 0;
 }
 
+/* Floating Action Button */
+.floating-customize-button {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  --background: #7A5C1E;
+  --background-hover: #8B6B2F;
+  --background-activated: #8B6B2F;
+  --border-radius: 50px;
+  --box-shadow: 0 4px 16px rgba(122, 92, 30, 0.3);
+  --padding-start: 24px;
+  --padding-end: 24px;
+  height: 48px;
+  font-weight: 600;
+  z-index: 1000;
+}
+
+.floating-customize-button ion-icon {
+  margin-right: 8px;
+}
+
 @media (max-width: 768px) {
-  .hero-section {
-    flex-direction: column;
-    text-align: center;
-    padding: 16px;
-  }
-
-  .hero-content {
-    padding-right: 0;
-    margin-bottom: 16px;
-  }
-
-  .hero-title {
-    font-size: 1.5rem;
-  }
-
-  .hero-image {
-    max-width: 100%;
-    height: 160px;
-  }
-
   .categories-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .category-image {
+    height: 320px;
   }
 
   .section-title {
     font-size: 1.5rem;
+  }
+
+  .floating-customize-button {
+    bottom: 16px;
+    --padding-start: 20px;
+    --padding-end: 20px;
+    height: 44px;
   }
 }
 
 @media (max-width: 480px) {
   .categories-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    gap: 16px;
   }
 
   .category-image {
-    height: 120px;
+    height: 280px;
   }
 
   .category-name {
     font-size: 0.875rem;
+  }
+
+  .floating-customize-button {
+    bottom: 12px;
+    --padding-start: 16px;
+    --padding-end: 16px;
+    height: 40px;
+    font-size: 0.9rem;
   }
 }
 </style>

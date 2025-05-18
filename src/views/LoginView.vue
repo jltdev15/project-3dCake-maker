@@ -129,7 +129,8 @@ const handleLogin = async () => {
         name: firebaseUser.displayName,
         photoUrl: firebaseUser.photoURL,
         status: 'active',
-        contact: firebaseUser.phoneNumber
+        contact: firebaseUser.phoneNumber,
+        isProfileCompleted: false,
       });
       await authStore.registerUser();
       router.replace({ name: 'home' });
@@ -157,7 +158,8 @@ const loginWithGoogle = async () => {
         name: firebaseUser.displayName,
         photoUrl: firebaseUser.photoURL,
         status: 'active',
-        contact: firebaseUser.phoneNumber
+        contact: firebaseUser.phoneNumber,
+        isProfileCompleted: false,
       });
       await authStore.registerUser();
       router.replace({ name: 'home' });

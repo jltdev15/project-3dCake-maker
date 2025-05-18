@@ -5,7 +5,7 @@
         <ion-buttons slot="start">
           <ion-back-button default-href="/home" class="back-button"></ion-back-button>
         </ion-buttons>
-        <ion-title class="category-title">{{ category?.name }}</ion-title>
+        <ion-title class="category-title ion-text-center pr-12">{{ category?.name }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -41,7 +41,7 @@
     <ion-modal :is-open="isModalOpen" @didDismiss="closeModal" class="cart-modal">
       <ion-header class="ion-no-border">
         <ion-toolbar>
-          <ion-title>Add to Cart</ion-title>
+          <ion-title class="modal-title">Add to Cart</ion-title>
           <ion-buttons slot="end">
             <ion-button @click="closeModal" class="close-button">
               <ion-icon :icon="closeOutline"></ion-icon>
@@ -52,17 +52,22 @@
       <ion-content class="ion-padding">
         <div v-if="selectedCake" class="modal-content">
           <div class="selected-cake-info">
-            <img :src="selectedCake.imageUrl" :alt="selectedCake.name" class="selected-cake-image" />
+            <div class="image-container">
+              <img :src="selectedCake.imageUrl" :alt="selectedCake.name" class="selected-cake-image" />
+            </div>
             <h2 class="selected-cake-name">{{ selectedCake.name }}</h2>
           </div>
           
           <div v-if="selectedCake.sizes" class="size-selection">
-            <h3>Select Size</h3>
+            <h3 class="section-title">Select Size</h3>
             <ion-list class="size-list">
-              <ion-item v-for="(price, size) in selectedCake.sizes" :key="size" class="size-item">
+              <ion-item v-for="(price, size) in selectedCake.sizes" :key="size" class="size-item" :class="{ 'selected': selectedSize === size }">
                 <ion-radio-group v-model="selectedSize">
                   <ion-item lines="none">
-                    <ion-label>{{ size }} - ₱{{ price }}</ion-label>
+                    <ion-label>
+                      <span class="size-label">{{ size }}</span>
+                      <span class="size-price">₱{{ price }}</span>
+                    </ion-label>
                     <ion-radio :value="size"></ion-radio>
                   </ion-item>
                 </ion-radio-group>
@@ -71,35 +76,38 @@
           </div>
 
           <div class="quantity-selection">
-            <h3>Quantity</h3>
+            <h3 class="section-title">Quantity</h3>
             <div class="quantity-controls">
-              <ion-button fill="outline" @click="decreaseQuantity" :disabled="quantity <= 1">
+              <ion-button fill="outline" @click="decreaseQuantity" :disabled="quantity <= 1" class="quantity-btn">
                 <ion-icon :icon="removeOutline"></ion-icon>
               </ion-button>
               <span class="quantity-value">{{ quantity }}</span>
-              <ion-button fill="outline" @click="increaseQuantity">
+              <ion-button fill="outline" @click="increaseQuantity" class="quantity-btn">
                 <ion-icon :icon="addOutline"></ion-icon>
               </ion-button>
             </div>
           </div>
 
           <div class="price-summary">
-            <h3>Price Summary</h3>
-            <div class="summary-item">
-              <span>Unit Price</span>
-              <span class="price-value">₱{{ unitPrice.toFixed(2) }}</span>
-            </div>
-            <div class="summary-item">
-              <span>Quantity</span>
-              <span class="quantity-value">{{ quantity }}</span>
-            </div>
-            <div class="summary-item total">
-              <span>Total Price</span>
-              <span class="total-price">₱{{ totalPrice.toFixed(2) }}</span>
+            <h3 class="section-title">Price Summary</h3>
+            <div class="summary-content">
+              <div class="summary-item">
+                <span class="summary-label">Unit Price</span>
+                <span class="price-value">₱{{ unitPrice.toFixed(2) }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Quantity</span>
+                <span class="quantity-value">{{ quantity }}</span>
+              </div>
+              <div class="summary-item total">
+                <span class="summary-label">Total Price</span>
+                <span class="total-price">₱{{ totalPrice.toFixed(2) }}</span>
+              </div>
             </div>
           </div>
 
           <ion-button expand="block" @click="confirmAddToCart" class="confirm-button" fill="solid">
+            <ion-icon :icon="cartOutline" slot="start"></ion-icon>
             Add to Cart
           </ion-button>
         </div>
@@ -221,7 +229,7 @@ const confirmAddToCart = async () => {
   }
   
   try {
-    await cartStore.addItem({
+    const cartItem = {
       cakeId: selectedCake.value.id,
       name: selectedCake.value.name,
       size: selectedSize.value,
@@ -229,21 +237,42 @@ const confirmAddToCart = async () => {
       unitPrice: unitPrice.value,
       totalPrice: totalPrice.value,
       imageUrl: selectedCake.value.imageUrl
-    });
+    };
 
-    const toast = await toastController.create({
-      message: 'Added to cart successfully!',
-      duration: 2000,
-      position: 'top',
-      color: 'success'
-    });
-    await toast.present();
+    // Check if the same cake (with same size) already exists in cart
+    const existingItem = cartStore.items.find(item => 
+      item.cakeId === cartItem.cakeId && 
+      item.size === cartItem.size
+    );
+
+    if (existingItem) {
+      // Update quantity of existing item
+      const newQuantity = existingItem.quantity + quantity.value;
+      await cartStore.updateItemQuantity(existingItem.id, newQuantity);
+      const toast = await toastController.create({
+        message: 'Cart updated successfully!',
+        duration: 2000,
+        position: 'top',
+        color: 'success'
+      });
+      await toast.present();
+    } else {
+      // Add new item to cart
+      await cartStore.addItem(cartItem);
+      const toast = await toastController.create({
+        message: 'Added to cart successfully!',
+        duration: 2000,
+        position: 'top',
+        color: 'success'
+      });
+      await toast.present();
+    }
     
     closeModal();
   } catch (error) {
-    console.error('Error adding to cart:', error);
+    console.error('Error updating cart:', error);
     const toast = await toastController.create({
-      message: 'Failed to add item to cart. Please try again.',
+      message: 'Failed to update cart. Please try again.',
       duration: 2000,
       position: 'top',
       color: 'danger'
@@ -309,22 +338,24 @@ ion-toolbar {
 
 .cakes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
   padding: 8px;
 }
 
 .cake-card {
   background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s ease;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
 }
 
 .cake-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
 }
 
 .cake-image {
@@ -345,73 +376,123 @@ ion-toolbar {
 }
 
 .cake-info {
-  padding: 16px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .cake-name {
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #7A5C1E;
-  margin: 0 0 8px 0;
+  margin: 0;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cake-price {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #7a1e1e;
-  margin: 0 0 16px 0;
+  margin: 0;
 }
 
 .add-to-cart-btn {
   --background: #7A5C1E;
   --background-hover: #8B6B2F;
   --background-activated: #8B6B2F;
-  --border-radius: 12px;
-  --box-shadow: 0 4px 12px rgba(122, 92, 30, 0.2);
-  width: 100%;
-  height: 48px;
+  --border-radius: 8px;
+  --box-shadow: 0 2px 8px rgba(122, 92, 30, 0.15);
+  height: 36px;
+  font-size: 0.9rem;
   font-weight: 600;
+  margin-top: auto;
+}
+
+.add-to-cart-btn ion-icon {
+  font-size: 1.1rem;
 }
 
 /* Modal Styles */
 .cart-modal {
-  --height: 90%;
-  --border-radius: 24px 24px 0 0;
+  --height: 85%;
+  --border-radius: 20px 20px 0 0;
+  --background: #f8f8f8;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #7A5C1E;
+}
+
+.close-button {
+  --color: #7A5C1E;
 }
 
 .modal-content {
-  padding: 16px;
+  padding: 12px;
+  max-width: 500px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .selected-cake-info {
   text-align: center;
-  margin-bottom: 24px;
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.image-container {
+  width: 100%;
+  height: 280px;
+  margin: 0 auto 12px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .selected-cake-image {
-  width: 200px;
-  height: 200px;
-  object-fit: cover;
-  border-radius: 16px;
-  margin-bottom: 16px;
+  width: 50%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
 }
 
 .selected-cake-name {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #7A5C1E;
   margin: 0;
 }
 
-.size-selection, .quantity-selection {
-  margin: 24px 0;
-}
-
-h3 {
-  font-size: 1.2rem;
+.section-title {
+  font-size: 1.1rem;
   font-weight: 600;
   color: #7A5C1E;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(122, 92, 30, 0.1);
+}
+
+.size-selection, .quantity-selection {
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .size-list {
@@ -419,9 +500,30 @@ h3 {
 }
 
 .size-item {
-  --background: rgba(255, 255, 255, 0.9);
-  --border-radius: 12px;
-  margin-bottom: 8px;
+  --background: transparent;
+  --border-radius: 8px;
+  margin-bottom: 4px;
+  border: 1px solid rgba(122, 92, 30, 0.1);
+  transition: all 0.3s ease;
+  --min-height: 44px;
+}
+
+.size-item.selected {
+  background: rgba(122, 92, 30, 0.05);
+  border-color: #7A5C1E;
+}
+
+.size-label {
+  font-weight: 500;
+  color: #7A5C1E;
+  font-size: 0.95rem;
+}
+
+.size-price {
+  color: #7a1e1e;
+  font-weight: 600;
+  margin-left: 6px;
+  font-size: 0.95rem;
 }
 
 .quantity-controls {
@@ -429,83 +531,150 @@ h3 {
   align-items: center;
   justify-content: center;
   gap: 16px;
+  background: rgba(122, 92, 30, 0.05);
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.quantity-btn {
+  --border-color: #7A5C1E;
+  --color: #7A5C1E;
+  --border-radius: 6px;
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --height: 32px;
 }
 
 .quantity-value {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: #7A5C1E;
-  min-width: 40px;
+  min-width: 32px;
   text-align: center;
 }
 
 .price-summary {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 16px;
-  padding: 16px;
-  margin: 24px 0;
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.summary-content {
+  background: rgba(122, 92, 30, 0.05);
+  border-radius: 8px;
+  padding: 12px;
 }
 
 .summary-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+  padding: 4px 0;
+  font-size: 0.95rem;
+}
+
+.summary-label {
   color: #666;
+  font-weight: 500;
+}
+
+.price-value {
+  color: #7a1e1e;
+  font-weight: 600;
 }
 
 .summary-item.total {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-  font-weight: 600;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(122, 92, 30, 0.2);
+}
+
+.summary-item.total .summary-label {
   color: #7A5C1E;
+  font-weight: 600;
 }
 
 .total-price {
   color: #7a1e1e;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
+  font-weight: 700;
 }
 
 .confirm-button {
   --background: #7A5C1E;
   --background-hover: #8B6B2F;
   --background-activated: #8B6B2F;
-  --border-radius: 12px;
-  --box-shadow: 0 4px 12px rgba(122, 92, 30, 0.2);
-  height: 56px;
+  --border-radius: 8px;
+  --box-shadow: 0 2px 8px rgba(122, 92, 30, 0.2);
+  height: 44px;
   font-weight: 600;
-  font-size: 1.1rem;
-  margin-top: 24px;
+  font-size: 1rem;
+  margin-top: 8px;
 }
 
 @media (max-width: 768px) {
   .cakes-grid {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 16px;
+    gap: 12px;
   }
 
   .cake-image {
-    height: 180px;
+    height: 220px;
   }
 
-  .cakes-title {
-    font-size: 1.75rem;
+  .cake-info {
+    padding: 10px;
+    gap: 6px;
+  }
+
+  .cake-name {
+    font-size: 0.95rem;
+  }
+
+  .cake-price {
+    font-size: 0.95rem;
+  }
+
+  .add-to-cart-btn {
+    height: 32px;
+    font-size: 0.85rem;
   }
 }
 
 @media (max-width: 480px) {
-  .cakes-grid {
-    grid-template-columns: 1fr;
+  .modal-content {
+    padding: 8px;
+    gap: 12px;
   }
 
-  .cake-image {
-    height: 200px;
+  .image-container {
+    height: 240px;
   }
 
-  .selected-cake-image {
-    width: 160px;
-    height: 160px;
+  .selected-cake-name {
+    font-size: 1.2rem;
+  }
+
+  .section-title {
+    font-size: 1rem;
+  }
+
+  .size-selection, .quantity-selection, .price-summary {
+    padding: 10px;
+  }
+
+  .size-item {
+    --min-height: 40px;
+  }
+
+  .quantity-controls {
+    gap: 12px;
+  }
+
+  .summary-item {
+    font-size: 0.9rem;
   }
 }
 </style> 

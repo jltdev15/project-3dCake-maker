@@ -11,6 +11,7 @@ interface UserData {
   photoUrl: string | null;
   status: string | null;
   contact: string | null;
+  isProfileCompleted: boolean;
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -44,7 +45,8 @@ export const useAuthStore = defineStore('auth', () => {
                     name: firebaseUser.displayName,
                     photoUrl: firebaseUser.photoURL,
                     contact: firebaseUser.phoneNumber,
-                    status: 'active'
+                    status: 'active',
+                    isProfileCompleted: false
                 };
                 await setUser(userData);
             } else {
@@ -52,28 +54,30 @@ export const useAuthStore = defineStore('auth', () => {
             }
         });
     };
-    const registerUser = async () => {
-        if (!user.value?.uid) {
+    const registerUser = async (userData?: UserData) => {
+        const uid = userData?.uid || user.value?.uid;
+        if (!uid) {
             throw new Error("User ID is required for registration");
         }
 
         try {
-            const userRef = dbRef(database, `users/${user.value.uid}`);
+            const userRef = dbRef(database, `users/${uid}`);
 
             const userSnapshot = await get(userRef);
 
             const operations: Promise<void>[] = [];
 
             if (!userSnapshot.exists()) {
-                const userData: UserData = {
-                    uid: user.value.uid,
-                    email: user.value.email || null,
-                    name: user.value.name || 'Anonymous User',
-                    photoUrl: user.value.photoUrl || null,
+                const newUserData: UserData = userData || {
+                    uid: user.value!.uid,
+                    email: user.value!.email || null,
+                    name: user.value!.name || 'Anonymous User',
+                    photoUrl: user.value!.photoUrl || null,
                     status: 'active',
-                    contact: null
+                    contact: null,
+                    isProfileCompleted: false
                 };
-                operations.push(set(userRef, userData));
+                operations.push(set(userRef, newUserData));
             }
 
             if (operations.length > 0) {
@@ -82,7 +86,7 @@ export const useAuthStore = defineStore('auth', () => {
             }
         } catch (err) {
             console.error("Error during user registration:", err instanceof Error ? err.message : "Unknown error");
-            throw err; // Re-throw to allow caller to handle the error
+            throw err;
         }
     };
 

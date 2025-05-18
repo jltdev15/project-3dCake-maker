@@ -154,17 +154,43 @@ export const useCartStore = defineStore('cart', () => {
   const addItem = async (item: Omit<CartItem, 'id'>) => {
     if (!authStore.user?.uid) return
 
-    const newItem: CartItem = {
-      ...item,
-      id: Date.now().toString()
-    }
-    
-    try {
-      const cartRef = dbRef(database, `users/${authStore.user.uid}/cart/${newItem.id}`)
-      await set(cartRef, newItem)
-      items.value.push(newItem)
-    } catch (error) {
-      console.error('Error adding item to cart:', error)
+    // Check if the same cake (with same size) already exists in cart
+    const existingItem = items.value.find(existing => 
+      existing.cakeId === item.cakeId && 
+      existing.size === item.size
+    );
+
+    if (existingItem) {
+      // Update quantity of existing item
+      const newQuantity = existingItem.quantity + item.quantity;
+      const updatedItem = {
+        ...existingItem,
+        quantity: newQuantity,
+        totalPrice: existingItem.unitPrice * newQuantity
+      };
+      
+      try {
+        const cartRef = dbRef(database, `users/${authStore.user.uid}/cart/${existingItem.id}`);
+        await update(cartRef, updatedItem);
+        existingItem.quantity = newQuantity;
+        existingItem.totalPrice = existingItem.unitPrice * newQuantity;
+      } catch (error) {
+        console.error('Error updating item quantity:', error);
+      }
+    } else {
+      // Add new item to cart
+      const newItem: CartItem = {
+        ...item,
+        id: Date.now().toString()
+      }
+      
+      try {
+        const cartRef = dbRef(database, `users/${authStore.user.uid}/cart/${newItem.id}`);
+        await set(cartRef, newItem);
+        items.value.push(newItem);
+      } catch (error) {
+        console.error('Error adding item to cart:', error);
+      }
     }
   }
 
@@ -180,7 +206,7 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
-  const updateQuantity = async (id: string, quantity: number) => {
+  const updateItemQuantity = async (id: string, quantity: number) => {
     if (!authStore.user?.uid) return
 
     const item = items.value.find(item => item.id === id)
@@ -221,7 +247,7 @@ export const useCartStore = defineStore('cart', () => {
     items,
     addItem,
     removeItem,
-    updateQuantity,
+    updateItemQuantity,
     cartTotal,
     itemCount,
     loadCartItems,

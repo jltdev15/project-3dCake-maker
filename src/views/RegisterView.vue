@@ -91,23 +91,48 @@
 
         <img src="/images/home-cakce.png" alt="Decorative cake" class="bottom-image" />
       </div>
+
+      <!-- Success Modal -->
+      <ion-modal :is-open="showSuccessModal" :backdrop-dismiss="false">
+        <div class="success-modal">
+          <div class="success-content">
+            <div class="success-icon-wrapper">
+              <ion-icon :icon="checkmarkCircle" class="success-icon"></ion-icon>
+            </div>
+            <div class="success-text">
+              <h2>Welcome to PSALM Cakes!</h2>
+              <p>Your account has been created successfully.</p>
+              <div class="success-details">
+                <p>You can now:</p>
+                <ul>
+                  <li>Browse our delicious cakes</li>
+                  <li>Customize your own cake</li>
+                  <li>Place orders</li>
+                </ul>
+              </div>
+              <p class="redirect-text">Redirecting to login...</p>
+            </div>
+          </div>
+        </div>
+      </ion-modal>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { IonPage, IonContent, IonButton, IonItem, IonInput, IonIcon, IonSpinner } from '@ionic/vue';
-import { arrowBack, logoGoogle } from 'ionicons/icons';
+import { IonPage, IonContent, IonButton, IonItem, IonInput, IonIcon, IonSpinner, IonModal } from '@ionic/vue';
+import { arrowBack, logoGoogle, checkmarkCircle } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
-import { auth, signInWithCredential, GoogleAuthProvider, createUserWithEmailAndPassword } from "../config/firebase";
+import { auth, signInWithCredential, GoogleAuthProvider, createUserWithEmailAndPassword, signOut } from "../config/firebase";
 import { useAuthStore } from '../stores/authStore';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const loading = ref(false);
 const error = ref('');
+const showSuccessModal = ref(false);
 
 const email = ref('');
 const password = ref('');
@@ -122,12 +147,13 @@ defineOptions({
     IonItem,
     IonInput,
     IonIcon,
-    IonSpinner
+    IonSpinner,
+    IonModal
   }
 });
 
 const goToHome = () => {
-  router.push({ name: 'Home' });
+  router.push({ name: 'home' });
 };
 
 const handleRegister = async () => {
@@ -149,23 +175,55 @@ const handleRegister = async () => {
   try {
     loading.value = true;
     error.value = '';
+    
+    // Create the user
     const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email.value, password.value);
     
     if (firebaseUser) {
-      await authStore.setUser({
-        uid: firebaseUser.uid,
-        email: firebaseUser.email,
-        name: firebaseUser.displayName,
-        photoUrl: firebaseUser.photoURL,
-        status: 'active',
-        contact: firebaseUser.phoneNumber
-      });
-      await authStore.registerUser();
-      router.replace({ name: 'home' });
+      try {
+        // Register user data while still authenticated
+        await authStore.registerUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: firebaseUser.displayName,
+          photoUrl: firebaseUser.photoURL,
+          status: 'active',
+          contact: firebaseUser.phoneNumber,
+          isProfileCompleted: false
+        });
+        
+        // Clear the auth store
+        await authStore.logout();
+        
+        // Sign out from Firebase
+        await signOut(auth);
+        
+        // Show success modal
+        showSuccessModal.value = true;
+        
+        // Wait for 2 seconds before redirecting
+        setTimeout(async () => {
+          showSuccessModal.value = false;
+          await router.replace({ name: 'Login' });
+        }, 2000);
+        
+      } catch (dbError) {
+        // If database write fails, delete the created user
+        await firebaseUser.delete();
+        throw dbError;
+      }
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error("Registration Error:", err);
-    error.value = 'Failed to create account. Please try again.';
+    if (err.code === 'auth/email-already-in-use') {
+      error.value = 'This email is already registered. Please use a different email or try logging in.';
+    } else if (err.code === 'auth/invalid-email') {
+      error.value = 'Please enter a valid email address.';
+    } else if (err.code === 'auth/weak-password') {
+      error.value = 'Password is too weak. Please use a stronger password.';
+    } else {
+      error.value = `Registration failed: ${err.message || 'Please try again.'}`;
+    }
   } finally {
     loading.value = false;
   }
@@ -186,10 +244,11 @@ const loginWithGoogle = async () => {
         name: firebaseUser.displayName,
         photoUrl: firebaseUser.photoURL,
         status: 'active',
-        contact: firebaseUser.phoneNumber
+        contact: firebaseUser.phoneNumber,
+        isProfileCompleted: false,
       });
       await authStore.registerUser();
-      router.replace({ name: 'home' });
+      router.replace({ name: 'Login' });
     }
   } catch (err) {
     console.error("Google Sign-In Error:", err);
@@ -447,6 +506,118 @@ ion-content {
   .brand-logo {
     width: 100px;
     height: 100px;
+  }
+}
+
+.success-modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+  padding: 0;
+  border-radius: 24px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 400px;
+  overflow: hidden;
+}
+
+.success-content {
+  padding: 2rem;
+}
+
+.success-icon-wrapper {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+}
+
+.success-icon {
+  font-size: 48px;
+  color: white;
+}
+
+.success-text h2 {
+  color: #333;
+  margin: 0 0 1rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.success-text p {
+  color: #666;
+  margin: 0.5rem 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.success-details {
+  background: rgba(76, 175, 80, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1.5rem 0;
+  text-align: left;
+}
+
+.success-details p {
+  color: #4CAF50;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.success-details ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.success-details li {
+  color: #666;
+  padding: 0.25rem 0;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+}
+
+.success-details li::before {
+  content: "•";
+  color: #4CAF50;
+  font-weight: bold;
+  margin-right: 0.5rem;
+}
+
+.redirect-text {
+  color: #999;
+  font-size: 0.9rem;
+  margin-top: 1.5rem;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .success-modal {
+    width: 95%;
+    max-width: 350px;
+  }
+  
+  .success-icon-wrapper {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .success-icon {
+    font-size: 40px;
+  }
+  
+  .success-text h2 {
+    font-size: 1.3rem;
   }
 }
 </style>
