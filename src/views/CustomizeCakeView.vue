@@ -1255,7 +1255,7 @@ const addDecorations = (layerMesh, layerConfig) => {
 
 // Greeting config and group
 const greetingConfig = reactive({
-  enabled: true,
+  enabled: false,
   text: 'Happy B-Day!',
   color: '#333333',
   size: 0.25,

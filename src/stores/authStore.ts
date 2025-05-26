@@ -11,6 +11,7 @@ interface UserData {
   photoUrl: string | null;
   status: string | null;
   contact: string | null;
+  address: string | null;
   isProfileCompleted: boolean;
 }
 
@@ -46,6 +47,7 @@ export const useAuthStore = defineStore('auth', () => {
                     photoUrl: firebaseUser.photoURL,
                     contact: firebaseUser.phoneNumber,
                     status: 'active',
+                    address: null,
                     isProfileCompleted: false
                 };
                 await setUser(userData);
@@ -75,6 +77,7 @@ export const useAuthStore = defineStore('auth', () => {
                     photoUrl: user.value!.photoUrl || null,
                     status: 'active',
                     contact: null,
+                    address: null,
                     isProfileCompleted: false
                 };
                 operations.push(set(userRef, newUserData));

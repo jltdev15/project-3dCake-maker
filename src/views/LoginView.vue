@@ -82,23 +82,45 @@
 
         <img src="/images/home-cakce.png" alt="Decorative cake" class="bottom-image" />
       </div>
+
+      <!-- Add Verification Alert -->
+      <ion-alert
+        :is-open="showVerificationAlert"
+        header="Email Verification Required"
+        message="Please verify your email address before logging in. Would you like to resend the verification email?"
+        :buttons="[
+          {
+            text: 'Cancel',
+            role: 'cancel',
+            cssClass: 'secondary',
+          },
+          {
+            text: 'Resend Email',
+            handler: resendVerificationEmail,
+          },
+        ]"
+        @didDismiss="showVerificationAlert = false"
+      ></ion-alert>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { IonPage, IonContent, IonButton, IonItem, IonInput, IonIcon, IonSpinner } from '@ionic/vue';
+import { IonPage, IonContent, IonButton, IonItem, IonInput, IonIcon, IonSpinner, IonAlert } from '@ionic/vue';
 import { arrowBack, logoGoogle } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import { auth, signInWithCredential, GoogleAuthProvider, signInWithEmailAndPassword } from "../config/firebase";
+import { sendEmailVerification, type User } from "firebase/auth";
 import { useAuthStore } from '../stores/authStore';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const loading = ref(false);
 const error = ref('');
+const showVerificationAlert = ref(false);
+const unverifiedUser = ref<User | null>(null);
 
 const email = ref('');
 const password = ref('');
@@ -123,6 +145,16 @@ const handleLogin = async () => {
     const { user: firebaseUser } = await signInWithEmailAndPassword(auth, email.value, password.value);
     
     if (firebaseUser) {
+      if (!firebaseUser.emailVerified) {
+        // Store the user temporarily
+        unverifiedUser.value = firebaseUser;
+        // Sign out the user
+        await auth.signOut();
+        // Show verification alert
+        showVerificationAlert.value = true;
+        return;
+      }
+
       await authStore.setUser({
         uid: firebaseUser.uid,
         email: firebaseUser.email,
@@ -130,16 +162,43 @@ const handleLogin = async () => {
         photoUrl: firebaseUser.photoURL,
         status: 'active',
         contact: firebaseUser.phoneNumber,
+        address: null,
         isProfileCompleted: false,
       });
       await authStore.registerUser();
       router.replace({ name: 'home' });
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error("Login Error:", err);
-    error.value = 'Invalid email or password';
+    if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+      error.value = 'Invalid email or password';
+    } else {
+      error.value = 'An error occurred. Please try again.';
+    }
   } finally {
     loading.value = false;
+  }
+};
+
+const resendVerificationEmail = async () => {
+  try {
+    loading.value = true;
+    error.value = '';
+    
+    // Sign in again to resend verification email
+    const { user: firebaseUser } = await signInWithEmailAndPassword(auth, email.value, password.value);
+    if (firebaseUser) {
+      await sendEmailVerification(firebaseUser);
+      error.value = 'Verification email has been resent. Please check your inbox.';
+      // Sign out after sending verification email
+      await auth.signOut();
+    }
+  } catch (err: any) {
+    console.error("Resend Verification Error:", err);
+    error.value = 'Failed to resend verification email. Please try again.';
+  } finally {
+    loading.value = false;
+    showVerificationAlert.value = false;
   }
 };
 
@@ -159,6 +218,7 @@ const loginWithGoogle = async () => {
         photoUrl: firebaseUser.photoURL,
         status: 'active',
         contact: firebaseUser.phoneNumber,
+        address: null,
         isProfileCompleted: false,
       });
       await authStore.registerUser();

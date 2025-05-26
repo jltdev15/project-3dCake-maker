@@ -103,11 +103,11 @@
               <h2>Welcome to PSALM Cakes!</h2>
               <p>Your account has been created successfully.</p>
               <div class="success-details">
-                <p>You can now:</p>
+                <p>Please check your email to verify your account:</p>
                 <ul>
-                  <li>Browse our delicious cakes</li>
-                  <li>Customize your own cake</li>
-                  <li>Place orders</li>
+                  <li>Look for an email from PSALM Cakes</li>
+                  <li>Click the verification link in the email</li>
+                  <li>Return here to log in</li>
                 </ul>
               </div>
               <p class="redirect-text">Redirecting to login...</p>
@@ -126,6 +126,7 @@ import { arrowBack, logoGoogle, checkmarkCircle } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import { auth, signInWithCredential, GoogleAuthProvider, createUserWithEmailAndPassword, signOut } from "../config/firebase";
+import { sendEmailVerification } from "firebase/auth";
 import { useAuthStore } from '../stores/authStore';
 
 const router = useRouter();
@@ -181,14 +182,18 @@ const handleRegister = async () => {
     
     if (firebaseUser) {
       try {
+        // Send email verification
+        await sendEmailVerification(firebaseUser);
+        
         // Register user data while still authenticated
         await authStore.registerUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
           name: firebaseUser.displayName,
           photoUrl: firebaseUser.photoURL,
-          status: 'active',
+          status: 'pending', // Changed to pending until email is verified
           contact: firebaseUser.phoneNumber,
+          address: null,
           isProfileCompleted: false
         });
         
@@ -201,11 +206,11 @@ const handleRegister = async () => {
         // Show success modal
         showSuccessModal.value = true;
         
-        // Wait for 2 seconds before redirecting
+        // Wait for 3 seconds before redirecting
         setTimeout(async () => {
           showSuccessModal.value = false;
           await router.replace({ name: 'Login' });
-        }, 2000);
+        }, 3000);
         
       } catch (dbError) {
         // If database write fails, delete the created user
@@ -245,6 +250,7 @@ const loginWithGoogle = async () => {
         photoUrl: firebaseUser.photoURL,
         status: 'active',
         contact: firebaseUser.phoneNumber,
+        address: null,
         isProfileCompleted: false,
       });
       await authStore.registerUser();

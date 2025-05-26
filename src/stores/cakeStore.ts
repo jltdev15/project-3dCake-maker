@@ -107,22 +107,29 @@ const sampleCategories: Category[] = [
         id: '4',
         name: 'Royal Wedding',
         description: 'Elegant white cake with gold accents',
-        price: 299.99,
-        imageUrl: '/swiper/3.jpg'
+        price: 1799.99,
+        imageUrl: '/wedding/1.jpg'
       },
       {
         id: '5',
         name: 'Floral Elegance',
         description: 'Multi-tiered cake with sugar flowers and delicate details',
-        price: 349.99,
-        imageUrl: '/swiper/4.jpg'
+        price: 2499.99,
+        imageUrl: '/wedding/2.jpg'
       },
       {
         id: '6',
         name: 'Modern Minimalist',
         description: 'Clean design with geometric patterns and metallic accents',
-        price: 279.99,
-        imageUrl: '/swiper/5.jpg'
+        price: 2799.99,
+        imageUrl: '/wedding/3.jpg'
+      },
+      {
+        id: '7',
+        name: 'Modern Minimalist',
+        description: 'Clean design with geometric patterns and metallic accents',
+        price: 2799.99,
+        imageUrl: '/wedding/3.jpg'
       }
     ]
   },
@@ -136,22 +143,22 @@ const sampleCategories: Category[] = [
         id: '7',
         name: 'Silver Anniversary',
         description: 'Silver-themed cake with elegant decorations',
-        price: 199.99,
-        imageUrl: '/swiper/4.jpg'
+        price: 1199.99,
+        imageUrl: '/anniversary/1.jpg'
       },
       {
         id: '8',
         name: 'Golden Years',
         description: 'Gold-themed cake with romantic decorations',
-        price: 219.99,
-        imageUrl: '/swiper/5.jpg'
+        price: 1219.99,
+        imageUrl: '/anniversary/2.jpg'
       },
       {
         id: '9',
         name: 'Love Story',
         description: 'Heart-shaped cake with personalized message',
-        price: 189.99,
-        imageUrl: '/swiper/3.jpg'
+        price: 1189.99,
+        imageUrl: '/anniversary/3.jpg'
       }
     ]
   },
@@ -165,22 +172,29 @@ const sampleCategories: Category[] = [
         id: '10',
         name: 'Angel\'s Blessing',
         description: 'White cake with angel decorations and cross design',
-        price: 159.99,
-        imageUrl: '/swiper/2.jpg'
+        price: 1200.99,
+        imageUrl: '/christening/1.jpg'
       },
       {
         id: '11',
         name: 'Heavenly Delight',
         description: 'Blue and white cake with cloud decorations',
-        price: 169.99,
-        imageUrl: '/swiper/3.jpg'
+        price: 969.99,
+        imageUrl: '/christening/2.jpg'
       },
       {
         id: '12',
         name: 'Dove of Peace',
         description: 'White cake with dove decorations and religious symbols',
-        price: 179.99,
-        imageUrl: '/swiper/4.jpg'
+        price: 679.99,
+        imageUrl: '/christening/3.jpg'
+      },
+      {
+        id: '12',
+        name: 'Dove of Peace',
+        description: 'White cake with dove decorations and religious symbols',
+        price: 899.99,
+        imageUrl: '/christening/4.jpg'
       }
     ]
   }

@@ -30,6 +30,27 @@
               <ion-input v-model="userEmail" :value="authStore.user?.email" disabled></ion-input>
             </ion-item>
 
+            <ion-item class="custom-input">
+              <ion-icon :icon="callOutline" slot="start" class="input-icon"></ion-icon>
+              <ion-label position="stacked">Contact Number</ion-label>
+              <ion-input 
+                v-model="userContact" 
+                :value="authStore.user?.contact" 
+                type="tel"
+                placeholder="Enter your contact number"
+              ></ion-input>
+            </ion-item>
+
+            <ion-item class="custom-input">
+              <ion-icon :icon="locationOutline" slot="start" class="input-icon"></ion-icon>
+              <ion-label position="stacked">Address</ion-label>
+              <ion-input 
+                v-model="userAddress" 
+                :value="authStore.user?.address" 
+                placeholder="Enter your address"
+              ></ion-input>
+            </ion-item>
+
             <ion-button expand="block" class="save-button" @click="handleSave">
               <ion-icon :icon="saveOutline" slot="start"></ion-icon>
               Save Changes
@@ -45,7 +66,7 @@
 import { IonPage, IonContent, IonBackButton, IonButtons, IonItem, IonLabel, IonInput, IonIcon, IonButton, IonHeader, IonToolbar, IonTitle } from '@ionic/vue';
 import { ref } from 'vue';
 import { useAuthStore } from '../../stores/authStore';
-import { personOutline, mailOutline, saveOutline } from 'ionicons/icons';
+import { personOutline, mailOutline, saveOutline, callOutline, locationOutline } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 import { database, ref as dbRef, update } from '../../config/firebase';
 
@@ -53,6 +74,8 @@ const router = useRouter();
 const authStore = useAuthStore();
 const userName = ref(authStore.user?.name || '');
 const userEmail = ref(authStore.user?.email || '');
+const userContact = ref(authStore.user?.contact || '');
+const userAddress = ref(authStore.user?.address || '');
 
 const handleSave = async () => {
   if (!authStore.user?.uid) return;
@@ -60,13 +83,19 @@ const handleSave = async () => {
   try {
     const userRef = dbRef(database, `users/${authStore.user.uid}`);
     await update(userRef, {
-      name: userName.value
+      name: userName.value,
+      email: userEmail.value,
+      contact: userContact.value,
+      address: userAddress.value
     });
     
     // Update local store
     await authStore.setUser({
       ...authStore.user,
-      name: userName.value
+      name: userName.value,
+      email: userEmail.value,
+      contact: userContact.value,
+      address: userAddress.value
     });
     
     router.push('/account');
@@ -147,35 +176,49 @@ ion-toolbar {
 }
 
 .custom-input {
-  --background: rgba(255, 255, 255, 0.9);
+  --background: rgba(255, 255, 255, 0.8);
   --border-radius: 12px;
+  --border-color: transparent;
   --border-width: 0;
-  --padding-start: 16px;
-  --inner-padding-end: 16px;
-  --highlight-color: #7A5C1E;
-  margin: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease;
+  align-items: flex-start;
+}
+
+.custom-input:focus-within {
+  box-shadow: 0 4px 12px rgba(88, 9, 31, 0.15);
 }
 
 .input-icon {
-  font-size: 24px;
-  color: #7A5C1E;
+  color: #58091F;
+  font-size: 1.5rem;
+  margin-top: 18px;
   margin-right: 12px;
-  margin-top: 8px;
+  align-self: flex-start;
 }
 
 ion-label {
-  color: #7A5C1E;
+  color: #222;
+  font-size: 1rem;
   font-weight: 500;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+  margin-left: 0;
+  margin-top: 12px;
 }
 
 ion-input {
   --padding-start: 0;
   --padding-end: 0;
-  --padding-top: 8px;
-  --padding-bottom: 8px;
+  --padding-top: 0;
+  --padding-bottom: 0;
   font-size: 1.1rem;
+  color: #888;
+  margin-left: 0;
+  margin-top: 0;
+  width: 100%;
+  font-weight: 400;
 }
 
 .save-button {

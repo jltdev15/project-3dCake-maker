@@ -5,6 +5,8 @@ import RegisterPage from '@/views/RegisterView.vue';
 import LoginPage from '@/views/LoginView.vue';
 import BottomNavigation from '@/components/BottomNavigation.vue';
 import { useAuthStore } from '@/stores/authStore';
+import MessagesView from '../views/MessagesView.vue'
+import ChatView from '../views/ChatView.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -63,6 +65,18 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('../views/Account/AccountView.vue'),
         meta: { requiresAuth: true },
       },
+      {
+        path: '/messages',
+        name: 'messages',
+        component: MessagesView,
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/chat/:id',
+        name: 'chat',
+        component: ChatView,
+        meta: { requiresAuth: true },
+      },
 
     ],
   },
@@ -90,6 +104,8 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../views/CustomizeCakeView.vue'),
     meta: { requiresAuth: true },
   },
+
+
 ];
 
 const router = createRouter({

@@ -20,6 +20,11 @@
                     <ion-label>Orders</ion-label>
                 </ion-tab-button>
 
+                <ion-tab-button tab="messages" href="/messages">
+                    <ion-icon :icon="chatbubble" />
+                    <ion-label>Messages</ion-label>
+                </ion-tab-button>
+
                 <ion-tab-button tab="account" href="/account">
                     <ion-icon :icon="person" />
                     <ion-label>Me</ion-label>
@@ -45,7 +50,7 @@ import {
     IonBadge
 } from "@ionic/vue";
 
-import { home, receipt, cart, person } from "ionicons/icons";
+import { home, receipt, cart, person, chatbubble } from "ionicons/icons";
 
 const router = useRouter()
 const cartStore = useCartStore();
