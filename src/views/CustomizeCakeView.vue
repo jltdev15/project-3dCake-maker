@@ -17,7 +17,7 @@
           <div class="progress-container">
             <div class="progress-steps">
               <div 
-                v-for="step in 2" 
+                v-for="step in 3" 
                 :key="step"
                 :class="['progress-step', { 
                   'completed': currentStep > step,
@@ -26,14 +26,14 @@
               >
                 <div class="step-number">{{ step }}</div>
                 <div class="step-label">
-                  {{ step === 1 ? 'Layers' : 'Size' }}
+                  {{ step === 1 ? 'Layers' : step === 2 ? 'Size' : 'Flavor' }}
                 </div>
               </div>
             </div>
             <div class="progress-bar">
               <div 
                 class="progress-fill"
-                :style="{ width: `${((currentStep - 1) / 1) * 100}%` }"
+                :style="{ width: `${((currentStep - 1) / 2) * 100}%` }"
               ></div>
             </div>
           </div>
@@ -93,6 +93,28 @@
                 </button>
               </div>
             </div>
+
+            <!-- Step 3: Cake Flavor -->
+            <div class="selection-step" v-if="currentStep === 3">
+              <h2>Choose Your Flavor</h2>
+              <p class="step-description">Select your favorite cake flavor</p>
+              <div class="options-grid flavor-grid">
+                <button 
+                  v-for="flavor in flavorOptions" 
+                  :key="flavor.name"
+                  :class="['option-button', { selected: selectedFlavor && selectedFlavor.name === flavor.name }]"
+                  @click="selectFlavor(flavor)"
+                >
+                  <div class="option-content">
+                    <div class="option-icon">
+                      <div :class="['flavor-preview', flavor.name.toLowerCase()]"></div>
+                    </div>
+                    <div class="option-label">{{ flavor.name }}</div>
+                    <div class="flavor-description">{{ flavor.description }}</div>
+                  </div>
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- Navigation Buttons -->
@@ -106,7 +128,7 @@
               Back
             </button>
             <button 
-              v-if="currentStep < 2" 
+              v-if="currentStep < 3" 
               class="nav-button next"
               @click="nextStep"
               :disabled="!canProceed"
@@ -115,7 +137,7 @@
               <span class="next-icon">→</span>
             </button>
             <button 
-              v-if="currentStep === 2" 
+              v-if="currentStep === 3" 
               class="nav-button finish"
               @click="finishSelection"
               :disabled="!canProceed"
@@ -305,11 +327,39 @@ const sizeOptions = [
   { name: '6 x 10', diameter: 6, height: 10, servings: '20-25', price: 2399 }
 ];
 
+const flavorOptions = [
+  { 
+    name: 'Chocolate',
+    description: 'Rich and decadent chocolate flavor',
+    color: '#4A2C2A'
+  },
+  { 
+    name: 'Ube',
+    description: 'Traditional Filipino purple yam flavor',
+    color: '#8A2BE2'
+  },
+  { 
+    name: 'Vanilla',
+    description: 'Classic and versatile vanilla flavor',
+    color: '#F5F5DC'
+  },
+  { 
+    name: 'Mocha',
+    description: 'Perfect blend of coffee and chocolate',
+    color: '#6F4E37'
+  },
+  { 
+    name: 'Strawberry',
+    description: 'Sweet and fruity strawberry flavor',
+    color: '#FFB6C1'
+  }
+];
+
 const showSelectionsModal = ref(true);
 const currentStep = ref(1);
 const selectedLayers = ref(1);
-// Initialize selectedSize as null
 const selectedSize = ref(null);
+const selectedFlavor = ref(null);
 
 // Computed property to check if user can proceed to next step
 const canProceed = computed(() => {
@@ -318,6 +368,8 @@ const canProceed = computed(() => {
       return selectedLayers.value !== null;
     case 2:
       return selectedSize.value !== null;
+    case 3:
+      return selectedFlavor.value !== null;
     default:
       return false;
   }
@@ -1215,7 +1267,7 @@ const addDecorations = (layerMesh, layerConfig) => {
         overallToppingGroup.add(sprinkle);
       }
     } else if (topping.type === 'cherries') {
-      const cherryCount = Math.max(1, Math.floor(layerRadius * 1.5));
+      const cherryCount = Math.max(1, Math.floor(layerRadius * 3)); // Increased multiplier from 1.5 to 3
       const cherryMaterial = new THREE.MeshStandardMaterial({
         color: 0xAA0000,
         roughness: 0.4,
@@ -1242,10 +1294,19 @@ const addDecorations = (layerMesh, layerConfig) => {
           angle = 0;
           dist = 0;
         } else {
-          angle = (i / cherryCount) * Math.PI * 2;
-          dist = Math.max(0, availableRadius * 0.75);
+          // Improved distribution using golden ratio for better spacing
+          const goldenRatio = 0.618033988749895;
+          angle = (i * goldenRatio * Math.PI * 2) % (Math.PI * 2);
+          // Create multiple rings of cherries
+          const ringIndex = Math.floor(i / (cherryCount / 3));
+          const ringRadius = (availableRadius * 0.75) * (ringIndex + 1) / 3;
+          dist = ringRadius;
+          // Add slight randomness to position
+          dist += (Math.random() - 0.5) * (availableRadius * 0.1);
         }
         cherry.position.set(Math.cos(angle) * dist, topY + cherryBodyRadius, Math.sin(angle) * dist);
+        // Add slight random rotation for more natural look
+        cherry.rotation.y = Math.random() * Math.PI * 2;
         overallToppingGroup.add(cherry);
       }
     }
@@ -1546,12 +1607,8 @@ const addLayerControlsUI = (layerConfig, container) => {
           <input type="text" id="topper_text_${layerConfig.id}" value="${layerConfig.topper.text}" placeholder="Enter text for topper">
           
           <div class="mt-2">
-            <label for="topper_font_size_${layerConfig.id}">Font Size:</label>
-            <select id="topper_font_size_${layerConfig.id}">
-              <option value="0.8" ${layerConfig.topper.fontSize === 0.8 ? 'selected' : ''}>Small</option>
-              <option value="1" ${layerConfig.topper.fontSize === 1 ? 'selected' : ''}>Medium</option>
-              <option value="1.2" ${layerConfig.topper.fontSize === 1.2 ? 'selected' : ''}>Large</option>
-            </select>
+            <label for="topper_font_size_${layerConfig.id}">Font Size (${layerConfig.topper.fontSize.toFixed(1)}):</label>
+            <input type="range" id="topper_font_size_${layerConfig.id}" min="0.5" max="4" step="0.1" value="${layerConfig.topper.fontSize}">
           </div>
           
           <div class="mt-2">
@@ -1722,8 +1779,13 @@ const addLayerControlsUI = (layerConfig, container) => {
     updateLayerProperty(layerConfig.id, 'topper.text', e.target.value);
   });
 
-  document.getElementById(`topper_font_size_${layerConfig.id}`).addEventListener('change', (e) => {
+  document.getElementById(`topper_font_size_${layerConfig.id}`).addEventListener('input', (e) => {
     updateLayerProperty(layerConfig.id, 'topper.fontSize', parseFloat(e.target.value));
+    // Update the label to show current value
+    const label = e.target.previousElementSibling;
+    if (label) {
+      label.textContent = `Font Size (${parseFloat(e.target.value).toFixed(1)}):`;
+    }
   });
 
   document.getElementById(`topper_font_style_${layerConfig.id}`).addEventListener('change', (e) => {
@@ -1920,7 +1982,7 @@ const selectSize = (size) => {
 };
 
 const nextStep = () => {
-  if (currentStep.value < 2) {
+  if (currentStep.value < 3) {
     currentStep.value++;
   }
 };
@@ -1938,8 +2000,8 @@ const finishSelection = () => {
 };
 
 const generateCakeFromSelections = () => {
-  if (!selectedSize.value || !selectedLayers.value) {
-    console.log('Size or layers not selected yet');
+  if (!selectedSize.value || !selectedLayers.value || !selectedFlavor.value) {
+    console.log('Size, layers, or flavor not selected yet');
     return;
   }
 
@@ -1947,28 +2009,18 @@ const generateCakeFromSelections = () => {
   cakeLayers = [];
   layerIdCounter = 0;
 
+  // Get the selected size object
+  const selectedSizeObj = selectedSize.value;
+
   // Calculate base dimensions based on size
-  let baseRadius;
-  const selectedSizeObj = sizeOptions.find(size => size.name === selectedSize.value.name);
-
-  if (!selectedSizeObj) {
-    console.error('Selected size not found in sizeOptions');
-    return;
-  }
-
-  // 1 unit = 1 inch
-  baseRadius = selectedSizeObj.diameter / 2;
-
-  // Calculate total height and layer height
+  const baseRadius = selectedSizeObj.diameter / 2;
   const totalHeightInches = selectedSizeObj.height;
+
+  // Calculate layer height
   let layerHeightInches = totalHeightInches / selectedLayers.value;
   const minLayerHeight = 1;
   if (layerHeightInches < minLayerHeight) layerHeightInches = minLayerHeight;
-  // Reduce the default height by half for better display
   const layerHeight = layerHeightInches * 0.5;
-
-  // Log actual values for debugging
-  console.log('Cake diameter:', selectedSizeObj.diameter, 'Cake height:', totalHeightInches, 'Layer height:', layerHeight, 'Layers:', selectedLayers.value);
 
   // Generate layers based on selection
   for (let i = 0; i < selectedLayers.value; i++) {
@@ -1984,15 +2036,22 @@ const generateCakeFromSelections = () => {
     // Each layer gets equal height
     newLayer.height = layerHeight;
 
-    // Adjust color based on layer number
-    const hue = (i * 30) % 360;
-    newLayer.color = `hsl(${hue}, 70%, 80%)`;
+    // Use the selected flavor color
+    newLayer.color = selectedFlavor.value.color;
 
     cakeLayers.push(newLayer);
   }
 
-  // Adjust camera position based on cake size - bring it closer
-  const cameraDistance = Math.max(selectedSizeObj.diameter, selectedSizeObj.height) * 3;
+  // Update cake stand size based on selected size
+  if (cakeStand) {
+    scene.remove(cakeStand);
+    cakeStand = createCakeStand(selectedSizeObj.diameter);
+    cakeStand.position.y = 0;
+    scene.add(cakeStand);
+  }
+
+  // Adjust camera position based on cake size
+  const cameraDistance = Math.max(selectedSizeObj.diameter, selectedSizeObj.height) * 2.5;
   camera.position.set(cameraDistance, cameraDistance * 0.5, cameraDistance);
   camera.lookAt(0, 0, 0);
 
@@ -2017,20 +2076,6 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Make greetingConfig reactive for UI binding
-// const greetingConfig = reactive({
-//   enabled: true,
-//   text: 'Happy B-Day!',
-//   color: '#333333',
-//   size: 0.25,
-//   depth: 0.05,
-//   layout: 'horizontal-top'
-// });
-
-// Remove duplicate function declaration
-// function onGreetingChange() {
-//   renderCake();
-// }
 
 // Add watcher to update cake when size changes after modal is closed
 watch(selectedSize, (newVal, oldVal) => {
@@ -2045,6 +2090,11 @@ watch(selectedLayers, (newVal, oldVal) => {
     generateCakeFromSelections();
   }
 });
+
+// Add flavor selection handler
+const selectFlavor = (flavor) => {
+  selectedFlavor.value = flavor;
+};
 </script>
 
 <style scoped>
@@ -2859,5 +2909,83 @@ ion-toolbar {
   background: #fff;
   border-radius: 6px;
   border: 1px solid #eee;
+}
+
+/* Flavor Selection Styles */
+.flavor-grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.flavor-preview {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.flavor-preview::after {
+  content: '';
+  position: absolute;
+  width: 80%;
+  height: 80%;
+  border: 2px dashed #fff;
+  border-radius: 50%;
+}
+
+.flavor-preview.chocolate {
+  background: #4A2C2A;
+}
+
+.flavor-preview.ube {
+  background: #8A2BE2;
+}
+
+.flavor-preview.vanilla {
+  background: #F5F5DC;
+}
+
+.flavor-preview.mocha {
+  background: #6F4E37;
+}
+
+.flavor-preview.strawberry {
+  background: #FFB6C1;
+}
+
+.flavor-description {
+  text-align: center;
+  color: #666;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.option-button:hover .flavor-preview {
+  transform: scale(1.1);
+}
+
+.option-button.selected .flavor-preview {
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Mobile Responsive Adjustments for Flavor Selection */
+@media (max-width: 480px) {
+  .flavor-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .flavor-description {
+    font-size: 0.8rem;
+    padding: 0.35rem;
+  }
 }
 </style> 
