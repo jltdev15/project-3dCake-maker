@@ -71,7 +71,7 @@
             <div class="selection-step" v-if="currentStep === 2">
               <h2>Select Size</h2>
               <p class="step-description">Choose the perfect size for your occasion</p>
-              <div class="options-grid">
+              <div class="options-grid flavor-grid">
                 <button 
                   v-for="size in sizeOptions" 
                   :key="size.name"
@@ -149,12 +149,31 @@
         </div>
       </div>
 
+      <!-- Reset Confirmation Modal -->
+      <div class="modal-overlay" v-if="showResetConfirmModal">
+        <div class="confirmation-modal">
+          <div class="modal-header">
+            <h3>Reset Design</h3>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to reset the cake design? This will remove all layers and reset all settings.</p>
+          </div>
+          <div class="modal-footer">
+            <button class="cancel-btn" @click="showResetConfirmModal = false">Cancel</button>
+            <button class="confirm-btn" @click="confirmReset">Reset Design</button>
+          </div>
+        </div>
+      </div>
+
       <div class="cake-customizer">
         <canvas id="cakeCanvas"></canvas>
         <div class="controls-panel">
           <div class="tabs">
             <button class="tab-button active" data-tab="tab-design">Design</button>
             <button class="tab-button" data-tab="tab-layer-editor">Layer Editor</button>
+            <button class="tab-button" data-tab="tab-topper">Printed Topper</button>
+            <button class="tab-button" data-tab="tab-icing">Icing</button>
+            <button class="tab-button" data-tab="tab-toppings">Toppings</button>
             <button class="tab-button" data-tab="tab-greeting">Greeting</button>
           </div>
           <div class="tab-content active" id="tab-design">
@@ -163,13 +182,25 @@
               <button id="saveCakeBtn" class="action-button">Save Design</button>
               <input type="file" id="loadCakeInput" accept=".json" style="display: none;">
               <button id="loadCakeBtn" class="action-button" onclick="document.getElementById('loadCakeInput').click()">Load Design</button>
-              <button id="resetCakeBtn" class="action-button">Reset Design</button>
+              <button id="resetCakeBtn" class="action-button" @click="resetCakeDesign">Reset Design</button>
               <button id="undoBtn" class="action-button" disabled>Undo Last Action</button>
             </div>
           </div>
           <div class="tab-content" id="tab-layer-editor">
             <div id="layerEditPrompt" class="prompt">Click a cake layer in the 3D view to edit it.</div>
             <div id="selectedLayerControlsContainer"></div>
+          </div>
+          <div class="tab-content" id="tab-topper">
+            <div id="topperEditPrompt" class="prompt">Click a cake layer in the 3D view to edit its topper.</div>
+            <div id="selectedTopperControlsContainer"></div>
+          </div>
+          <div class="tab-content" id="tab-icing">
+            <div id="icingEditPrompt" class="prompt">Click a cake layer in the 3D view to edit its icing.</div>
+            <div id="selectedIcingControlsContainer"></div>
+          </div>
+          <div class="tab-content" id="tab-toppings">
+            <div id="toppingEditPrompt" class="prompt">Click a cake layer in the 3D view to edit its toppings.</div>
+            <div id="selectedToppingsControlsContainer"></div>
           </div>
           <div class="tab-content" id="tab-greeting">
             <div class="greeting-control-group">
@@ -288,7 +319,9 @@ const defaultLayerSettings = {
     fontSize: 1,
     color: '#000000',
     style: 'normal',
-    position: 'center'
+    position: 'center',
+    size: 1,
+    stickHeight: 0.4
   },
   edgeIcing: {
     enabled: false,
@@ -360,6 +393,7 @@ const currentStep = ref(1);
 const selectedLayers = ref(1);
 const selectedSize = ref(null);
 const selectedFlavor = ref(null);
+const showResetConfirmModal = ref(false);
 
 // Computed property to check if user can proceed to next step
 const canProceed = computed(() => {
@@ -493,6 +527,7 @@ const initScene = () => {
   document.getElementById('saveCakeBtn').addEventListener('click', saveCakeConfiguration);
   document.getElementById('loadCakeInput').addEventListener('change', loadCakeConfiguration);
   document.getElementById('resetCakeBtn').addEventListener('click', resetCakeDesign);
+  document.getElementById('undoBtn').addEventListener('click', undoLastAction);
 
   window.addEventListener('resize', onWindowResize, false);
   renderer.domElement.addEventListener('click', onCanvasClick, false);
@@ -505,21 +540,6 @@ const initTabs = () => {
   const tabButtons = document.querySelectorAll('.tab-button');
   const tabContents = document.querySelectorAll('.tab-content');
 
-  // Add undo button to the design tab
-  const designTabContent = document.getElementById('tab-design');
-  if (designTabContent) {
-    const controlGroup = designTabContent.querySelector('.control-group');
-    if (controlGroup) {
-      const undoButton = document.createElement('button');
-      undoButton.id = 'undoBtn';
-      undoButton.className = 'action-button';
-      undoButton.textContent = 'Undo Last Action';
-      undoButton.disabled = true;
-      undoButton.addEventListener('click', undoLastAction);
-      controlGroup.insertBefore(undoButton, controlGroup.firstChild);
-    }
-  }
-
   tabButtons.forEach(button => {
     button.addEventListener('click', () => {
       tabButtons.forEach(btn => btn.classList.remove('active'));
@@ -527,8 +547,27 @@ const initTabs = () => {
       button.classList.add('active');
       const targetTabId = button.getAttribute('data-tab');
       document.getElementById(targetTabId).classList.add('active');
+      
+      // Update controls based on selected layer and active tab
+      if (selectedLayerId) {
+        switch (targetTabId) {
+          case 'tab-layer-editor':
+            updateControlsForSelectedLayer();
+            break;
+          case 'tab-topper':
+            updateControlsForSelectedTopper();
+            break;
+          case 'tab-icing':
+            updateControlsForSelectedIcing();
+            break;
+          case 'tab-toppings':
+            updateControlsForSelectedToppings();
+            break;
+        }
+      }
     });
   });
+  
   if (tabButtons.length > 0) {
     tabButtons[0].click();
   }
@@ -544,9 +583,24 @@ const onCanvasClick = (event) => {
     const clickedLayerObject = intersects[0].object;
     if (clickedLayerObject.userData.layerId) {
       selectLayer(clickedLayerObject.userData.layerId);
-      const layerEditorTabButton = document.querySelector('.tab-button[data-tab="tab-layer-editor"]');
-      if (layerEditorTabButton) {
-        layerEditorTabButton.click();
+      // Get the active tab
+      const activeTab = document.querySelector('.tab-button.active');
+      if (activeTab) {
+        const tabId = activeTab.getAttribute('data-tab');
+        switch (tabId) {
+          case 'tab-layer-editor':
+            updateControlsForSelectedLayer();
+            break;
+          case 'tab-topper':
+            updateControlsForSelectedTopper();
+            break;
+          case 'tab-icing':
+            updateControlsForSelectedIcing();
+            break;
+          case 'tab-toppings':
+            updateControlsForSelectedToppings();
+            break;
+        }
       }
     }
   } else {
@@ -694,39 +748,30 @@ const addDecorations = (layerMesh, layerConfig) => {
     const topperGroup = new THREE.Group();
     topperGroup.name = "topperGroup";
 
-    // Calculate topper position
+    // --- DYNAMIC STICK LOGIC ---
+    // Default values
+    let stickHeight = topper.stickHeight || 0.4; // Use custom stick height or default
+    if (stickHeight < 0.1) stickHeight = 0.1;
+    
+    let stickBaseY = topY; // Always start at cake top
+    let stickTopY = stickBaseY + stickHeight; // Calculate the top of the stick
+    
+    // Calculate content position offsets based on stick height
+    let textYOffset = 0.05; // Small offset from stick top
+    let imageYOffset = 0.05;
+    const imageHeight = 0.5; // Should match the image geometry height
+    
+    // Calculate topper base position
     let topperY = topY;
     if (topper.position === 'top') {
       topperY += 0.1; // Slightly above the layer
+      stickBaseY = topperY;
+      stickTopY = stickBaseY + stickHeight;
     } else if (topper.position === 'bottom') {
       topperY = bottomY - 0.1; // Slightly below the layer
+      stickBaseY = topperY;
+      stickTopY = stickBaseY + stickHeight;
     }
-
-    // --- DYNAMIC STICK LOGIC ---
-    // Default values
-    let stickTopY = topperY + 0.28; // Default for text
-    let stickHeight = 0.4;
-    let contentYOffset = 0.28;
-    let imageYOffset = 0.2;
-    let textYOffset = 0.28;
-    let stickBaseY = topY; // Always start at cake top
-    const imageHeight = 0.5; // Should match the image geometry height
-
-    // If image or text_image, adjust
-    if (topper.type === 'image') {
-      // Place stick top at bottom of image
-      stickTopY = topperY + imageYOffset - (imageHeight / 2);
-      stickHeight = stickTopY - stickBaseY;
-    } else if (topper.type === 'text_image') {
-      // Text is on top, image is below text
-      // Place stick top at bottom of image (image is at topperY + 0.13, so bottom is 0.13 - 0.25)
-      stickTopY = topperY + 0.13 - (imageHeight / 2);
-      stickHeight = stickTopY - stickBaseY;
-    } else if (topper.type === 'text') {
-      stickTopY = topperY + textYOffset;
-      stickHeight = stickTopY - stickBaseY;
-    }
-    if (stickHeight < 0.1) stickHeight = 0.1;
 
     // Add stick/support for the topper
     const stickGeometry = new THREE.CylinderGeometry(0.02, 0.02, stickHeight, 8);
@@ -775,7 +820,7 @@ const addDecorations = (layerMesh, layerConfig) => {
           metalness: 0.1
         });
         const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-        textMesh.position.set(0, topperY + textYOffset, 0); // Position above the cake
+        textMesh.position.set(0, stickTopY + textYOffset, 0); // Position above the stick
         topperGroup.add(textMesh);
         // If it's text with image, add the image below the text
         if (topper.type === 'text_image' && topper.image) {
@@ -788,7 +833,7 @@ const addDecorations = (layerMesh, layerConfig) => {
               side: THREE.DoubleSide
             });
             const imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);
-            imageMesh.position.set(0, topperY + 0.13, 0);
+            imageMesh.position.set(0, stickTopY + textYOffset - (0.3 * sizeMultiplier), 0); // Position below the text
             topperGroup.add(imageMesh);
           });
         }
@@ -803,7 +848,7 @@ const addDecorations = (layerMesh, layerConfig) => {
           side: THREE.DoubleSide
         });
         const imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);
-        imageMesh.position.set(0, topperY + imageYOffset, 0);
+        imageMesh.position.set(0, stickTopY + imageYOffset, 0); // Position above the stick
         topperGroup.add(imageMesh);
       });
     }
@@ -1309,6 +1354,139 @@ const addDecorations = (layerMesh, layerConfig) => {
         cherry.rotation.y = Math.random() * Math.PI * 2;
         overallToppingGroup.add(cherry);
       }
+    } else if (topping.type === 'strawberries') {
+      const strawberryCount = Math.max(1, Math.floor(layerRadius * 2.5));
+      const strawberryMaterial = new THREE.MeshStandardMaterial({
+        color: 0xFF3B3B,
+        roughness: 0.7,
+        metalness: 0.1
+      });
+      const stemMaterial = new THREE.MeshStandardMaterial({
+        color: 0x228B22,
+        roughness: 0.8
+      });
+      const seedMaterial = new THREE.MeshStandardMaterial({
+        color: 0xFFFDD0,
+        roughness: 0.6
+      });
+
+      for (let i = 0; i < strawberryCount; i++) {
+        const strawberry = new THREE.Group();
+        
+        // Create strawberry body (cone-like shape)
+        const bodyGeo = new THREE.ConeGeometry(0.12, 0.25, 16);
+        const body = new THREE.Mesh(bodyGeo, strawberryMaterial);
+        body.rotation.x = Math.PI; // Flip upside down
+        strawberry.add(body);
+        
+        // Add green top/leaves
+        const leafGeo = new THREE.CylinderGeometry(0.1, 0.05, 0.05, 12);
+        const leaves = new THREE.Mesh(leafGeo, stemMaterial);
+        leaves.position.y = 0.125;
+        strawberry.add(leaves);
+        
+        // Add seeds (small yellow dots)
+        for (let s = 0; s < 10; s++) {
+          const seedGeo = new THREE.SphereGeometry(0.01, 4, 4);
+          const seed = new THREE.Mesh(seedGeo, seedMaterial);
+          const seedAngle = Math.random() * Math.PI * 2;
+          const seedHeight = Math.random() * 0.2 - 0.1;
+          const seedRadius = 0.1 * Math.random() + 0.05;
+          seed.position.set(
+            Math.cos(seedAngle) * seedRadius,
+            seedHeight,
+            Math.sin(seedAngle) * seedRadius
+          );
+          strawberry.add(seed);
+        }
+        
+        // Position the strawberry on the cake
+        const strawberryRadius = 0.15;
+        const availableRadius = layerRadius - (edgeIcing.enabled ? edgeIcing.thickness : 0) - strawberryRadius;
+        
+        // Use golden ratio for better distribution
+        const goldenRatio = 0.618033988749895;
+        const angle = (i * goldenRatio * Math.PI * 2) % (Math.PI * 2);
+        
+        // Place strawberries mostly around the edge
+        let dist = availableRadius * (0.7 + Math.random() * 0.3);
+        
+        // If it's the first strawberry and there are only a few, place one in the center
+        if (i === 0 && strawberryCount <= 5) {
+          dist = availableRadius * 0.3 * Math.random();
+        }
+        
+        strawberry.position.set(
+          Math.cos(angle) * dist, 
+          topY + 0.1, 
+          Math.sin(angle) * dist
+        );
+        
+        // Random rotation for variety
+        strawberry.rotation.y = Math.random() * Math.PI * 2;
+        strawberry.rotation.z = (Math.random() - 0.5) * 0.3;
+        
+        overallToppingGroup.add(strawberry);
+      }
+    } else if (topping.type === 'blueberries') {
+      const blueberryCount = Math.max(2, Math.floor(layerRadius * 5)); // More blueberries as they're smaller
+      const blueberryMaterial = new THREE.MeshStandardMaterial({
+        color: 0x4169E1,
+        roughness: 0.5,
+        metalness: 0.2
+      });
+      const highlightMaterial = new THREE.MeshStandardMaterial({
+        color: 0xE6E6FA,
+        roughness: 0.3,
+        metalness: 0.4
+      });
+
+      for (let i = 0; i < blueberryCount; i++) {
+        const blueberry = new THREE.Group();
+        
+        // Create blueberry body (small sphere)
+        const bodyRadius = 0.07 + Math.random() * 0.02; // Slight size variation
+        const bodyGeo = new THREE.SphereGeometry(bodyRadius, 12, 12);
+        const body = new THREE.Mesh(bodyGeo, blueberryMaterial);
+        blueberry.add(body);
+        
+        // Add highlight spot (small white dot)
+        const highlightGeo = new THREE.SphereGeometry(bodyRadius * 0.2, 6, 6);
+        const highlight = new THREE.Mesh(highlightGeo, highlightMaterial);
+        highlight.position.set(bodyRadius * 0.5, bodyRadius * 0.5, 0);
+        blueberry.add(highlight);
+        
+        // Position the blueberry on the cake
+        const availableRadius = layerRadius - (edgeIcing.enabled ? edgeIcing.thickness : 0) - bodyRadius;
+        
+        // Distribute blueberries in clusters and across the cake top
+        let angle, dist;
+        
+        if (i % 3 === 0) {
+          // Create clusters
+          const clusterIndex = Math.floor(i / 3);
+          const clusterAngle = (clusterIndex * Math.PI * 0.5) % (Math.PI * 2);
+          angle = clusterAngle + (Math.random() - 0.5) * 0.5; // Small angle variation within cluster
+          dist = availableRadius * (0.4 + Math.random() * 0.5);
+        } else {
+          // Random placement
+          angle = Math.random() * Math.PI * 2;
+          dist = Math.random() * availableRadius;
+        }
+        
+        blueberry.position.set(
+          Math.cos(angle) * dist, 
+          topY + bodyRadius, 
+          Math.sin(angle) * dist
+        );
+        
+        // Random rotation
+        blueberry.rotation.x = Math.random() * Math.PI;
+        blueberry.rotation.y = Math.random() * Math.PI;
+        blueberry.rotation.z = Math.random() * Math.PI;
+        
+        overallToppingGroup.add(blueberry);
+      }
     }
   });
   if (overallToppingGroup.children.length > 0) layerMesh.add(overallToppingGroup);
@@ -1551,14 +1729,7 @@ const updateLayerProperty = (layerId, propertyPath, value) => {
 
 const addLayerControlsUI = (layerConfig, container) => {
   const layerControlsDiv = document.createElement('div');
-  layerControlsDiv.className = 'control-group';
-  const edgeIcingSubControlsId = `edge_icing_sub_controls_${layerConfig.id}`;
-  const middleIcingSubControlsId = `middle_icing_sub_controls_${layerConfig.id}`;
-  const edgeIcingConfig = layerConfig.edgeIcing;
-  const middleBandIcingConfig = layerConfig.middleBandIcing;
-
-  const hasSprinkles = layerConfig.toppings.some(t => t.type === 'sprinkles');
-  const hasCherries = layerConfig.toppings.some(t => t.type === 'cherries');
+  layerControlsDiv.className = 'control-group mobile-optimized';
 
   // Get the layer index and selected size
   const layerIndex = cakeLayers.findIndex(l => l.id === layerConfig.id);
@@ -1569,250 +1740,78 @@ const addLayerControlsUI = (layerConfig, container) => {
   const layerHeightMax = selectedSizeObj ? selectedSizeObj.height : 6;
 
   layerControlsDiv.innerHTML = `
-    <p class="layer-header">Layer ${layerIndex + 1}</p>
-    <div class="layer-dimensions">
-      <p>Initial Size: ${selectedSizeObj ? `${selectedSizeObj.diameter} in (diameter) × ${selectedSizeObj.height} in (height)` : 'Not selected'}</p>
+    <div class="mobile-section-header">
+      <h2 class="layer-title">Layer ${layerIndex + 1}</h2>
+      <div class="layer-dimensions">
+        <p>Size: ${selectedSizeObj ? `${selectedSizeObj.diameter}″ × ${selectedSizeObj.height}″` : 'Custom'}</p>
+      </div>
     </div>
-    <div><label for="color_${layerConfig.id}">Layer Color:</label><input type="color" id="color_${layerConfig.id}" value="${layerConfig.color}"></div>
-    <div class="mt-2"><label for="radius_${layerConfig.id}">Layer Radius (${layerConfig.radius.toFixed(1)}):</label><input type="range" id="radius_${layerConfig.id}" min="0.5" max="${baseRadius}" step="0.1" value="${layerConfig.radius}"></div>
-    <div class="mt-2"><label for="height_${layerConfig.id}">Layer Height (${layerConfig.height.toFixed(1)}):</label><input type="range" id="height_${layerConfig.id}" min="1" max="${layerHeightMax}" step="0.1" value="${layerConfig.height}"></div>
-
-    <div class="mt-2">
-      <label>Toppings:</label>
-      <div class="toppings-group flex flex-wrap gap-x-4 gap-y-1">
-        <label class="checkbox-label">
-          <input type="checkbox" id="topping_sprinkles_${layerConfig.id}" value="sprinkles" ${hasSprinkles ? 'checked' : ''}> Sprinkles
-        </label>
-        <label class="checkbox-label">
-          <input type="checkbox" id="topping_cherries_${layerConfig.id}" value="cherries" ${hasCherries ? 'checked' : ''}> Cherries
-        </label>
+    
+    <div class="mobile-control-item">
+      <label for="color_${layerConfig.id}" class="mobile-label">Layer Color:</label>
+      <div class="color-picker-container">
+        <input type="color" id="color_${layerConfig.id}" class="mobile-color-picker" value="${layerConfig.color}">
+        <span class="color-value">${layerConfig.color}</span>
+      </div>
+    </div>
+    
+    <div class="mobile-control-item">
+      <label for="radius_${layerConfig.id}" class="mobile-label">
+        Layer Radius: <span class="value-display">${layerConfig.radius.toFixed(1)}</span>
+      </label>
+      <input type="range" id="radius_${layerConfig.id}" class="mobile-slider" 
+        min="0.5" max="${baseRadius}" step="0.1" value="${layerConfig.radius}">
+      <div class="range-labels">
+        <span>0.5</span>
+        <span>${baseRadius}</span>
+      </div>
+    </div>
+    
+    <div class="mobile-control-item">
+      <label for="height_${layerConfig.id}" class="mobile-label">
+        Layer Height: <span class="value-display">${layerConfig.height.toFixed(1)}</span>
+      </label>
+      <input type="range" id="height_${layerConfig.id}" class="mobile-slider" 
+        min="0.5" max="${layerHeightMax}" step="0.1" value="${layerConfig.height}">
+      <div class="range-labels">
+        <span>0.5</span>
+        <span>${layerHeightMax}</span>
       </div>
     </div>
 
-    <div class="topper-section mt-3 pt-3 border-t border-gray-200">
-      <label class="checkbox-label"><input type="checkbox" id="topper_enabled_${layerConfig.id}" ${layerConfig.topper.enabled ? 'checked' : ''}>Enable Printed Topper</label>
-      <div id="topper_sub_controls_${layerConfig.id}" class="sub-controls mt-2 ${layerConfig.topper.enabled ? '' : 'hidden'}">
-        <div class="mt-2">
-          <label for="topper_type_${layerConfig.id}">Topper Type:</label>
-          <select id="topper_type_${layerConfig.id}">
-            <option value="none" ${layerConfig.topper.type === 'none' ? 'selected' : ''}>Select Type</option>
-            <option value="text" ${layerConfig.topper.type === 'text' ? 'selected' : ''}>Text Only</option>
-            <option value="image" ${layerConfig.topper.type === 'image' ? 'selected' : ''}>Image</option>
-            <option value="text_image" ${layerConfig.topper.type === 'text_image' ? 'selected' : ''}>Text with Image</option>
-          </select>
-        </div>
-        
-        <div class="mt-2" id="topper_text_controls_${layerConfig.id}" style="display: ${layerConfig.topper.type === 'text' || layerConfig.topper.type === 'text_image' ? 'block' : 'none'}">
-          <label for="topper_text_${layerConfig.id}">Text:</label>
-          <input type="text" id="topper_text_${layerConfig.id}" value="${layerConfig.topper.text}" placeholder="Enter text for topper">
-          
-          <div class="mt-2">
-            <label for="topper_font_size_${layerConfig.id}">Font Size (${layerConfig.topper.fontSize.toFixed(1)}):</label>
-            <input type="range" id="topper_font_size_${layerConfig.id}" min="0.5" max="4" step="0.1" value="${layerConfig.topper.fontSize}">
-          </div>
-          
-          <div class="mt-2">
-            <label for="topper_font_style_${layerConfig.id}">Font Style:</label>
-            <select id="topper_font_style_${layerConfig.id}">
-              <option value="normal" ${layerConfig.topper.style === 'normal' ? 'selected' : ''}>Normal</option>
-              <option value="bold" ${layerConfig.topper.style === 'bold' ? 'selected' : ''}>Bold</option>
-              <option value="italic" ${layerConfig.topper.style === 'italic' ? 'selected' : ''}>Italic</option>
-            </select>
-          </div>
-          
-          <div class="mt-2">
-            <label for="topper_text_color_${layerConfig.id}">Text Color:</label>
-            <input type="color" id="topper_text_color_${layerConfig.id}" value="${layerConfig.topper.color}">
-          </div>
-        </div>
-        
-        <div class="mt-2" id="topper_image_controls_${layerConfig.id}" style="display: ${layerConfig.topper.type === 'image' || layerConfig.topper.type === 'text_image' ? 'block' : 'none'}">
-          <label for="topper_image_${layerConfig.id}">Upload Image:</label>
-          <input type="file" id="topper_image_${layerConfig.id}" accept="image/*">
-        </div>
-        
-        <div class="mt-2">
-          <label for="topper_position_${layerConfig.id}">Position:</label>
-          <select id="topper_position_${layerConfig.id}">
-            <option value="center" ${layerConfig.topper.position === 'center' ? 'selected' : ''}>Center</option>
-            <option value="top" ${layerConfig.topper.position === 'top' ? 'selected' : ''}>Top</option>
-            <option value="bottom" ${layerConfig.topper.position === 'bottom' ? 'selected' : ''}>Bottom</option>
-          </select>
-        </div>
-        <div class="mt-2">
-          <label for="topper_size_${layerConfig.id}">Topper Size (${layerConfig.topper.size || 1}):</label>
-          <input type="range" id="topper_size_${layerConfig.id}" min="0.5" max="2" step="0.01" value="${layerConfig.topper.size || 1}">
-        </div>
-      </div>
-    </div>
-
-    <div class="icing-section mt-3 pt-3 border-t border-gray-200">
-      <label class="checkbox-label"><input type="checkbox" id="edgeIcing_enabled_${layerConfig.id}" ${edgeIcingConfig.enabled ? 'checked' : ''}>Enable Edge Icing</label>
-      <div id="${edgeIcingSubControlsId}" class="sub-controls mt-2 ${edgeIcingConfig.enabled ? '' : 'hidden'}">
-        <div class="mt-1">
-          <label for="edgeIcing_style_${layerConfig.id}">Edge Style:</label>
-          <select id="edgeIcing_style_${layerConfig.id}">
-            <option value="smooth" ${edgeIcingConfig.style === 'smooth' ? 'selected' : ''}>Smooth Ring</option>
-            <option value="curl" ${edgeIcingConfig.style === 'curl' ? 'selected' : ''}>Curl Pattern</option>
-            <option value="shell" ${edgeIcingConfig.style === 'shell' ? 'selected' : ''}>Shell Pattern</option>
-            <option value="rosette" ${edgeIcingConfig.style === 'rosette' ? 'selected' : ''}>Rosette Pattern</option>
-            <option value="ruffle" ${edgeIcingConfig.style === 'ruffle' ? 'selected' : ''}>Ruffle Pattern</option>
-            <option value="zigzag" ${edgeIcingConfig.style === 'zigzag' ? 'selected' : ''}>Zigzag Pattern</option>
-          </select>
-        </div>
-        <div class="mt-2"><label for="edgeIcing_color_${layerConfig.id}">Edge Color:</label><input type="color" id="edgeIcing_color_${layerConfig.id}" value="${edgeIcingConfig.color}"></div>
-        <div class="mt-2"><label for="edgeIcing_thickness_${layerConfig.id}">Edge Detail/Thickness (${edgeIcingConfig.thickness.toFixed(2)}):</label><input type="range" id="edgeIcing_thickness_${layerConfig.id}" min="0.02" max="0.3" step="0.01" value="${edgeIcingConfig.thickness}"></div>
-      </div>
-    </div>
-
-    <div class="icing-section mt-3 pt-3 border-t border-gray-200">
-      <label class="checkbox-label"><input type="checkbox" id="middleIcing_enabled_${layerConfig.id}" ${middleBandIcingConfig.enabled ? 'checked' : ''}>Enable Middle Band Icing</label>
-      <div id="${middleIcingSubControlsId}" class="sub-controls mt-2 ${middleBandIcingConfig.enabled ? '' : 'hidden'}">
-        <div class="mt-2"><label for="middleIcing_color_${layerConfig.id}">Middle Color:</label><input type="color" id="middleIcing_color_${layerConfig.id}" value="${middleBandIcingConfig.color}"></div>
-        <div class="mt-2"><label for="middleIcing_thickness_${layerConfig.id}">Middle Thickness (${middleBandIcingConfig.thickness.toFixed(2)}):</label><input type="range" id="middleIcing_thickness_${layerConfig.id}" min="0.02" max="0.2" step="0.01" value="${middleBandIcingConfig.thickness}"></div>
-      </div>
-    </div>
-
-    <div class="icing-section mt-3 pt-3 border-t border-gray-200">
-      <label class="checkbox-label"><input type="checkbox" id="bottomIcing_enabled_${layerConfig.id}" ${layerConfig.bottomIcing.enabled ? 'checked' : ''}>Enable Bottom Icing</label>
-      <div id="bottomIcing_sub_controls_${layerConfig.id}" class="sub-controls mt-2 ${layerConfig.bottomIcing.enabled ? '' : 'hidden'}">
-        <div class="mt-1">
-          <label for="bottomIcing_style_${layerConfig.id}">Bottom Style:</label>
-          <select id="bottomIcing_style_${layerConfig.id}">
-            <option value="smooth" ${layerConfig.bottomIcing.style === 'smooth' ? 'selected' : ''}>Smooth Ring</option>
-            <option value="curl" ${layerConfig.bottomIcing.style === 'curl' ? 'selected' : ''}>Curl Pattern</option>
-            <option value="shell" ${layerConfig.bottomIcing.style === 'shell' ? 'selected' : ''}>Shell Pattern</option>
-            <option value="rosette" ${layerConfig.bottomIcing.style === 'rosette' ? 'selected' : ''}>Rosette Pattern</option>
-            <option value="ruffle" ${layerConfig.bottomIcing.style === 'ruffle' ? 'selected' : ''}>Ruffle Pattern</option>
-            <option value="zigzag" ${layerConfig.bottomIcing.style === 'zigzag' ? 'selected' : ''}>Zigzag Pattern</option>
-          </select>
-        </div>
-        <div class="mt-2"><label for="bottomIcing_color_${layerConfig.id}">Bottom Color:</label><input type="color" id="bottomIcing_color_${layerConfig.id}" value="${layerConfig.bottomIcing.color}"></div>
-        <div class="mt-2"><label for="bottomIcing_thickness_${layerConfig.id}">Bottom Detail/Thickness (${layerConfig.bottomIcing.thickness.toFixed(2)}):</label><input type="range" id="bottomIcing_thickness_${layerConfig.id}" min="0.02" max="0.3" step="0.01" value="${layerConfig.bottomIcing.thickness}"></div>
-      </div>
-    </div>
-
-    <button class="remove-layer-btn mt-3" id="removeSelectedLayerBtn">Remove This Layer</button>`;
+    <div class="mobile-action-container">
+      <button class="mobile-remove-btn" id="removeSelectedLayerBtn">
+        <span class="btn-icon">🗑️</span> Remove Layer
+      </button>
+    </div>`;
+    
   container.appendChild(layerControlsDiv);
 
-  document.getElementById(`color_${layerConfig.id}`).addEventListener('input', (e) => updateLayerProperty(layerConfig.id, 'color', e.target.value));
+  // Add event listeners with value display updates
+  const colorPicker = document.getElementById(`color_${layerConfig.id}`);
+  const colorValueDisplay = colorPicker.nextElementSibling;
+  
+  colorPicker.addEventListener('input', (e) => {
+    updateLayerProperty(layerConfig.id, 'color', e.target.value);
+    colorValueDisplay.textContent = e.target.value;
+  });
   
   const radiusInput = document.getElementById(`radius_${layerConfig.id}`);
-  const radiusLabel = layerControlsDiv.querySelector(`label[for='radius_${layerConfig.id}']`);
+  const radiusValueDisplay = layerControlsDiv.querySelector(`label[for='radius_${layerConfig.id}'] .value-display`);
+  
   radiusInput.addEventListener('input', (e) => {
+    const value = parseFloat(e.target.value).toFixed(1);
     updateLayerProperty(layerConfig.id, 'radius', e.target.value);
-    radiusLabel.textContent = `Layer Radius (${parseFloat(e.target.value).toFixed(1)}):`;
+    radiusValueDisplay.textContent = value;
   });
   
   const heightInput = document.getElementById(`height_${layerConfig.id}`);
-  const heightLabel = layerControlsDiv.querySelector(`label[for='height_${layerConfig.id}']`);
-  heightInput.addEventListener('input', (e) => {
-    updateLayerProperty(layerConfig.id, 'height', e.target.value);
-    heightLabel.textContent = `Layer Height (${parseFloat(e.target.value).toFixed(1)}):`;
-  });
-
-  document.getElementById(`topping_sprinkles_${layerConfig.id}`).addEventListener('change', (e) => updateLayerProperty(layerConfig.id, 'toppings.sprinkles', e.target.checked));
-  document.getElementById(`topping_cherries_${layerConfig.id}`).addEventListener('change', (e) => updateLayerProperty(layerConfig.id, 'toppings.cherries', e.target.checked));
-
-  const edgeIcingEnabledCheckbox = document.getElementById(`edgeIcing_enabled_${layerConfig.id}`);
-  const edgeIcingSubControlsDiv = document.getElementById(edgeIcingSubControlsId);
-  edgeIcingEnabledCheckbox.addEventListener('change', (e) => {
-    updateLayerProperty(layerConfig.id, 'edgeIcing.enabled', e.target.checked);
-    edgeIcingSubControlsDiv.classList.toggle('hidden', !e.target.checked);
-  });
-  document.getElementById(`edgeIcing_style_${layerConfig.id}`).addEventListener('change', (e) => updateLayerProperty(layerConfig.id, 'edgeIcing.style', e.target.value));
-  document.getElementById(`edgeIcing_color_${layerConfig.id}`).addEventListener('input', (e) => updateLayerProperty(layerConfig.id, 'edgeIcing.color', e.target.value));
-  const edgeIcingThicknessInput = document.getElementById(`edgeIcing_thickness_${layerConfig.id}`);
-  const edgeIcingThicknessLabel = layerControlsDiv.querySelector(`label[for='edgeIcing_thickness_${layerConfig.id}']`);
-  edgeIcingThicknessInput.addEventListener('input', (e) => {
-    updateLayerProperty(layerConfig.id, 'edgeIcing.thickness', e.target.value);
-    edgeIcingThicknessLabel.textContent = `Edge Detail/Thickness (${parseFloat(e.target.value).toFixed(2)}):`;
-  });
-
-  const middleIcingEnabledCheckbox = document.getElementById(`middleIcing_enabled_${layerConfig.id}`);
-  const middleIcingSubControlsDiv = document.getElementById(middleIcingSubControlsId);
-  middleIcingEnabledCheckbox.addEventListener('change', (e) => {
-    updateLayerProperty(layerConfig.id, 'middleBandIcing.enabled', e.target.checked);
-    middleIcingSubControlsDiv.classList.toggle('hidden', !e.target.checked);
-  });
-  document.getElementById(`middleIcing_color_${layerConfig.id}`).addEventListener('input', (e) => updateLayerProperty(layerConfig.id, 'middleBandIcing.color', e.target.value));
-  const middleIcingThicknessInput = document.getElementById(`middleIcing_thickness_${layerConfig.id}`);
-  const middleIcingThicknessLabel = layerControlsDiv.querySelector(`label[for='middleIcing_thickness_${layerConfig.id}']`);
-  middleIcingThicknessInput.addEventListener('input', (e) => {
-    updateLayerProperty(layerConfig.id, 'middleBandIcing.thickness', e.target.value);
-    middleIcingThicknessLabel.textContent = `Middle Thickness (${parseFloat(e.target.value).toFixed(2)}):`;
-  });
-
-  const bottomIcingEnabledCheckbox = document.getElementById(`bottomIcing_enabled_${layerConfig.id}`);
-  const bottomIcingSubControlsDiv = document.getElementById(`bottomIcing_sub_controls_${layerConfig.id}`);
-  bottomIcingEnabledCheckbox.addEventListener('change', (e) => {
-    updateLayerProperty(layerConfig.id, 'bottomIcing.enabled', e.target.checked);
-    bottomIcingSubControlsDiv.classList.toggle('hidden', !e.target.checked);
-  });
-  document.getElementById(`bottomIcing_style_${layerConfig.id}`).addEventListener('change', (e) => updateLayerProperty(layerConfig.id, 'bottomIcing.style', e.target.value));
-  document.getElementById(`bottomIcing_color_${layerConfig.id}`).addEventListener('input', (e) => updateLayerProperty(layerConfig.id, 'bottomIcing.color', e.target.value));
-  const bottomIcingThicknessInput = document.getElementById(`bottomIcing_thickness_${layerConfig.id}`);
-  const bottomIcingThicknessLabel = layerControlsDiv.querySelector(`label[for='bottomIcing_thickness_${layerConfig.id}']`);
-  bottomIcingThicknessInput.addEventListener('input', (e) => {
-    updateLayerProperty(layerConfig.id, 'bottomIcing.thickness', e.target.value);
-    bottomIcingThicknessLabel.textContent = `Bottom Detail/Thickness (${parseFloat(e.target.value).toFixed(2)}):`;
-  });
-
-  const topperEnabledCheckbox = document.getElementById(`topper_enabled_${layerConfig.id}`);
-  const topperSubControlsDiv = document.getElementById(`topper_sub_controls_${layerConfig.id}`);
-  topperEnabledCheckbox.addEventListener('change', (e) => {
-    updateLayerProperty(layerConfig.id, 'topper.enabled', e.target.checked);
-    topperSubControlsDiv.classList.toggle('hidden', !e.target.checked);
-  });
-
-  const topperTypeSelect = document.getElementById(`topper_type_${layerConfig.id}`);
-  const topperTextControls = document.getElementById(`topper_text_controls_${layerConfig.id}`);
-  const topperImageControls = document.getElementById(`topper_image_controls_${layerConfig.id}`);
+  const heightValueDisplay = layerControlsDiv.querySelector(`label[for='height_${layerConfig.id}'] .value-display`);
   
-  topperTypeSelect.addEventListener('change', (e) => {
-    updateLayerProperty(layerConfig.id, 'topper.type', e.target.value);
-    topperTextControls.style.display = (e.target.value === 'text' || e.target.value === 'text_image') ? 'block' : 'none';
-    topperImageControls.style.display = (e.target.value === 'image' || e.target.value === 'text_image') ? 'block' : 'none';
-  });
-
-  document.getElementById(`topper_text_${layerConfig.id}`).addEventListener('input', (e) => {
-    updateLayerProperty(layerConfig.id, 'topper.text', e.target.value);
-  });
-
-  document.getElementById(`topper_font_size_${layerConfig.id}`).addEventListener('input', (e) => {
-    updateLayerProperty(layerConfig.id, 'topper.fontSize', parseFloat(e.target.value));
-    // Update the label to show current value
-    const label = e.target.previousElementSibling;
-    if (label) {
-      label.textContent = `Font Size (${parseFloat(e.target.value).toFixed(1)}):`;
-    }
-  });
-
-  document.getElementById(`topper_font_style_${layerConfig.id}`).addEventListener('change', (e) => {
-    updateLayerProperty(layerConfig.id, 'topper.style', e.target.value);
-  });
-
-  document.getElementById(`topper_text_color_${layerConfig.id}`).addEventListener('input', (e) => {
-    updateLayerProperty(layerConfig.id, 'topper.color', e.target.value);
-  });
-
-  document.getElementById(`topper_position_${layerConfig.id}`).addEventListener('change', (e) => {
-    updateLayerProperty(layerConfig.id, 'topper.position', e.target.value);
-  });
-
-  document.getElementById(`topper_image_${layerConfig.id}`).addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        updateLayerProperty(layerConfig.id, 'topper.image', event.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-
-  document.getElementById(`topper_size_${layerConfig.id}`).addEventListener('input', (e) => {
-    updateLayerProperty(layerConfig.id, 'topper.size', parseFloat(e.target.value));
+  heightInput.addEventListener('input', (e) => {
+    const value = parseFloat(e.target.value).toFixed(1);
+    updateLayerProperty(layerConfig.id, 'height', e.target.value);
+    heightValueDisplay.textContent = value;
   });
 
   document.getElementById(`removeSelectedLayerBtn`).addEventListener('click', () => removeLayer(layerConfig.id));
@@ -1913,10 +1912,12 @@ const loadCakeConfiguration = (event) => {
 };
 
 const resetCakeDesign = () => {
-  if (!confirm("Are you sure you want to reset the cake design? This will remove all layers and reset all settings.")) {
-    return;
-  }
+  showResetConfirmModal.value = true;
+};
 
+const confirmReset = () => {
+  showResetConfirmModal.value = false;
+  
   saveToHistory(); // Save state before making changes
   selectLayer(null);
   cakeLayers = [];
@@ -2095,6 +2096,462 @@ watch(selectedLayers, (newVal, oldVal) => {
 const selectFlavor = (flavor) => {
   selectedFlavor.value = flavor;
 };
+
+// Add new functions for topper and icing controls
+const updateControlsForSelectedTopper = () => {
+  const controlsContainer = document.getElementById('selectedTopperControlsContainer');
+  const prompt = document.getElementById('topperEditPrompt');
+  controlsContainer.innerHTML = '';
+  
+  if (selectedLayerId) {
+    const layerConfig = cakeLayers.find(l => l.id === selectedLayerId);
+    if (layerConfig) {
+      if (prompt) prompt.style.display = 'none';
+      addTopperControlsUI(layerConfig, controlsContainer);
+    } else {
+      if (prompt) {
+        prompt.textContent = "Error: Layer data not found.";
+        prompt.style.display = 'block';
+      }
+    }
+  } else {
+    if (prompt) {
+      prompt.textContent = "Click a cake layer in the 3D view to edit its topper.";
+      prompt.style.display = 'block';
+    }
+  }
+};
+
+const updateControlsForSelectedIcing = () => {
+  const controlsContainer = document.getElementById('selectedIcingControlsContainer');
+  const prompt = document.getElementById('icingEditPrompt');
+  controlsContainer.innerHTML = '';
+  
+  if (selectedLayerId) {
+    const layerConfig = cakeLayers.find(l => l.id === selectedLayerId);
+    if (layerConfig) {
+      if (prompt) prompt.style.display = 'none';
+      addIcingControlsUI(layerConfig, controlsContainer);
+    } else {
+      if (prompt) {
+        prompt.textContent = "Error: Layer data not found.";
+        prompt.style.display = 'block';
+      }
+    }
+  } else {
+    if (prompt) {
+      prompt.textContent = "Click a cake layer in the 3D view to edit its icing.";
+      prompt.style.display = 'block';
+    }
+  }
+};
+
+const updateControlsForSelectedToppings = () => {
+  const controlsContainer = document.getElementById('selectedToppingsControlsContainer');
+  const prompt = document.getElementById('toppingEditPrompt');
+  controlsContainer.innerHTML = '';
+  
+  if (selectedLayerId) {
+    const layerConfig = cakeLayers.find(l => l.id === selectedLayerId);
+    if (layerConfig) {
+      if (prompt) prompt.style.display = 'none';
+      addToppingsControlsUI(layerConfig, controlsContainer);
+    } else {
+      if (prompt) {
+        prompt.textContent = "Error: Layer data not found.";
+        prompt.style.display = 'block';
+      }
+    }
+  } else {
+    if (prompt) {
+      prompt.textContent = "Click a cake layer in the 3D view to edit its toppings.";
+      prompt.style.display = 'block';
+    }
+  }
+};
+
+const addTopperControlsUI = (layerConfig, container) => {
+  const topperControlsDiv = document.createElement('div');
+  topperControlsDiv.className = 'control-group';
+  
+  // Create unique IDs for the topper tab controls to avoid conflicts with Layer Editor
+  const topperSubControlsId = `topper_tab_sub_controls_${layerConfig.id}`;
+  const topperTextControlsId = `topper_tab_text_controls_${layerConfig.id}`;
+  const topperImageControlsId = `topper_tab_image_controls_${layerConfig.id}`;
+  
+  topperControlsDiv.innerHTML = `
+    <p class="layer-header">Layer ${cakeLayers.findIndex(l => l.id === layerConfig.id) + 1} Topper</p>
+    <div class="topper-section">
+      <label class="checkbox-label">
+        <input type="checkbox" id="topper_tab_enabled_${layerConfig.id}" ${layerConfig.topper.enabled ? 'checked' : ''}>
+        Enable Printed Topper
+      </label>
+      <div id="${topperSubControlsId}" class="sub-controls mt-2 ${layerConfig.topper.enabled ? '' : 'hidden'}">
+        <div class="mt-2">
+          <label for="topper_tab_type_${layerConfig.id}">Topper Type:</label>
+          <select id="topper_tab_type_${layerConfig.id}">
+            <option value="none" ${layerConfig.topper.type === 'none' ? 'selected' : ''}>Select Type</option>
+            <option value="text" ${layerConfig.topper.type === 'text' ? 'selected' : ''}>Text Only</option>
+            <option value="image" ${layerConfig.topper.type === 'image' ? 'selected' : ''}>Image</option>
+            <option value="text_image" ${layerConfig.topper.type === 'text_image' ? 'selected' : ''}>Text with Image</option>
+          </select>
+        </div>
+        
+        <div class="mt-2" id="${topperTextControlsId}" style="display: ${layerConfig.topper.type === 'text' || layerConfig.topper.type === 'text_image' ? 'block' : 'none'}">
+          <label for="topper_tab_text_${layerConfig.id}">Text:</label>
+          <input type="text" id="topper_tab_text_${layerConfig.id}" value="${layerConfig.topper.text}" placeholder="Enter text for topper">
+          
+          <div class="mt-2">
+            <label for="topper_tab_font_size_${layerConfig.id}">Font Size (${layerConfig.topper.fontSize.toFixed(1)}):</label>
+            <input type="range" id="topper_tab_font_size_${layerConfig.id}" min="0.5" max="4" step="0.1" value="${layerConfig.topper.fontSize}">
+          </div>
+          
+          <div class="mt-2">
+            <label for="topper_tab_font_style_${layerConfig.id}">Font Style:</label>
+            <select id="topper_tab_font_style_${layerConfig.id}">
+              <option value="normal" ${layerConfig.topper.style === 'normal' ? 'selected' : ''}>Normal</option>
+              <option value="bold" ${layerConfig.topper.style === 'bold' ? 'selected' : ''}>Bold</option>
+              <option value="italic" ${layerConfig.topper.style === 'italic' ? 'selected' : ''}>Italic</option>
+            </select>
+          </div>
+          
+          <div class="mt-2">
+            <label for="topper_tab_text_color_${layerConfig.id}">Text Color:</label>
+            <input type="color" id="topper_tab_text_color_${layerConfig.id}" value="${layerConfig.topper.color}">
+          </div>
+        </div>
+        
+        <div class="mt-2" id="${topperImageControlsId}" style="display: ${layerConfig.topper.type === 'image' || layerConfig.topper.type === 'text_image' ? 'block' : 'none'}">
+          <label for="topper_tab_image_${layerConfig.id}">Upload Image:</label>
+          <input type="file" id="topper_tab_image_${layerConfig.id}" accept="image/*">
+        </div>
+        
+        <div class="mt-2">
+          <label for="topper_tab_position_${layerConfig.id}">Position:</label>
+          <select id="topper_tab_position_${layerConfig.id}">
+            <option value="center" ${layerConfig.topper.position === 'center' ? 'selected' : ''}>Center</option>
+            <option value="top" ${layerConfig.topper.position === 'top' ? 'selected' : ''}>Top</option>
+            <option value="bottom" ${layerConfig.topper.position === 'bottom' ? 'selected' : ''}>Bottom</option>
+          </select>
+        </div>
+        
+        <div class="mt-2">
+          <label for="topper_tab_size_${layerConfig.id}">Topper Size (${layerConfig.topper.size || 1}):</label>
+          <input type="range" id="topper_tab_size_${layerConfig.id}" min="0.5" max="2" step="0.01" value="${layerConfig.topper.size || 1}">
+        </div>
+        
+        <div class="mt-2">
+          <label for="topper_tab_stick_height_${layerConfig.id}">Stick Height (${layerConfig.topper.stickHeight.toFixed(1)}):</label>
+          <input type="range" id="topper_tab_stick_height_${layerConfig.id}" min="0.1" max="1.5" step="0.1" value="${layerConfig.topper.stickHeight}">
+        </div>
+      </div>
+    </div>
+  `;
+  
+  container.appendChild(topperControlsDiv);
+  
+  // Add event listeners for topper controls with the correct IDs
+  const topperEnabledCheckbox = document.getElementById(`topper_tab_enabled_${layerConfig.id}`);
+  const topperSubControlsDiv = document.getElementById(topperSubControlsId);
+  
+  topperEnabledCheckbox.addEventListener('change', (e) => {
+    updateLayerProperty(layerConfig.id, 'topper.enabled', e.target.checked);
+    topperSubControlsDiv.classList.toggle('hidden', !e.target.checked);
+  });
+  
+  const topperTypeSelect = document.getElementById(`topper_tab_type_${layerConfig.id}`);
+  const topperTextControls = document.getElementById(topperTextControlsId);
+  const topperImageControls = document.getElementById(topperImageControlsId);
+  
+  topperTypeSelect.addEventListener('change', (e) => {
+    updateLayerProperty(layerConfig.id, 'topper.type', e.target.value);
+    topperTextControls.style.display = (e.target.value === 'text' || e.target.value === 'text_image') ? 'block' : 'none';
+    topperImageControls.style.display = (e.target.value === 'image' || e.target.value === 'text_image') ? 'block' : 'none';
+  });
+  
+  document.getElementById(`topper_tab_text_${layerConfig.id}`).addEventListener('input', (e) => {
+    updateLayerProperty(layerConfig.id, 'topper.text', e.target.value);
+  });
+  
+  document.getElementById(`topper_tab_font_size_${layerConfig.id}`).addEventListener('input', (e) => {
+    updateLayerProperty(layerConfig.id, 'topper.fontSize', parseFloat(e.target.value));
+  });
+  
+  document.getElementById(`topper_tab_font_style_${layerConfig.id}`).addEventListener('change', (e) => {
+    updateLayerProperty(layerConfig.id, 'topper.style', e.target.value);
+  });
+  
+  document.getElementById(`topper_tab_text_color_${layerConfig.id}`).addEventListener('input', (e) => {
+    updateLayerProperty(layerConfig.id, 'topper.color', e.target.value);
+  });
+  
+  document.getElementById(`topper_tab_position_${layerConfig.id}`).addEventListener('change', (e) => {
+    updateLayerProperty(layerConfig.id, 'topper.position', e.target.value);
+  });
+  
+  document.getElementById(`topper_tab_image_${layerConfig.id}`).addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        updateLayerProperty(layerConfig.id, 'topper.image', event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+  
+  document.getElementById(`topper_tab_size_${layerConfig.id}`).addEventListener('input', (e) => {
+    updateLayerProperty(layerConfig.id, 'topper.size', parseFloat(e.target.value));
+  });
+  
+  document.getElementById(`topper_tab_stick_height_${layerConfig.id}`).addEventListener('input', (e) => {
+    updateLayerProperty(layerConfig.id, 'topper.stickHeight', parseFloat(e.target.value));
+  });
+};
+
+const addIcingControlsUI = (layerConfig, container) => {
+  const icingControlsDiv = document.createElement('div');
+  icingControlsDiv.className = 'control-group';
+  
+  // Create unique IDs for the icing tab controls to avoid conflicts with Layer Editor
+  const edgeIcingSubControlsId = `icing_tab_edge_controls_${layerConfig.id}`;
+  const middleIcingSubControlsId = `icing_tab_middle_controls_${layerConfig.id}`;
+  const bottomIcingSubControlsId = `icing_tab_bottom_controls_${layerConfig.id}`;
+  
+  icingControlsDiv.innerHTML = `
+    <p class="layer-header">Layer ${cakeLayers.findIndex(l => l.id === layerConfig.id) + 1} Icing</p>
+    
+    <div class="icing-section">
+      <label class="checkbox-label">
+        <input type="checkbox" id="icing_tab_edge_enabled_${layerConfig.id}" ${layerConfig.edgeIcing.enabled ? 'checked' : ''}>
+        Enable Edge Icing
+      </label>
+      <div id="${edgeIcingSubControlsId}" class="sub-controls mt-2 ${layerConfig.edgeIcing.enabled ? '' : 'hidden'}">
+        <div class="mt-1">
+          <label for="icing_tab_edge_style_${layerConfig.id}">Edge Style:</label>
+          <select id="icing_tab_edge_style_${layerConfig.id}">
+            <option value="smooth" ${layerConfig.edgeIcing.style === 'smooth' ? 'selected' : ''}>Smooth Ring</option>
+            <option value="curl" ${layerConfig.edgeIcing.style === 'curl' ? 'selected' : ''}>Curl Pattern</option>
+            <option value="shell" ${layerConfig.edgeIcing.style === 'shell' ? 'selected' : ''}>Shell Pattern</option>
+            <option value="rosette" ${layerConfig.edgeIcing.style === 'rosette' ? 'selected' : ''}>Rosette Pattern</option>
+            <option value="ruffle" ${layerConfig.edgeIcing.style === 'ruffle' ? 'selected' : ''}>Ruffle Pattern</option>
+            <option value="zigzag" ${layerConfig.edgeIcing.style === 'zigzag' ? 'selected' : ''}>Zigzag Pattern</option>
+          </select>
+        </div>
+        <div class="mt-2">
+          <label for="icing_tab_edge_color_${layerConfig.id}">Edge Color:</label>
+          <input type="color" id="icing_tab_edge_color_${layerConfig.id}" value="${layerConfig.edgeIcing.color}">
+        </div>
+        <div class="mt-2">
+          <label for="icing_tab_edge_thickness_${layerConfig.id}">Edge Detail/Thickness (${layerConfig.edgeIcing.thickness.toFixed(2)}):</label>
+          <input type="range" id="icing_tab_edge_thickness_${layerConfig.id}" min="0.02" max="0.3" step="0.01" value="${layerConfig.edgeIcing.thickness}">
+        </div>
+      </div>
+    </div>
+
+    <div class="icing-section">
+      <label class="checkbox-label">
+        <input type="checkbox" id="icing_tab_middle_enabled_${layerConfig.id}" ${layerConfig.middleBandIcing.enabled ? 'checked' : ''}>
+        Enable Middle Band Icing
+      </label>
+      <div id="${middleIcingSubControlsId}" class="sub-controls mt-2 ${layerConfig.middleBandIcing.enabled ? '' : 'hidden'}">
+        <div class="mt-2">
+          <label for="icing_tab_middle_color_${layerConfig.id}">Middle Color:</label>
+          <input type="color" id="icing_tab_middle_color_${layerConfig.id}" value="${layerConfig.middleBandIcing.color}">
+        </div>
+        <div class="mt-2">
+          <label for="icing_tab_middle_thickness_${layerConfig.id}">Middle Thickness (${layerConfig.middleBandIcing.thickness.toFixed(2)}):</label>
+          <input type="range" id="icing_tab_middle_thickness_${layerConfig.id}" min="0.02" max="0.2" step="0.01" value="${layerConfig.middleBandIcing.thickness}">
+        </div>
+      </div>
+    </div>
+
+    <div class="icing-section">
+      <label class="checkbox-label">
+        <input type="checkbox" id="icing_tab_bottom_enabled_${layerConfig.id}" ${layerConfig.bottomIcing.enabled ? 'checked' : ''}>
+        Enable Bottom Icing
+      </label>
+      <div id="${bottomIcingSubControlsId}" class="sub-controls mt-2 ${layerConfig.bottomIcing.enabled ? '' : 'hidden'}">
+        <div class="mt-1">
+          <label for="icing_tab_bottom_style_${layerConfig.id}">Bottom Style:</label>
+          <select id="icing_tab_bottom_style_${layerConfig.id}">
+            <option value="smooth" ${layerConfig.bottomIcing.style === 'smooth' ? 'selected' : ''}>Smooth Ring</option>
+            <option value="curl" ${layerConfig.bottomIcing.style === 'curl' ? 'selected' : ''}>Curl Pattern</option>
+            <option value="shell" ${layerConfig.bottomIcing.style === 'shell' ? 'selected' : ''}>Shell Pattern</option>
+            <option value="rosette" ${layerConfig.bottomIcing.style === 'rosette' ? 'selected' : ''}>Rosette Pattern</option>
+            <option value="ruffle" ${layerConfig.bottomIcing.style === 'ruffle' ? 'selected' : ''}>Ruffle Pattern</option>
+            <option value="zigzag" ${layerConfig.bottomIcing.style === 'zigzag' ? 'selected' : ''}>Zigzag Pattern</option>
+          </select>
+        </div>
+        <div class="mt-2">
+          <label for="icing_tab_bottom_color_${layerConfig.id}">Bottom Color:</label>
+          <input type="color" id="icing_tab_bottom_color_${layerConfig.id}" value="${layerConfig.bottomIcing.color}">
+        </div>
+        <div class="mt-2">
+          <label for="icing_tab_bottom_thickness_${layerConfig.id}">Bottom Detail/Thickness (${layerConfig.bottomIcing.thickness.toFixed(2)}):</label>
+          <input type="range" id="icing_tab_bottom_thickness_${layerConfig.id}" min="0.02" max="0.3" step="0.01" value="${layerConfig.bottomIcing.thickness}">
+        </div>
+      </div>
+    </div>
+  `;
+  
+  container.appendChild(icingControlsDiv);
+  
+  // Add event listeners for icing controls with the correct IDs
+  const edgeIcingEnabledCheckbox = document.getElementById(`icing_tab_edge_enabled_${layerConfig.id}`);
+  const edgeIcingSubControlsDiv = document.getElementById(edgeIcingSubControlsId);
+  
+  edgeIcingEnabledCheckbox.addEventListener('change', (e) => {
+    updateLayerProperty(layerConfig.id, 'edgeIcing.enabled', e.target.checked);
+    edgeIcingSubControlsDiv.classList.toggle('hidden', !e.target.checked);
+  });
+  
+  document.getElementById(`icing_tab_edge_style_${layerConfig.id}`).addEventListener('change', (e) => {
+    updateLayerProperty(layerConfig.id, 'edgeIcing.style', e.target.value);
+  });
+  
+  document.getElementById(`icing_tab_edge_color_${layerConfig.id}`).addEventListener('input', (e) => {
+    updateLayerProperty(layerConfig.id, 'edgeIcing.color', e.target.value);
+  });
+  
+  document.getElementById(`icing_tab_edge_thickness_${layerConfig.id}`).addEventListener('input', (e) => {
+    updateLayerProperty(layerConfig.id, 'edgeIcing.thickness', parseFloat(e.target.value));
+  });
+  
+  const middleIcingEnabledCheckbox = document.getElementById(`icing_tab_middle_enabled_${layerConfig.id}`);
+  const middleIcingSubControlsDiv = document.getElementById(middleIcingSubControlsId);
+  
+  middleIcingEnabledCheckbox.addEventListener('change', (e) => {
+    updateLayerProperty(layerConfig.id, 'middleBandIcing.enabled', e.target.checked);
+    middleIcingSubControlsDiv.classList.toggle('hidden', !e.target.checked);
+  });
+  
+  document.getElementById(`icing_tab_middle_color_${layerConfig.id}`).addEventListener('input', (e) => {
+    updateLayerProperty(layerConfig.id, 'middleBandIcing.color', e.target.value);
+  });
+  
+  document.getElementById(`icing_tab_middle_thickness_${layerConfig.id}`).addEventListener('input', (e) => {
+    updateLayerProperty(layerConfig.id, 'middleBandIcing.thickness', parseFloat(e.target.value));
+  });
+  
+  const bottomIcingEnabledCheckbox = document.getElementById(`icing_tab_bottom_enabled_${layerConfig.id}`);
+  const bottomIcingSubControlsDiv = document.getElementById(bottomIcingSubControlsId);
+  
+  bottomIcingEnabledCheckbox.addEventListener('change', (e) => {
+    updateLayerProperty(layerConfig.id, 'bottomIcing.enabled', e.target.checked);
+    bottomIcingSubControlsDiv.classList.toggle('hidden', !e.target.checked);
+  });
+  
+  document.getElementById(`icing_tab_bottom_style_${layerConfig.id}`).addEventListener('change', (e) => {
+    updateLayerProperty(layerConfig.id, 'bottomIcing.style', e.target.value);
+  });
+  
+  document.getElementById(`icing_tab_bottom_color_${layerConfig.id}`).addEventListener('input', (e) => {
+    updateLayerProperty(layerConfig.id, 'bottomIcing.color', e.target.value);
+  });
+  
+  document.getElementById(`icing_tab_bottom_thickness_${layerConfig.id}`).addEventListener('input', (e) => {
+    updateLayerProperty(layerConfig.id, 'bottomIcing.thickness', parseFloat(e.target.value));
+  });
+};
+
+const addToppingsControlsUI = (layerConfig, container) => {
+  const toppingsControlsDiv = document.createElement('div');
+  toppingsControlsDiv.className = 'control-group';
+  
+  // Get current toppings state
+  const hasSprinkles = layerConfig.toppings.some(t => t.type === 'sprinkles');
+  const hasCherries = layerConfig.toppings.some(t => t.type === 'cherries');
+  const hasStrawberries = layerConfig.toppings.some(t => t.type === 'strawberries');
+  const hasBlueberries = layerConfig.toppings.some(t => t.type === 'blueberries');
+  
+  toppingsControlsDiv.innerHTML = `
+    <p class="layer-header">Layer ${cakeLayers.findIndex(l => l.id === layerConfig.id) + 1} Toppings</p>
+    
+    <div class="toppings-section">
+      <p class="section-title">Add toppings to your cake layer:</p>
+      
+      <div class="topping-item">
+        <label class="checkbox-label">
+          <input type="checkbox" id="toppings_tab_sprinkles_${layerConfig.id}" ${hasSprinkles ? 'checked' : ''}>
+          Sprinkles
+        </label>
+        <div class="sub-controls mt-2 ${hasSprinkles ? '' : 'hidden'}" id="sprinkles_controls_${layerConfig.id}">
+          <p class="topping-description">Colorful sprinkles randomly distributed across the top of the cake</p>
+        </div>
+      </div>
+      
+      <div class="topping-item mt-3">
+        <label class="checkbox-label">
+          <input type="checkbox" id="toppings_tab_cherries_${layerConfig.id}" ${hasCherries ? 'checked' : ''}>
+          Cherries
+        </label>
+        <div class="sub-controls mt-2 ${hasCherries ? '' : 'hidden'}" id="cherries_controls_${layerConfig.id}">
+          <p class="topping-description">Red cherries with green stems placed on top of your cake</p>
+        </div>
+      </div>
+      
+      <div class="topping-item mt-3">
+        <label class="checkbox-label">
+          <input type="checkbox" id="toppings_tab_strawberries_${layerConfig.id}" ${hasStrawberries ? 'checked' : ''}>
+          Strawberries
+        </label>
+        <div class="sub-controls mt-2 ${hasStrawberries ? '' : 'hidden'}" id="strawberries_controls_${layerConfig.id}">
+          <p class="topping-description">Fresh strawberries arranged around the top of your cake</p>
+        </div>
+      </div>
+      
+      <div class="topping-item mt-3">
+        <label class="checkbox-label">
+          <input type="checkbox" id="toppings_tab_blueberries_${layerConfig.id}" ${hasBlueberries ? 'checked' : ''}>
+          Blueberries
+        </label>
+        <div class="sub-controls mt-2 ${hasBlueberries ? '' : 'hidden'}" id="blueberries_controls_${layerConfig.id}">
+          <p class="topping-description">Fresh blueberries scattered across the top of your cake</p>
+        </div>
+      </div>
+      
+      <div class="mt-4">
+        <p class="hint-text">More toppings coming soon!</p>
+      </div>
+    </div>
+  `;
+  
+  container.appendChild(toppingsControlsDiv);
+  
+  // Add event listeners for topping controls
+  const sprinklesCheckbox = document.getElementById(`toppings_tab_sprinkles_${layerConfig.id}`);
+  const sprinklesControls = document.getElementById(`sprinkles_controls_${layerConfig.id}`);
+  
+  sprinklesCheckbox.addEventListener('change', (e) => {
+    updateLayerProperty(layerConfig.id, 'toppings.sprinkles', e.target.checked);
+    sprinklesControls.classList.toggle('hidden', !e.target.checked);
+  });
+  
+  const cherriesCheckbox = document.getElementById(`toppings_tab_cherries_${layerConfig.id}`);
+  const cherriesControls = document.getElementById(`cherries_controls_${layerConfig.id}`);
+  
+  cherriesCheckbox.addEventListener('change', (e) => {
+    updateLayerProperty(layerConfig.id, 'toppings.cherries', e.target.checked);
+    cherriesControls.classList.toggle('hidden', !e.target.checked);
+  });
+  
+  const strawberriesCheckbox = document.getElementById(`toppings_tab_strawberries_${layerConfig.id}`);
+  const strawberriesControls = document.getElementById(`strawberries_controls_${layerConfig.id}`);
+  
+  strawberriesCheckbox.addEventListener('change', (e) => {
+    updateLayerProperty(layerConfig.id, 'toppings.strawberries', e.target.checked);
+    strawberriesControls.classList.toggle('hidden', !e.target.checked);
+  });
+  
+  const blueberriesCheckbox = document.getElementById(`toppings_tab_blueberries_${layerConfig.id}`);
+  const blueberriesControls = document.getElementById(`blueberries_controls_${layerConfig.id}`);
+  
+  blueberriesCheckbox.addEventListener('change', (e) => {
+    updateLayerProperty(layerConfig.id, 'toppings.blueberries', e.target.checked);
+    blueberriesControls.classList.toggle('hidden', !e.target.checked);
+  });
+};
 </script>
 
 <style scoped>
@@ -2119,7 +2576,7 @@ const selectFlavor = (flavor) => {
   left: 0;
   width: 100%;
   background-color: rgba(255, 255, 255, 0.97);
-  padding: 0 15px 15px 15px;
+  padding: 15px 15px 15px 15px;
   border-radius: 12px 12px 0 0;
   box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1);
   max-height: 50vh;
@@ -2131,22 +2588,50 @@ const selectFlavor = (flavor) => {
 
 .tabs {
   display: flex;
-  margin-bottom: 15px;
-  border-bottom: 1px solid #ddd;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
+  scrollbar-width: thin;
+  scroll-behavior: smooth;
+}
+
+.tabs::-webkit-scrollbar {
+  height: 0px;
+}
+
+.tabs::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 0px;
 }
 
 .tab-button {
-  padding: 8px 16px;
-  border: none;
-  background: none;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid #7A5C1E;
+  border-radius: 8px;
+  color: #333;
+  background-color: #f8f9fa;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 14px;
-  color: #666;
+  transition: all 0.3s ease;
+  flex: 0 0 auto;
+  min-width: 120px;
+  text-align: center;
+}
+
+.tab-button:hover {
+  background-color: #e9ecef;
+  color: #000;
+  border-color: #7A5C1E;
 }
 
 .tab-button.active {
-  color: #007bff;
-  border-bottom: 2px solid #007bff;
+  background-color: #7A5C1E;
+  color: #ffffff;
+  border-color: #7A5C1E;
+  font-weight: bold;
 }
 
 .tab-content {
@@ -2157,9 +2642,7 @@ const selectFlavor = (flavor) => {
   display: block;
 }
 
-.control-group {
-  margin-bottom: 15px;
-}
+
 
 .action-button {
   display: block;
@@ -2987,5 +3470,458 @@ ion-toolbar {
     font-size: 0.8rem;
     padding: 0.35rem;
   }
+}
+
+/* Topper Controls Styles */
+.topper-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.topper-section label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #fff;
+}
+
+.topper-section input[type="text"] {
+  width: 100%;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: #fff;
+}
+
+.topper-section select {
+  width: 100%;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: #fff;
+}
+
+.topper-section input[type="file"] {
+  width: 100%;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: #fff;
+}
+
+/* Icing Controls Styles */
+.icing-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.icing-section:last-child {
+  margin-bottom: 0;
+}
+
+.icing-section label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #fff;
+}
+
+.icing-section select {
+  width: 100%;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: #fff;
+}
+
+.icing-section input[type="color"] {
+  width: 100%;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: none;
+}
+
+.icing-section input[type="range"] {
+  width: 100%;
+  margin: 0.5rem 0;
+}
+
+/* Common Styles for Both */
+.sub-controls {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sub-controls.hidden {
+  display: none;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+/* Tab Styles */
+.tab-button {
+  padding: 0.75rem 1.25rem;
+  border: 1px solid #7A5C1E;
+  border-radius: 8px;
+  color: #333;
+  background-color: #f8f9fa;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 0 0 auto;
+}
+
+.tab-button:hover {
+  background-color: #e9ecef;
+  color: #000;
+  border-color: #7A5C1E;
+}
+
+.tab-button.active {
+  background-color: #7A5C1E;
+  color: #ffffff;
+  border-color: #7A5C1E;
+  font-weight: bold;
+}
+
+.tab-content {
+  display: none;
+  padding: 1rem;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .topper-section,
+  .icing-section {
+    padding: 0.75rem;
+  }
+  
+  .tab-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+.toppings-section {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.section-title {
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.topping-item {
+  padding: 10px;
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.topping-description {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 5px;
+  font-style: italic;
+}
+
+.hint-text {
+  font-size: 0.9rem;
+  color: #999;
+  text-align: center;
+  font-style: italic;
+}
+
+/* Mobile-Friendly Layer Editor Styles */
+.mobile-optimized {
+  padding: 0;
+  margin: 0;
+}
+
+.mobile-section-header {
+  background-color: #7A5C1E;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.layer-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.layer-dimensions p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.mobile-control-item {
+  background-color: white;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.mobile-label {
+  display: block;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.value-display {
+  background-color: #f0f0f0;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+  margin-left: 6px;
+}
+
+.mobile-slider {
+  width: 100%;
+  height: 24px;
+  margin: 8px 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #f0f0f0;
+  border-radius: 12px;
+  outline: none;
+}
+
+.mobile-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #7A5C1E;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.mobile-slider::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #7A5C1E;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 4px;
+}
+
+.color-picker-container {
+  display: flex;
+  align-items: center;
+}
+
+.mobile-color-picker {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+}
+
+.mobile-color-picker::-webkit-color-swatch {
+  border-radius: 8px;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.mobile-color-picker::-moz-color-swatch {
+  border-radius: 8px;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.color-value {
+  margin-left: 12px;
+  font-family: monospace;
+  font-size: 1rem;
+  background-color: #f0f0f0;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.mobile-action-container {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.mobile-remove-btn {
+  background-color: #ff4b5c;
+  color: white;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(255, 75, 92, 0.3);
+  transition: all 0.2s ease;
+}
+
+.mobile-remove-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 3px rgba(255, 75, 92, 0.3);
+}
+
+.btn-icon {
+  margin-right: 8px;
+  font-size: 1.1rem;
+}
+
+/* Mobile responsiveness adjustments */
+@media (max-width: 480px) {
+  .mobile-control-item {
+    padding: 12px;
+  }
+  
+  .mobile-label {
+    font-size: 0.9rem;
+  }
+  
+  .mobile-slider {
+    height: 20px;
+  }
+  
+  .mobile-slider::-webkit-slider-thumb,
+  .mobile-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* Confirmation Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.confirmation-modal {
+  background-color: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 16px 20px;
+  background-color: #7A5C1E;
+  color: white;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-body p {
+  margin: 0;
+  color: #333;
+  line-height: 1.5;
+}
+
+.modal-footer {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #eee;
+}
+
+.cancel-btn {
+  padding: 10px 16px;
+  background-color: #f5f5f5;
+  color: #333;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cancel-btn:hover {
+  background-color: #e5e5e5;
+}
+
+.confirm-btn {
+  padding: 10px 16px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.confirm-btn:hover {
+  background-color: #c82333;
 }
 </style> 
