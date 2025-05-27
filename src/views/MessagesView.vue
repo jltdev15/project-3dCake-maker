@@ -6,11 +6,6 @@
                     <ion-icon :icon="chatbubbleEllipsesOutline" class="title-icon"></ion-icon>
                     Messages
                 </ion-title>
-                <ion-buttons slot="end">
-                    <ion-button>
-                        <ion-icon :icon="searchOutline" slot="icon-only"></ion-icon>
-                    </ion-button>
-                </ion-buttons>
             </ion-toolbar>
         </ion-header>
 
@@ -42,7 +37,9 @@
                             <span class="time">{{ formatLastSeen(admin.lastLogin) }}</span>
                         </div>
                         <div class="message-preview">
-                            <p>{{ admin.lastMessage || 'Start a conversation' }}</p>
+                            <p :class="{ 'unread-message': admin.unreadCount && admin.unreadCount > 0 }">
+                                {{ admin.latestUnreadMessage || admin.lastMessage || '' }}
+                            </p>
                             <ion-badge v-if="admin.unreadCount" color="primary" class="unread-badge">
                                 {{ admin.unreadCount }}
                             </ion-badge>
@@ -83,6 +80,7 @@ interface AdminUser {
     status: string;
     unreadCount?: number;
     lastMessage?: string;
+    latestUnreadMessage?: string;
     avatar?: string;
 }
 
@@ -113,16 +111,42 @@ const fetchAdminUsers = () => {
             // Filter only admin users based on email and transform the data
             adminUsers.value = Object.entries(users)
                 .filter(([_, user]: [string, any]) => user.email?.toLowerCase().includes('admin'))
-                .map(([id, user]: [string, any]) => ({
-                    id: user.uid || id,
-                    name: user.name,
-                    email: user.email,
-                    lastLogin: user.lastLogin,
-                    status: user.status || 'active',
-                    unreadCount: user.messages?.unreadCount || 0,
-                    lastMessage: user.messages?.lastMessage || '',
-                    avatar: user.avatar
-                }));
+                .map(([id, user]: [string, any]) => {
+                    // Get latest message data
+                    let lastMessage = '';
+                    let latestUnreadMessage = '';
+                    
+                    // Check if user has message conversations
+                    if (user.messages) {
+                        // Iterate through all conversations to find last messages
+                        Object.entries(user.messages).forEach(([convId, convo]: [string, any]) => {
+                            // Only process if it's a conversation object with lastMessage
+                            if (typeof convo === 'object' && convo.lastMessage) {
+                                // Update last message if this is a more recent one
+                                if (!lastMessage || (convo.lastMessageTime && !lastMessage)) {
+                                    lastMessage = convo.lastMessage;
+                                }
+                                
+                                // If there are unread messages, capture this as the latest unread
+                                if (convo.unreadCount && convo.unreadCount > 0) {
+                                    latestUnreadMessage = convo.lastMessage;
+                                }
+                            }
+                        });
+                    }
+                    
+                    return {
+                        id: user.uid || id,
+                        name: user.name,
+                        email: user.email,
+                        lastLogin: user.lastLogin,
+                        status: user.status || 'active',
+                        unreadCount: user.messages?.unreadCount || 0,
+                        lastMessage: lastMessage,
+                        latestUnreadMessage: latestUnreadMessage || lastMessage,
+                        avatar: user.avatar
+                    };
+                });
         } else {
             adminUsers.value = [];
         }
@@ -304,5 +328,10 @@ ion-title {
     100% {
         opacity: 0.6;
     }
+}
+
+.unread-message {
+    font-weight: 600;
+    color: var(--ion-color-dark);
 }
 </style> 

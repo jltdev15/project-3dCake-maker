@@ -165,6 +165,54 @@
         </div>
       </div>
 
+      <!-- Add to Cart Confirmation Modal -->
+      <div class="modal-overlay" v-if="showCartConfirmModal">
+        <div class="confirmation-modal">
+          <div class="modal-header">
+            <h3>Add to Cart</h3>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to add this cake design to your cart?</p>
+            <div class="cart-info" v-if="selectedSize">
+              <div class="price-info">
+                <h4>Order Summary</h4>
+                <p>Custom Cake: ₱{{ selectedSize.price.toLocaleString() }}</p>
+                <p><strong>Total:</strong> ₱{{ selectedSize.price.toLocaleString() }}</p>
+              </div>
+              <div class="contact-form">
+                <h4>Special Instructions</h4>
+                <div class="form-group">
+                  <label for="customerMessage">Add any special requests or instructions:</label>
+                  <textarea id="customerMessage" v-model="customerInfo.message" placeholder="Any special requests or delivery instructions"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="cancel-btn" @click="showCartConfirmModal = false">Cancel</button>
+            <button class="confirm-btn" @click="addToCart" :disabled="!isFormValid">Add to Cart</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success Modal -->
+      <div class="modal-overlay" v-if="showSuccessModal">
+        <div class="confirmation-modal success-modal">
+          <div class="modal-header success-header">
+            <h3>Order Placed!</h3>
+          </div>
+          <div class="modal-body">
+            <div class="success-icon">✓</div>
+            <p>Your custom cake design has been added to your cart and your order has been received!</p>
+            <p>We'll contact you shortly to confirm your order details.</p>
+            <p>Order ID: {{ lastOrderId }}</p>
+          </div>
+          <div class="modal-footer">
+            <button class="confirm-btn success-btn" @click="finishOrder">Continue Shopping</button>
+          </div>
+        </div>
+      </div>
+
       <div class="cake-customizer">
         <canvas id="cakeCanvas"></canvas>
         <div class="controls-panel">
@@ -184,6 +232,7 @@
               <button id="loadCakeBtn" class="action-button" onclick="document.getElementById('loadCakeInput').click()">Load Design</button>
               <button id="resetCakeBtn" class="action-button" @click="resetCakeDesign">Reset Design</button>
               <button id="undoBtn" class="action-button" disabled>Undo Last Action</button>
+              <button id="addToCartBtn" class="action-button add-to-cart-btn" @click="showAddToCartModal">Add to Cart</button>
             </div>
           </div>
           <div class="tab-content" id="tab-layer-editor">
@@ -249,9 +298,14 @@ import {
 } from '@ionic/vue';
 import { onMounted, onUnmounted, ref, computed, reactive, watch } from 'vue';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
+import * as TextGeometryModule from 'three/examples/jsm/geometries/TextGeometry.js';
+const TextGeometry = TextGeometryModule.TextGeometry;
+import { getDatabase, ref as dbRef, push, set } from '../config/firebase';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 let scene, camera, renderer, cakeGroup, controls, cakeStand;
 let cakeLayers = [];
@@ -2552,6 +2606,163 @@ const addToppingsControlsUI = (layerConfig, container) => {
     blueberriesControls.classList.toggle('hidden', !e.target.checked);
   });
 };
+
+// Add to Cart related reactive variables
+const showCartConfirmModal = ref(false);
+const showSuccessModal = ref(false);
+const lastOrderId = ref('');
+const isLoading = ref(false);
+
+// Special instructions for the order
+const customerInfo = reactive({
+  message: ''
+});
+
+// Import cart store
+import { useCartStore } from '@/stores/cartStore';
+import { toastController } from '@ionic/vue';
+const cartStore = useCartStore();
+
+// No required fields in the form anymore, so it's always valid
+const isFormValid = computed(() => {
+  return true;
+});
+
+// Show the add to cart modal
+const showAddToCartModal = () => {
+  if (cakeLayers.length === 0) {
+    alert('Please design your cake before adding to cart.');
+    return;
+  }
+  
+  if (!selectedSize.value) {
+    alert('Please select a cake size before adding to cart.');
+    return;
+  }
+  
+  showCartConfirmModal.value = true;
+};
+
+// Add the cake to cart and save to Firebase
+const addToCart = async () => {
+  isLoading.value = true;
+  
+  try {
+    // Create a rendered image of the cake as base64
+    const cakeImageBase64 = renderer.domElement.toDataURL('image/png');
+    
+    // Create a deep copy of the cake design data
+    const cakeDesignData = {
+      cakeLayers: JSON.parse(JSON.stringify(cakeLayers)),
+      layerIdCounter: layerIdCounter
+    };
+    
+    // Verify the design data is valid
+    if (!cakeDesignData.cakeLayers || cakeDesignData.cakeLayers.length === 0) {
+      throw new Error('Cake design is incomplete. Please add at least one layer.');
+    }
+    
+    console.log('Design data to be saved:', cakeDesignData);
+    
+    // Generate a consistent order ID to use in both cart and Firebase
+    const orderId = 'custom-' + Date.now();
+    lastOrderId.value = orderId; // Set the lastOrderId for display in success modal
+    
+    // Prepare the cake data
+    const customCakeItem = {
+      cakeId: orderId, // Use the consistent order ID
+      orderId: orderId, // Store the order ID explicitly for reference
+      name: 'Custom ' + (selectedFlavor.value ? selectedFlavor.value.name : '') + ' Cake',
+      size: selectedSize.value ? selectedSize.value.name : '',
+      quantity: 1,
+      unitPrice: selectedSize.value ? selectedSize.value.price : 0,
+      totalPrice: selectedSize.value ? selectedSize.value.price : 0,
+      imageUrl: cakeImageBase64,
+      isCustomCake: true,
+      customDetails: {
+        // Save design data exactly as the Save Design button does
+        designData: cakeDesignData,
+        // Still keep the other important info
+        layers: selectedLayers.value,
+        flavor: selectedFlavor.value ? JSON.parse(JSON.stringify(selectedFlavor.value)) : null,
+        greeting: greetingConfig.enabled ? JSON.parse(JSON.stringify(greetingConfig)) : null,
+        message: customerInfo.message.trim() || ''
+      }
+    };
+    
+    console.log('Adding custom cake to cart:', customCakeItem);
+    
+    // Add the custom cake to the cart
+    await cartStore.addItem(customCakeItem);
+    
+    // Show success toast
+    const toast = await toastController.create({
+      message: 'Custom cake added to cart successfully!',
+      duration: 2000,
+      position: 'top',
+      color: 'success'
+    });
+    await toast.present();
+    
+    // Hide the cart confirmation modal
+    showCartConfirmModal.value = false;
+    
+    // Reset the customer info form
+    Object.keys(customerInfo).forEach(key => {
+      customerInfo[key] = '';
+    });
+    
+    // Optional: also save to Firebase for admin reference
+    try {
+      const database = getDatabase();
+      const ordersRef = dbRef(database, 'orders/custom');
+      
+      // Use the consistent order ID as the Firebase key instead of push()
+      const newOrderRef = dbRef(ordersRef, orderId);
+      
+      await set(newOrderRef, {
+        ...customCakeItem,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      
+      console.log('Order also saved to Firebase with ID:', orderId);
+      
+      // Show success modal after successful Firebase save
+      showSuccessModal.value = true;
+      
+    } catch (firebaseError) {
+      console.error('Firebase save error:', firebaseError);
+      // Show a warning toast but don't block the cart process
+      const warningToast = await toastController.create({
+        message: 'Order saved to cart but there was an issue with order tracking. Your order is still valid.',
+        duration: 3000,
+        position: 'top',
+        color: 'warning'
+      });
+      await warningToast.present();
+    }
+    
+  } catch (error) {
+    console.error('Error adding to cart:', error);
+    const toast = await toastController.create({
+      message: 'Failed to add custom cake to cart. Please try again.',
+      duration: 2000,
+      position: 'top',
+      color: 'danger'
+    });
+    await toast.present();
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Finish the order process
+const finishOrder = () => {
+  showSuccessModal.value = false;
+  router.push('/home');
+};
 </script>
 
 <style scoped>
@@ -3923,5 +4134,114 @@ ion-toolbar {
 
 .confirm-btn:hover {
   background-color: #c82333;
+}
+
+/* Add to Cart Button Styles */
+.add-to-cart-btn {
+  background-color: #28a745 !important;
+  font-weight: 600;
+  margin-top: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.add-to-cart-btn:hover {
+  background-color: #218838 !important;
+}
+
+/* Cart Modal Styles */
+.cart-info {
+  margin-top: 20px;
+}
+
+.price-info {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.price-info h4 {
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.price-info p {
+  margin: 5px 0;
+}
+
+.contact-form {
+  margin-top: 20px;
+}
+
+.contact-form h4 {
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.form-group textarea {
+  height: 80px;
+  resize: vertical;
+}
+
+/* Success Modal Styles */
+.success-modal {
+  max-width: 450px;
+}
+
+.success-header {
+  background-color: #28a745;
+}
+
+.success-icon {
+  font-size: 60px;
+  color: #28a745;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.success-btn {
+  background-color: #28a745;
+}
+
+.success-btn:hover {
+  background-color: #218838;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .confirmation-modal {
+    width: 95%;
+    max-width: none;
+  }
+  
+  .form-group input,
+  .form-group textarea {
+    font-size: 16px; /* Prevents zoom on mobile */
+  }
 }
 </style> 

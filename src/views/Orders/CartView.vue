@@ -34,11 +34,14 @@
               <div class="item-details">
                 <h3 class="item-name">{{ item.name }}</h3>
                 <p v-if="item.size" class="item-size">Size: {{ item.size }}</p>
-                <p class="item-price">₱{{ item.unitPrice.toFixed(2) }} each</p>
+                <p v-if="(item as CartItem).isCustomCake" class="item-custom-badge">Custom Design</p>
+                <p v-if="!(item as CartItem).isCustomCake" class="item-price">₱{{ item.unitPrice.toFixed(2) }} each</p>
+                <p v-else class="item-price-pending">Price to be determined</p>
               </div>
               <div class="item-controls">
                 <div class="quantity-controls">
-                  <ion-button fill="outline" @click="updateItemQuantity(item.id, item.quantity - 1)" :disabled="item.quantity <= 1">
+                  <ion-button fill="outline" @click="updateItemQuantity(item.id, item.quantity - 1)"
+                    :disabled="item.quantity <= 1">
                     <ion-icon :icon="removeOutline"></ion-icon>
                   </ion-button>
                   <span class="quantity-value">{{ item.quantity }}</span>
@@ -75,12 +78,8 @@
         </template>
       </div>
 
-      <ion-alert
-        :is-open="showDeleteAlert"
-        header="Remove Item"
-        message="Are you sure you want to remove this item from your cart?"
-        :cssClass="'custom-alert'"
-        :buttons="[
+      <ion-alert :is-open="showDeleteAlert" header="Remove Item"
+        message="Are you sure you want to remove this item from your cart?" :cssClass="'custom-alert'" :buttons="[
           {
             text: 'Cancel',
             role: 'cancel',
@@ -92,19 +91,17 @@
             cssClass: 'bg-red-700',
             handler: removeItem
           }
-        ]"
-        @didDismiss="showDeleteAlert = false"
-      ></ion-alert>
+        ]" @didDismiss="showDeleteAlert = false"></ion-alert>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { 
-  IonPage, 
-  IonHeader, 
-  IonToolbar, 
-  IonTitle, 
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
   IonContent,
   IonButton,
   IonIcon,
@@ -117,7 +114,33 @@ import { onMounted, ref, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { toastController } from '@ionic/vue';
 import { useAuthStore } from '../../stores/authStore';
+import type { UserData } from '../../stores/authStore';
 import { database, ref as dbRef, push, set } from '../../config/firebase';
+import { storeToRefs } from 'pinia';
+
+// Define interface for cart items including custom cake properties
+interface CartItem {
+  id: string;
+  cakeId: string;
+  name: string;
+  size?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  imageUrl: string;
+  isCustomCake?: boolean;
+  customDetails?: {
+    designData?: {
+      cakeLayers: any[];
+      layerIdCounter: number;
+    };
+    layers: number;
+    flavor: any;
+    cakeLayers?: any[];
+    greeting: any;
+    customerInfo: any;
+  };
+}
 
 const router = useRouter();
 const cartStore = useCartStore();
@@ -155,39 +178,195 @@ const removeItem = () => {
 
 const handleCheckout = async () => {
   if (isCheckingOut.value) return;
-  
+
   isCheckingOut.value = true;
   try {
-    const orderId = await cartStore.checkout();
-    if (orderId) {
-      // Create admin notification
-      const adminNotificationRef = dbRef(database, 'admin_notifications');
-      const newNotificationRef = push(adminNotificationRef);
-      await set(newNotificationRef, {
-        orderId,
-        userId: authStore.user?.uid,
-        customerName: authStore.user?.name || 'Anonymous User',
-        status: 'pending',
-        type: 'non-custom',
-        createdAt: Date.now(),
-        read: false,
-        message: `New order #${orderId} from ${authStore.user?.name || 'Anonymous User'}`
-      });
+    console.log('Starting checkout process...');
 
-      const toast = await toastController.create({
-        message: 'Order placed successfully!',
-        duration: 2000,
-        position: 'top',
-        color: 'success'
-      });
-      await toast.present();
-      router.replace('/');
+    // Separate custom and regular cakes
+    const customCakes = cartStore.items.filter((item: CartItem) => item.isCustomCake);
+    const regularCakes = cartStore.items.filter((item: CartItem) => !item.isCustomCake);
+
+    const hasCustomCakes = customCakes.length > 0;
+    const hasRegularCakes = regularCakes.length > 0;
+
+    console.log(`Cart contains: ${customCakes.length} custom cakes, ${regularCakes.length} regular cakes`);
+
+    // Generate a common order ID for both types
+    const orderId = `order_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    console.log(`Generated order ID: ${orderId}`);
+
+    // Calculate totals for different cake types
+    const customTotal = customCakes.reduce((sum, item) => sum + item.totalPrice, 0);
+    const regularTotal = regularCakes.reduce((sum, item) => sum + item.totalPrice, 0);
+
+    // Base order data common to both types
+    const baseOrderData = {
+      userId: authStore.user?.uid ?? '',
+      customerName: authStore.user?.name ?? 'Anonymous User',
+      customerEmail: authStore.user?.email ?? '',
+      status: 'pending',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      orderId: orderId
+    };
+
+    // Save custom cakes order if any
+    if (hasCustomCakes) {
+      try {
+        console.log('Processing custom cakes...');
+
+        // Safely prepare custom cakes data
+        const customCakesForOrder = customCakes.map(item => {
+          try {
+            // Create a deep copy to avoid reference issues
+            const itemCopy = JSON.parse(JSON.stringify(item));
+
+            // Remove price fields
+            delete itemCopy.unitPrice;
+            delete itemCopy.totalPrice;
+
+            // Add pricing flag
+            itemCopy.needsPricing = true;
+
+            // Log for debugging
+            if (itemCopy.customDetails &&
+              itemCopy.customDetails.designData &&
+              itemCopy.customDetails.designData.cakeLayers) {
+              console.log('Successfully prepared cake design data for saving');
+            } else {
+              console.warn('Custom cake missing design data for 3D view');
+            }
+
+            return itemCopy;
+          } catch (err) {
+            console.error('Error processing custom cake item:', err);
+            // Return a simplified version if processing fails
+            return {
+              id: item.id,
+              cakeId: item.cakeId,
+              name: item.name,
+              size: item.size,
+              quantity: item.quantity,
+              imageUrl: item.imageUrl,
+              isCustomCake: true,
+              needsPricing: true
+            };
+          }
+        });
+
+        console.log('Saving custom cakes to Firebase...');
+        const customOrderRef = dbRef(database, `orders/custom/${orderId}`);
+        await set(customOrderRef, {
+          ...baseOrderData,
+          items: customCakesForOrder,
+          orderType: 'custom',
+          needsPricing: true,
+          pricingStatus: 'pending'
+        });
+
+        console.log('Custom cakes saved successfully');
+
+        // Create admin notification for custom cakes
+        const customNotificationRef = dbRef(database, 'admin_notifications');
+        const newCustomNotificationRef = push(customNotificationRef);
+        await set(newCustomNotificationRef, {
+          orderId,
+          userId: authStore.user?.uid ?? '',
+          customerName: authStore.user?.name ?? 'Anonymous User',
+          status: 'pending',
+          type: 'custom',
+          createdAt: Date.now(),
+          read: false,
+          message: `New custom cake order #${orderId} from ${authStore.user?.name ?? 'Anonymous User'} - Needs pricing`,
+          has3DData: true
+        });
+
+        console.log('Custom cake admin notification created');
+      } catch (customError) {
+        console.error('Error saving custom cakes:', customError);
+        throw new Error(`Failed to save custom cakes: ${(customError as Error).message || 'Unknown error'}`);
+      }
     }
+
+    // Save regular cakes order if any
+    if (hasRegularCakes) {
+      try {
+        console.log('Processing regular cakes...');
+
+        // Prepare regular cakes data (simplified)
+        const regularCakesForOrder = regularCakes.map(item => ({
+          id: item.id,
+          cakeId: item.cakeId,
+          name: item.name,
+          size: item.size,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+          imageUrl: item.imageUrl
+        }));
+
+        console.log('Saving regular cakes to Firebase...');
+        const regularOrderRef = dbRef(database, `orders/non-custom/${orderId}`);
+        await set(regularOrderRef, {
+          ...baseOrderData,
+          items: regularCakesForOrder,
+          totalAmount: regularTotal,
+          orderType: 'non-custom'
+        });
+
+        console.log('Regular cakes saved successfully');
+
+        // Create admin notification for regular cakes
+        const regularNotificationRef = dbRef(database, 'admin_notifications');
+        const newRegularNotificationRef = push(regularNotificationRef);
+        await set(newRegularNotificationRef, {
+          orderId,
+          userId: authStore.user?.uid ?? '',
+          customerName: authStore.user?.name ?? 'Anonymous User',
+          status: 'pending',
+          type: 'non-custom',
+          createdAt: Date.now(),
+          read: false,
+          message: `New order #${orderId} from ${authStore.user?.name ?? 'Anonymous User'}`
+        });
+
+        console.log('Regular cake admin notification created');
+      } catch (regularError) {
+        console.error('Error saving regular cakes:', regularError);
+        throw new Error(`Failed to save regular cakes: ${(regularError as Error).message || 'Unknown error'}`);
+      }
+    }
+
+    // Clear the cart after successful checkout
+    try {
+      console.log('Clearing cart...');
+      // Instead of using cartStore.clearCart() which might not exist, clear items one by one
+      const cartItemIds = [...cartStore.items].map(item => item.id);
+      for (const itemId of cartItemIds) {
+        await cartStore.removeItem(itemId);
+      }
+      console.log('Cart cleared successfully');
+    } catch (clearError) {
+      console.error('Error clearing cart:', clearError);
+      // Don't throw here, since the order was already saved
+    }
+
+    console.log('Checkout completed successfully!');
+    const toast = await toastController.create({
+      message: 'Order placed successfully!',
+      duration: 2000,
+      position: 'top',
+      color: 'success'
+    });
+    await toast.present();
+    router.replace('/');
   } catch (error) {
     console.error('Checkout error:', error);
+    const errorMessage = (error as Error).message || 'Failed to place order. Please try again.';
     const toast = await toastController.create({
-      message: 'Failed to place order. Please try again.',
-      duration: 2000,
+      message: errorMessage,
+      duration: 3000,
       position: 'top',
       color: 'danger'
     });
@@ -265,7 +444,8 @@ ion-toolbar {
 .cart-container {
   padding: 16px;
   padding-top: 80px;
-  padding-bottom: 180px; /* Space for fixed summary */
+  padding-bottom: 180px;
+  /* Space for fixed summary */
 }
 
 .cart-header {
@@ -337,7 +517,24 @@ ion-toolbar {
   font-size: 0.8rem;
 }
 
+.item-custom-badge {
+  background: #7A5C1E;
+  color: #FFFFFF;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
 .item-price {
+  color: #7a1e1e;
+  font-weight: 600;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.item-price-pending {
   color: #7a1e1e;
   font-weight: 600;
   margin: 0;

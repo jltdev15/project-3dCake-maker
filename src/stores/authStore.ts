@@ -4,7 +4,7 @@ import { auth, database, ref as dbRef, set, get, update, onValue } from '../conf
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { Preferences } from '@capacitor/preferences';
 
-interface UserData {
+export interface UserData {
   uid: string;
   email: string | null;
   name: string | null;

@@ -71,14 +71,15 @@ const routes: Array<RouteRecordRaw> = [
         component: MessagesView,
         meta: { requiresAuth: true },
       },
-      {
-        path: '/chat/:id',
-        name: 'chat',
-        component: ChatView,
-        meta: { requiresAuth: true },
-      },
+
 
     ],
+  },
+  {
+    path: '/chat/:id',
+    name: 'chat',
+    component: ChatView,
+    meta: { requiresAuth: true },
   },
   {
     path: '/orders/:id',

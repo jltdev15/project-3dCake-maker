@@ -21,8 +21,11 @@
                 </ion-tab-button>
 
                 <ion-tab-button tab="messages" href="/messages">
-                    <ion-icon :icon="chatbubble" />
-                    <ion-label>Messages</ion-label>
+                    <div class="message-button-wrapper">
+                        <ion-icon :icon="chatbubble" />
+                        <ion-label>Messages</ion-label>
+                        <ion-badge v-if="messageStore.unreadMessagesCount > 0" class="message-badge">{{ messageStore.unreadMessagesCount }}</ion-badge>
+                    </div>
                 </ion-tab-button>
 
                 <ion-tab-button tab="account" href="/account">
@@ -39,6 +42,8 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
 import { useCartStore } from '../stores/cartStore';
+import { useMessageStore } from '../stores/messageStore';
+import { onMounted } from 'vue';
 import {
     IonPage,
     IonTabs,
@@ -54,6 +59,12 @@ import { home, receipt, cart, person, chatbubble } from "ionicons/icons";
 
 const router = useRouter()
 const cartStore = useCartStore();
+const messageStore = useMessageStore();
+
+onMounted(() => {
+    // Initialize message store to check for unread messages
+    messageStore.checkUnreadMessages();
+});
 </script>
 
 <style scoped>
@@ -122,14 +133,14 @@ ion-label {
     margin-top: 4px;
 }
 
-.cart-button-wrapper {
+.cart-button-wrapper, .message-button-wrapper {
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-.cart-badge {
+.cart-badge, .message-badge {
     position: absolute;
     top: -4px;
     right: -8px;
@@ -145,6 +156,14 @@ ion-label {
     justify-content: center;
     padding: 0 6px;
     box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+}
+
+.message-badge {
+    min-width: 20px;
+    height: 20px;
+    right: -8px;
+    top: -4px;
+    padding: 0 6px;
 }
 
 ion-tabs {

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { database, auth } from '../config/firebase';
 import { ref as dbRef, push, set, onValue, update, serverTimestamp, get } from 'firebase/database';
 
@@ -25,6 +25,48 @@ export const useMessageStore = defineStore('message', () => {
     const messages = ref<Message[]>([]);
     const loading = ref(false);
     const error = ref<string | null>(null);
+    const unreadMessagesCount = ref(0);
+
+    // Computed property to check if there are any unread messages
+    const hasNewMessages = computed(() => {
+        return unreadMessagesCount.value > 0;
+    });
+
+    // Check for unread messages for the current user
+    const checkUnreadMessages = async () => {
+        try {
+            const userId = auth.currentUser?.uid;
+            if (!userId) return;
+
+            const userRef = dbRef(database, `users/${userId}`);
+            onValue(userRef, (snapshot) => {
+                const userData = snapshot.val();
+                if (userData) {
+                    // Check if user has a top-level unreadCount
+                    if (userData.unreadCount && userData.unreadCount > 0) {
+                        unreadMessagesCount.value = userData.unreadCount;
+                        return;
+                    }
+                    
+                    // Check individual conversation unreadCounts
+                    let totalUnread = 0;
+                    if (userData.messages) {
+                        Object.values(userData.messages).forEach((convo: any) => {
+                            if (convo.unreadCount) {
+                                totalUnread += convo.unreadCount;
+                            }
+                        });
+                    }
+                    unreadMessagesCount.value = totalUnread;
+                } else {
+                    unreadMessagesCount.value = 0;
+                }
+            });
+        } catch (err) {
+            console.error('Error checking unread messages:', err);
+            unreadMessagesCount.value = 0;
+        }
+    };
 
     const fetchAdminUsers = async () => {
         loading.value = true;
@@ -161,6 +203,13 @@ export const useMessageStore = defineStore('message', () => {
                 }
             }
 
+            // Reset unread count in the user's messages
+            const userMessageRef = dbRef(database, `users/${userId}/messages/${chatId}/unreadCount`);
+            await set(userMessageRef, 0);
+
+            // Update the local unreadMessagesCount to reflect the change immediately
+            checkUnreadMessages();
+
         } catch (err) {
             error.value = 'Failed to mark messages as read';
             console.error('Error marking messages as read:', err);
@@ -173,6 +222,9 @@ export const useMessageStore = defineStore('message', () => {
         messages,
         loading,
         error,
+        unreadMessagesCount,
+        hasNewMessages,
+        checkUnreadMessages,
         fetchAdminUsers,
         fetchMessages,
         sendMessage,

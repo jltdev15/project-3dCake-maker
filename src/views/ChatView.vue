@@ -5,11 +5,11 @@
                 <ion-buttons slot="start">
                     <ion-back-button default-href="/messages"></ion-back-button>
                 </ion-buttons>
-                <ion-title class="ion-text-center pr-12">Administrator</ion-title>
+                <ion-title class="ion-text-center pr-12">PSALM Cakes</ion-title>
             </ion-toolbar>
         </ion-header>
 
-        <ion-content class="ion-padding">
+        <ion-content ref="contentRef" class="ion-padding">
             <div v-if="loading" class="loading-container">
                 <ion-spinner></ion-spinner>
             </div>
@@ -28,6 +28,8 @@
                         {{ formatTime(message.timestamp) }}
                     </div>
                 </div>
+                <!-- Anchor element for scrolling -->
+                <div ref="messagesEndRef"></div>
             </div>
         </ion-content>
 
@@ -45,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { useMessageStore } from '../stores/messageStore';
 import { storeToRefs } from 'pinia';
@@ -66,7 +68,8 @@ import {
     IonButton,
     IonIcon,
     IonSpinner,
-    IonText
+    IonText,
+    useIonRouter
 } from '@ionic/vue';
 import { send } from 'ionicons/icons';
 
@@ -74,6 +77,8 @@ const route = useRoute();
 const messageStore = useMessageStore();
 const { adminUsers, messages, loading, error } = storeToRefs(messageStore);
 const newMessage = ref('');
+const contentRef = ref();
+const messagesEndRef = ref();
 
 const adminId = computed(() => route.params.id as string);
 const currentAdmin = computed(() => {
@@ -88,14 +93,32 @@ const formatTime = (timestamp: number | string) => {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
+const scrollToBottom = async () => {
+    await nextTick();
+    if (messagesEndRef.value) {
+        messagesEndRef.value.scrollIntoView({ behavior: 'smooth' });
+    }
+};
+
 const sendMessage = async () => {
     if (!newMessage.value.trim()) return;
     
     await messageStore.sendMessage(adminId.value, newMessage.value);
     newMessage.value = '';
+    await scrollToBottom();
 };
 
 const currentUserId = ref<string | null>(null);
+
+const markAsRead = async () => {
+    if (!adminId.value || !currentUserId.value) return;
+    
+    try {
+        await messageStore.markMessagesAsRead(adminId.value);
+    } catch (error) {
+        console.error('Error marking messages as read:', error);
+    }
+};
 
 onMounted(async () => {
     // Wait for authentication state to be confirmed
@@ -105,13 +128,23 @@ onMounted(async () => {
             try {
                 await messageStore.fetchAdminUsers();
                 await messageStore.fetchMessages(adminId.value);
-                await messageStore.markMessagesAsRead(adminId.value);
+                // Mark messages as read when conversation opens
+                await markAsRead();
+                await scrollToBottom();
             } catch (error) {
                 console.error('Error initializing chat:', error);
             }
         }
     });
 });
+
+// Watch for new messages and mark them as read
+watch(messages, async () => {
+    if (Array.isArray(messages.value) && messages.value.length > 0) {
+        await markAsRead();
+        await scrollToBottom();
+    }
+}, { deep: true });
 </script>
 
 <style scoped>
