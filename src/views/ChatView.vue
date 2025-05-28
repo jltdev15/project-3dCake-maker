@@ -18,6 +18,10 @@
                 <ion-text color="danger">{{ error }}</ion-text>
             </div>
 
+            <div v-else-if="messages.length === 0" class="empty-container">
+                <ion-text>No messages yet. Start the conversation!</ion-text>
+            </div>
+
             <div v-else class="messages-container">
                 <div v-for="message in messages" :key="message.id" 
                      :class="['message', message.senderId === currentUserId ? 'message-sent' : 'message-received']">
@@ -193,7 +197,8 @@ watch(messages, async () => {
 }
 
 .loading-container,
-.error-container {
+.error-container,
+.empty-container {
     display: flex;
     justify-content: center;
     align-items: center;

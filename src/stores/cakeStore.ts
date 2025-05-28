@@ -144,14 +144,14 @@ const sampleCategories: Category[] = [
         name: 'Silver Anniversary',
         description: 'Silver-themed cake with elegant decorations',
         price: 1199.99,
-        imageUrl: '/anniversary/1.jpg'
+        imageUrl: '/anniversary/1.jpeg'
       },
       {
         id: '8',
         name: 'Golden Years',
         description: 'Gold-themed cake with romantic decorations',
         price: 1219.99,
-        imageUrl: '/anniversary/2.jpg'
+        imageUrl: '/anniversary/2.jpeg'
       },
       {
         id: '9',

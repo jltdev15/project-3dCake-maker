@@ -121,7 +121,7 @@ import { storeToRefs } from 'pinia';
 // Define interface for cart items including custom cake properties
 interface CartItem {
   id: string;
-  cakeId: string;
+  cakeId?: string; // Make cakeId optional since we're using unified order structure
   name: string;
   size?: string;
   quantity: number;
@@ -129,6 +129,7 @@ interface CartItem {
   totalPrice: number;
   imageUrl: string;
   isCustomCake?: boolean;
+  needsPricing?: boolean;
   customDetails?: {
     designData?: {
       cakeLayers: any[];
@@ -139,6 +140,7 @@ interface CartItem {
     cakeLayers?: any[];
     greeting: any;
     customerInfo: any;
+    message?: string;
   };
 }
 
@@ -192,8 +194,8 @@ const handleCheckout = async () => {
 
     console.log(`Cart contains: ${customCakes.length} custom cakes, ${regularCakes.length} regular cakes`);
 
-    // Generate a common order ID for both types
-    const orderId = `order_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    // Generate a common order ID
+    const orderId = await cartStore.generateOrderId('order');
     console.log(`Generated order ID: ${orderId}`);
 
     // Calculate totals for different cake types
@@ -211,11 +213,32 @@ const handleCheckout = async () => {
       orderId: orderId
     };
 
-    // Save custom cakes order if any
-    if (hasCustomCakes) {
+    // Save reference to order in user's node
+    if (authStore.user?.uid) {
       try {
-        console.log('Processing custom cakes...');
+        console.log('Saving order reference to user profile...');
+        const userOrderRef = dbRef(database, `users/${authStore.user.uid}/orders/${orderId}`);
+        await set(userOrderRef, {
+          orderId,
+          createdAt: Date.now()
+        });
+        console.log('Order reference saved to user profile');
+      } catch (userRefError) {
+        console.error('Error saving order reference to user profile:', userRefError);
+        // Continue with checkout even if this fails
+      }
+    }
 
+    // Process all items in a single order
+    try {
+      console.log('Processing order items...');
+
+      // Process custom cakes
+      let orderItems: CartItem[] = [];
+      let needsPricing = false;
+
+      if (hasCustomCakes) {
+        console.log('Processing custom cakes...');
         // Safely prepare custom cakes data
         const customCakesForOrder = customCakes.map(item => {
           try {
@@ -244,7 +267,6 @@ const handleCheckout = async () => {
             // Return a simplified version if processing fails
             return {
               id: item.id,
-              cakeId: item.cakeId,
               name: item.name,
               size: item.size,
               quantity: item.quantity,
@@ -254,88 +276,71 @@ const handleCheckout = async () => {
             };
           }
         });
-
-        console.log('Saving custom cakes to Firebase...');
-        const customOrderRef = dbRef(database, `orders/custom/${orderId}`);
-        await set(customOrderRef, {
-          ...baseOrderData,
-          items: customCakesForOrder,
-          orderType: 'custom',
-          needsPricing: true,
-          pricingStatus: 'pending'
-        });
-
-        console.log('Custom cakes saved successfully');
-
-        // Create admin notification for custom cakes
-        const customNotificationRef = dbRef(database, 'admin_notifications');
-        const newCustomNotificationRef = push(customNotificationRef);
-        await set(newCustomNotificationRef, {
-          orderId,
-          userId: authStore.user?.uid ?? '',
-          customerName: authStore.user?.name ?? 'Anonymous User',
-          status: 'pending',
-          type: 'custom',
-          createdAt: Date.now(),
-          read: false,
-          message: `New custom cake order #${orderId} from ${authStore.user?.name ?? 'Anonymous User'} - Needs pricing`,
-          has3DData: true
-        });
-
-        console.log('Custom cake admin notification created');
-      } catch (customError) {
-        console.error('Error saving custom cakes:', customError);
-        throw new Error(`Failed to save custom cakes: ${(customError as Error).message || 'Unknown error'}`);
+        orderItems = [...orderItems, ...customCakesForOrder];
+        needsPricing = true;
       }
-    }
 
-    // Save regular cakes order if any
-    if (hasRegularCakes) {
-      try {
+      // Process regular cakes
+      if (hasRegularCakes) {
         console.log('Processing regular cakes...');
 
         // Prepare regular cakes data (simplified)
         const regularCakesForOrder = regularCakes.map(item => ({
           id: item.id,
-          cakeId: item.cakeId,
           name: item.name,
           size: item.size,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           totalPrice: item.totalPrice,
-          imageUrl: item.imageUrl
+          imageUrl: item.imageUrl,
+          isCustomCake: false
         }));
-
-        console.log('Saving regular cakes to Firebase...');
-        const regularOrderRef = dbRef(database, `orders/non-custom/${orderId}`);
-        await set(regularOrderRef, {
-          ...baseOrderData,
-          items: regularCakesForOrder,
-          totalAmount: regularTotal,
-          orderType: 'non-custom'
-        });
-
-        console.log('Regular cakes saved successfully');
-
-        // Create admin notification for regular cakes
-        const regularNotificationRef = dbRef(database, 'admin_notifications');
-        const newRegularNotificationRef = push(regularNotificationRef);
-        await set(newRegularNotificationRef, {
-          orderId,
-          userId: authStore.user?.uid ?? '',
-          customerName: authStore.user?.name ?? 'Anonymous User',
-          status: 'pending',
-          type: 'non-custom',
-          createdAt: Date.now(),
-          read: false,
-          message: `New order #${orderId} from ${authStore.user?.name ?? 'Anonymous User'}`
-        });
-
-        console.log('Regular cake admin notification created');
-      } catch (regularError) {
-        console.error('Error saving regular cakes:', regularError);
-        throw new Error(`Failed to save regular cakes: ${(regularError as Error).message || 'Unknown error'}`);
+        orderItems = [...orderItems, ...regularCakesForOrder];
       }
+
+      // Save unified order to Firebase
+      console.log('Saving order to Firebase...');
+      const orderRef = dbRef(database, `orders/${orderId}`);
+      
+      // Build the complete order data
+      const orderData = {
+        ...baseOrderData,
+        items: orderItems,
+        totalAmount: hasRegularCakes ? regularTotal : 0,
+        hasCustomItems: hasCustomCakes,
+        hasRegularItems: hasRegularCakes,
+        needsPricing: needsPricing,
+        pricingStatus: needsPricing ? 'pending' : 'completed'
+      };
+      
+      // Save the order
+      await set(orderRef, orderData);
+      console.log('Order saved successfully');
+
+      // Create admin notification
+      const notificationType = hasCustomCakes ? (hasRegularCakes ? 'mixed' : 'custom') : 'regular';
+      const notificationMessage = hasCustomCakes
+        ? `New order #${orderId} from ${authStore.user?.name ?? 'Anonymous User'} - Needs pricing`
+        : `New order #${orderId} from ${authStore.user?.name ?? 'Anonymous User'}`;
+        
+      const adminNotificationRef = dbRef(database, 'admin_notifications');
+      const newNotificationRef = push(adminNotificationRef);
+      await set(newNotificationRef, {
+        orderId,
+        userId: authStore.user?.uid ?? '',
+        customerName: authStore.user?.name ?? 'Anonymous User',
+        status: 'pending',
+        type: notificationType,
+        createdAt: Date.now(),
+        read: false,
+        message: notificationMessage,
+        has3DData: hasCustomCakes
+      });
+
+      console.log('Admin notification created');
+    } catch (error) {
+      console.error('Error saving order:', error);
+      throw new Error(`Failed to save order: ${(error as Error).message || 'Unknown error'}`);
     }
 
     // Clear the cart after successful checkout
@@ -451,6 +456,7 @@ ion-toolbar {
 .cart-header {
   text-align: center;
   margin-bottom: 24px;
+  margin-top: 24px;
 }
 
 .cart-items-title {

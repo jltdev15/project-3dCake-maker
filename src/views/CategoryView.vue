@@ -17,7 +17,7 @@
         </div>
 
         <div class="cakes-grid">
-          <div v-for="cake in category.cakes" :key="cake.id" class="cake-card" @click="viewCakeDetails(cake.id)">
+          <div v-for="cake in category.cakes" :key="cake.id" class="cake-card" >
             <div class="cake-image">
               <img :src="cake.imageUrl" :alt="cake.name" />
             </div>

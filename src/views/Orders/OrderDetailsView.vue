@@ -5,7 +5,7 @@
         <ion-buttons slot="start">
           <ion-back-button default-href="/orders" class="back-button"></ion-back-button>
         </ion-buttons>
-        <ion-title class="details-title">Order Details</ion-title>
+        <ion-title class="details-title ion-text-center pr-12">Order Details</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -15,7 +15,7 @@
           <ion-spinner name="crescent"></ion-spinner>
           <p>Loading order details...</p>
         </div>
-        
+
         <div v-else-if="!order" class="error-state">
           <div class="error-content">
             <ion-icon :icon="alertCircleOutline" class="error-icon"></ion-icon>
@@ -37,6 +37,13 @@
           </div>
 
           <div class="order-info-card">
+            <!-- Order Type Badge -->
+            <div class="type-badge-container">
+              <span class="type-badge" :class="{'custom': isCustomOrder(order)}">
+                {{ isCustomOrder(order) ? 'Custom Cake' : 'Standard Cake' }}
+              </span>
+            </div>
+
             <div class="info-section">
               <h3 class="section-title">Order Information</h3>
               <div class="info-grid">
@@ -57,14 +64,37 @@
                 <div class="info-item">
                   <ion-icon :icon="cashOutline"></ion-icon>
                   <div class="info-content">
-                    <span class="label">Total Amount</span>
-                    <span class="value price">₱{{ order.totalAmount?.toFixed(2) || '0.00' }}</span>
+                    <template v-if="!isCustomOrder(order)">
+                      ₱{{ ((order as NonCustomOrder).totalAmount || 0).toFixed(2) }}
+                    </template>
+                    <span class="value pending" v-else-if="isCustomOrder(order)">
+                      Pending Pricing
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="info-section">
+            <!-- Custom Order Details -->
+            <div class="info-section" v-if="isCustomOrder(order)">
+              <h3 class="section-title">Custom Cake Details</h3>
+              <div class="custom-cake-details">
+                <p class="custom-description">
+                  Your custom cake order has been received. Our team will review your design request and provide pricing
+                  information shortly.
+                </p>
+                <div class="pricing-status">
+                  <span class="status-label">Status:</span>
+                  <span :class="['status-value', order.pricingStatus]">
+                    {{ order.pricingStatus === 'pending' ? 'Awaiting Pricing' :
+                    order.pricingStatus === 'priced' ? 'Price Quoted' : 'Price Accepted' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Standard Order Items -->
+            <div class="info-section" v-if="isNonCustomOrder(order)">
               <h3 class="section-title">Order Items</h3>
               <div v-if="!order.items?.length" class="no-items">
                 <p>No items in this order</p>
@@ -75,11 +105,11 @@
                     <img :src="item.imageUrl" :alt="item.name" />
                   </div>
                   <div class="item-details">
-                    <h4 class="item-name">{{ item.productName || item.name || 'Unnamed Item' }}</h4>
+                    <h4 class="item-name">{{ item.name || 'Unnamed Item' }}</h4>
                     <div class="item-meta">
                       <span class="quantity">Quantity: {{ item.quantity || 0 }}</span>
                       <span v-if="item.size" class="size">Size: {{ item.size }}</span>
-                      <span class="price">₱{{ (item.unitPrice || item.price || item.productPrice || 0).toFixed(2) }}</span>
+                      <span class="price">₱{{ item.unitPrice?.toFixed(2) || '0.00' }}</span>
                     </div>
                   </div>
                 </div>
@@ -94,23 +124,61 @@
 
 <script setup lang="ts">
 import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonButtons, IonBackButton, IonIcon, IonSpinner, IonButton } from '@ionic/vue';
-import { calendarOutline, timeOutline, cashOutline, alertCircleOutline, arrowBack } from 'ionicons/icons';
+import { calendarOutline, timeOutline, cashOutline, alertCircleOutline, arrowBack, pricetagOutline } from 'ionicons/icons';
 import { useRoute, useRouter } from 'vue-router';
 import { useOrderStore } from '../../stores/orderStore';
 import { computed, ref, onMounted } from 'vue';
+
+// Type definitions
+interface BaseOrder {
+  orderId: string;
+  userId: string;
+  customerName: string;
+  customerEmail: string;
+  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  createdAt: number;
+}
+
+interface NonCustomOrder extends BaseOrder {
+  type: 'non-custom';
+  totalAmount: number;
+  items: any[];
+}
+
+interface CustomOrder extends BaseOrder {
+  orderType: 'custom';
+  pricingStatus: 'pending' | 'priced' | 'accepted';
+  totalAmount?: number;
+  updatedAt: number;
+  items: {
+    needsPricing: boolean;
+  };
+}
+
+type Order = NonCustomOrder | CustomOrder;
 
 const route = useRoute();
 const router = useRouter();
 const orderStore = useOrderStore();
 const isLoading = ref(true);
 
+// Type guard for custom order
+const isCustomOrder = (order: any): order is CustomOrder => {
+  return order?.hasCustomItems === true;
+};
+
+// Type guard for non-custom order
+const isNonCustomOrder = (order: any): order is NonCustomOrder => {
+  return order?.hasCustomItems === false;
+};
+
 const order = computed(() => {
-  const orderId = route.params.id;
+  const orderId = route.params.id as string;
+  const orderType = route.query.type || 'non-custom';
+  console.log(`Looking for order ${orderId} with type ${orderType}`);
+  
   const foundOrder = orderStore.orders.find(o => o.orderId === orderId);
   console.log('Found order:', foundOrder);
-  if (foundOrder) {
-    console.log('Order items:', foundOrder.items);
-  }
   return foundOrder;
 });
 
@@ -209,11 +277,37 @@ ion-toolbar {
   color: #721C24;
 }
 
+.status-badge.processing {
+  background: #CCE5FF;
+  color: #004085;
+}
+
 .order-info-card {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.type-badge-container {
+  position: absolute;
+  top: -15px;
+  right: 20px;
+}
+
+.type-badge {
+  background: #7A5C1E;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.type-badge.custom {
+  background: #8e44ad;
 }
 
 .info-section {
@@ -270,6 +364,55 @@ ion-toolbar {
 .info-content .value.price {
   color: #7a1e1e;
   font-weight: 600;
+}
+
+.info-content .value.pending {
+  color: #856404;
+  font-weight: 600;
+}
+
+.custom-cake-details {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.custom-description {
+  margin-bottom: 16px;
+  color: #555;
+}
+
+.pricing-status {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.status-label {
+  font-weight: 500;
+  color: #555;
+}
+
+.status-value {
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-value.pending {
+  background: #FFF3CD;
+  color: #856404;
+}
+
+.status-value.priced {
+  background: #CCE5FF;
+  color: #004085;
+}
+
+.status-value.accepted {
+  background: #D4EDDA;
+  color: #155724;
 }
 
 .order-items {

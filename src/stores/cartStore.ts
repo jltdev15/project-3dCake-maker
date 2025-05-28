@@ -97,8 +97,8 @@ export const useCartStore = defineStore('cart', () => {
     setupUserStatusListener()
   }
 
-  const generateOrderId = async () => {
-    const ordersRef = dbRef(database, 'orders/non-custom')
+  const generateOrderId = async (type: 'order' | 'custom' | 'non-custom' = 'order') => {
+    const ordersRef = dbRef(database, 'orders')
     const snapshot = await get(ordersRef)
     const orderCount = snapshot.exists() ? Object.keys(snapshot.val()).length : 0
     const nextNumber = orderCount + 1
@@ -122,14 +122,17 @@ export const useCartStore = defineStore('cart', () => {
       }
 
       // Save order to Firebase
-      const orderRef = dbRef(database, `orders/non-custom/${orderId}`)
-      await set(orderRef, order)
+      const orderRef = dbRef(database, `orders/${orderId}`)
+      await set(orderRef, {
+        ...order,
+        hasCustomItems: false,
+        hasRegularItems: true
+      })
 
       // Save order reference to user's orders
       const userOrderRef = dbRef(database, `users/${authStore.user.uid}/orders/${orderId}`)
       await set(userOrderRef, {
         orderId,
-        type: 'non-custom',
         status: 'pending',
         createdAt: Date.now(),
         customerName: authStore.user.name || 'Anonymous User'
@@ -253,6 +256,7 @@ export const useCartStore = defineStore('cart', () => {
     loadCartItems,
     checkout,
     cleanup,
-    checkUserStatus
+    checkUserStatus,
+    generateOrderId
   }
 }) 

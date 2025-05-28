@@ -195,23 +195,7 @@
         </div>
       </div>
 
-      <!-- Success Modal -->
-      <div class="modal-overlay" v-if="showSuccessModal">
-        <div class="confirmation-modal success-modal">
-          <div class="modal-header success-header">
-            <h3>Order Placed!</h3>
-          </div>
-          <div class="modal-body">
-            <div class="success-icon">✓</div>
-            <p>Your custom cake design has been added to your cart and your order has been received!</p>
-            <p>We'll contact you shortly to confirm your order details.</p>
-            <p>Order ID: {{ lastOrderId }}</p>
-          </div>
-          <div class="modal-footer">
-            <button class="confirm-btn success-btn" @click="finishOrder">Continue Shopping</button>
-          </div>
-        </div>
-      </div>
+      <!-- Success Modal removed as user is now redirected to cart directly -->
 
       <div class="cake-customizer">
         <canvas id="cakeCanvas"></canvas>
@@ -807,13 +791,33 @@ const addDecorations = (layerMesh, layerConfig) => {
     let stickHeight = topper.stickHeight || 0.4; // Use custom stick height or default
     if (stickHeight < 0.1) stickHeight = 0.1;
     
+    // Check if this is the top layer in the cake to avoid intersections
+    const currentLayerIndex = cakeLayers.findIndex(layer => layer.id === layerConfig.id);
+    const isTopLayer = currentLayerIndex === cakeLayers.length - 1;
+    
+    // If it's not the top layer, we need to adjust the stick height to avoid intersections
+    if (!isTopLayer) {
+      // Calculate maximum safe height to avoid intersection with layer above
+      // Get distance to the bottom of the layer above
+      const layersAbove = cakeLayers.slice(currentLayerIndex + 1);
+      const nextLayerHeight = layersAbove.reduce((total, layer) => total + layer.height, 0);
+      
+      // Calculate safe distance (leaving a small gap)
+      const safeDistance = nextLayerHeight - 0.05;
+      
+      // Limit stick height to prevent intersection
+      if (stickHeight > safeDistance) {
+        stickHeight = Math.max(0.1, safeDistance);
+      }
+    }
+    
     let stickBaseY = topY; // Always start at cake top
     let stickTopY = stickBaseY + stickHeight; // Calculate the top of the stick
     
     // Calculate content position offsets based on stick height
     let textYOffset = 0.05; // Small offset from stick top
-    let imageYOffset = 0.05;
-    const imageHeight = 0.5; // Should match the image geometry height
+    // Increase the image offset to prevent overlap with the stick
+    let imageYOffset = 0.15;
     
     // Calculate topper base position
     let topperY = topY;
@@ -850,7 +854,7 @@ const addDecorations = (layerMesh, layerConfig) => {
     topperGroup.add(base);
 
     // Only create topper text if font is loaded
-    if ((topper.type === 'text' || topper.type === 'text_image')) {
+    if (topper.type === 'text') {
       if (!loadedFont) {
         console.warn('Font not loaded yet, skipping topper text creation');
         return;
@@ -876,46 +880,42 @@ const addDecorations = (layerMesh, layerConfig) => {
         const textMesh = new THREE.Mesh(textGeometry, textMaterial);
         textMesh.position.set(0, stickTopY + textYOffset, 0); // Position above the stick
         topperGroup.add(textMesh);
-        // If it's text with image, add the image below the text
-        if (topper.type === 'text_image' && topper.image) {
-          const textureLoader = new THREE.TextureLoader();
-          textureLoader.load(topper.image, (texture) => {
-            const sizeMultiplier = topper.size || 1;
-            const imageGeometry = new THREE.PlaneGeometry(0.5 * sizeMultiplier, 0.5 * sizeMultiplier);
-            const imageMaterial = new THREE.MeshStandardMaterial({
-              map: texture,
-              side: THREE.DoubleSide
-            });
-            const imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);
-            imageMesh.position.set(0, stickTopY + textYOffset - (0.3 * sizeMultiplier), 0); // Position below the text
-            topperGroup.add(imageMesh);
-          });
-        }
       }
-    } else if (topper.type === 'image' && topper.image) {
+    }
+    // Handle backward compatibility: if type is text_image, treat as image
+    else if ((topper.type === 'image' || topper.type === 'text_image') && topper.image) {
       const textureLoader = new THREE.TextureLoader();
       textureLoader.load(topper.image, (texture) => {
         const sizeMultiplier = topper.size || 1;
         const imageGeometry = new THREE.PlaneGeometry(0.5 * sizeMultiplier, 0.5 * sizeMultiplier);
         const imageMaterial = new THREE.MeshStandardMaterial({
           map: texture,
-          side: THREE.DoubleSide
+          side: THREE.DoubleSide,
+          transparent: true
         });
         const imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);
-        imageMesh.position.set(0, stickTopY + imageYOffset, 0); // Position above the stick
+        
+        // Calculate half height of the image to position it properly
+        const imageHeight = 0.5 * sizeMultiplier;
+        const halfImageHeight = imageHeight / 2;
+        
+        // Position image with proper offset to avoid overlap with stick
+        imageMesh.position.set(0, stickTopY + imageYOffset + halfImageHeight, 0);
         topperGroup.add(imageMesh);
       });
     }
 
     // Add a small connector between stick and content
-    const connectorGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.02, 8);
+    const connectorGeometry = new THREE.CylinderGeometry(0.04, 0.03, 0.05, 12);
     const connectorMaterial = new THREE.MeshStandardMaterial({
       color: 0xCCCCCC,
       roughness: 0.7,
       metalness: 0.3
     });
     const connector = new THREE.Mesh(connectorGeometry, connectorMaterial);
-    connector.position.set(0, stickTopY, 0); // Position connector at the top of the stick
+    
+    // Position connector slightly higher than the top of the stick to create a gentle transition
+    connector.position.set(0, stickTopY + 0.02, 0);
     topperGroup.add(connector);
 
     layerMesh.add(topperGroup);
@@ -1923,6 +1923,11 @@ const loadCakeConfiguration = (event) => {
             ...(loadedLayer.bottomIcing || {})
           };
           mergedLayer.toppings = loadedLayer.toppings || [];
+          
+          // Convert text_image topper type to image for backward compatibility
+          if (mergedLayer.topper && mergedLayer.topper.type === 'text_image') {
+            mergedLayer.topper.type = 'image';
+          }
           ['edgeIcing', 'middleBandIcing', 'bottomIcing'].forEach(icingType => {
             if (mergedLayer[icingType]) {
               if (!mergedLayer[icingType].hasOwnProperty('isAnimating')) {
@@ -2247,7 +2252,6 @@ const addTopperControlsUI = (layerConfig, container) => {
             <option value="none" ${layerConfig.topper.type === 'none' ? 'selected' : ''}>Select Type</option>
             <option value="text" ${layerConfig.topper.type === 'text' ? 'selected' : ''}>Text Only</option>
             <option value="image" ${layerConfig.topper.type === 'image' ? 'selected' : ''}>Image</option>
-            <option value="text_image" ${layerConfig.topper.type === 'text_image' ? 'selected' : ''}>Text with Image</option>
           </select>
         </div>
         
@@ -2319,8 +2323,8 @@ const addTopperControlsUI = (layerConfig, container) => {
   
   topperTypeSelect.addEventListener('change', (e) => {
     updateLayerProperty(layerConfig.id, 'topper.type', e.target.value);
-    topperTextControls.style.display = (e.target.value === 'text' || e.target.value === 'text_image') ? 'block' : 'none';
-    topperImageControls.style.display = (e.target.value === 'image' || e.target.value === 'text_image') ? 'block' : 'none';
+    topperTextControls.style.display = (e.target.value === 'text') ? 'block' : 'none';
+    topperImageControls.style.display = (e.target.value === 'image') ? 'block' : 'none';
   });
   
   document.getElementById(`topper_tab_text_${layerConfig.id}`).addEventListener('input', (e) => {
@@ -2609,8 +2613,6 @@ const addToppingsControlsUI = (layerConfig, container) => {
 
 // Add to Cart related reactive variables
 const showCartConfirmModal = ref(false);
-const showSuccessModal = ref(false);
-const lastOrderId = ref('');
 const isLoading = ref(false);
 
 // Special instructions for the order
@@ -2664,14 +2666,8 @@ const addToCart = async () => {
     
     console.log('Design data to be saved:', cakeDesignData);
     
-    // Generate a consistent order ID to use in both cart and Firebase
-    const orderId = 'custom-' + Date.now();
-    lastOrderId.value = orderId; // Set the lastOrderId for display in success modal
-    
-    // Prepare the cake data
+    // Prepare the cake data without an orderId - this will be added during checkout
     const customCakeItem = {
-      cakeId: orderId, // Use the consistent order ID
-      orderId: orderId, // Store the order ID explicitly for reference
       name: 'Custom ' + (selectedFlavor.value ? selectedFlavor.value.name : '') + ' Cake',
       size: selectedSize.value ? selectedSize.value.name : '',
       quantity: 1,
@@ -2695,6 +2691,14 @@ const addToCart = async () => {
     // Add the custom cake to the cart
     await cartStore.addItem(customCakeItem);
     
+    // Hide the cart confirmation modal
+    showCartConfirmModal.value = false;
+    
+    // Reset the customer info form
+    Object.keys(customerInfo).forEach(key => {
+      customerInfo[key] = '';
+    });
+    
     // Show success toast
     const toast = await toastController.create({
       message: 'Custom cake added to cart successfully!',
@@ -2704,45 +2708,8 @@ const addToCart = async () => {
     });
     await toast.present();
     
-    // Hide the cart confirmation modal
-    showCartConfirmModal.value = false;
-    
-    // Reset the customer info form
-    Object.keys(customerInfo).forEach(key => {
-      customerInfo[key] = '';
-    });
-    
-    // Optional: also save to Firebase for admin reference
-    try {
-      const database = getDatabase();
-      const ordersRef = dbRef(database, 'orders/custom');
-      
-      // Use the consistent order ID as the Firebase key instead of push()
-      const newOrderRef = dbRef(ordersRef, orderId);
-      
-      await set(newOrderRef, {
-        ...customCakeItem,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
-      
-      console.log('Order also saved to Firebase with ID:', orderId);
-      
-      // Show success modal after successful Firebase save
-      showSuccessModal.value = true;
-      
-    } catch (firebaseError) {
-      console.error('Firebase save error:', firebaseError);
-      // Show a warning toast but don't block the cart process
-      const warningToast = await toastController.create({
-        message: 'Order saved to cart but there was an issue with order tracking. Your order is still valid.',
-        duration: 3000,
-        position: 'top',
-        color: 'warning'
-      });
-      await warningToast.present();
-    }
+    // Redirect to cart page
+    router.push('/cart');
     
   } catch (error) {
     console.error('Error adding to cart:', error);
@@ -2758,11 +2725,7 @@ const addToCart = async () => {
   }
 };
 
-// Finish the order process
-const finishOrder = () => {
-  showSuccessModal.value = false;
-  router.push('/home');
-};
+// Finish the order process - removed as we now redirect directly to cart
 </script>
 
 <style scoped>

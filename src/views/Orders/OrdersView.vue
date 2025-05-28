@@ -2,13 +2,49 @@
   <ion-page class="orders-page">
     <ion-header class="ion-no-border">
       <ion-toolbar>
-        <ion-title class="orders-title">Orders</ion-title>
+        <ion-title class="orders-title ion-text-center">Orders</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content>
+      <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)">
+        <ion-refresher-content></ion-refresher-content>
+      </ion-refresher>
+      
       <div class="orders-container">
-        <div v-if="orderStore.orders.length === 0" class="no-orders">
+        <!-- Loading skeleton -->
+        <div v-if="isLoading" class="orders-list">
+          <div class="orders-header">
+            <h2 class="orders-list-title">Order History</h2>
+            <p class="orders-list-subtitle">View and track your orders</p>
+          </div>
+          
+          <div class="orders-grid">
+            <div v-for="n in 3" :key="n" class="order-card skeleton">
+              <div class="order-header">
+                <div class="skeleton-text skeleton-title"></div>
+                <div class="skeleton-badge"></div>
+              </div>
+              <div class="order-details">
+                <div class="detail-item">
+                  <div class="skeleton-circle"></div>
+                  <div class="skeleton-text"></div>
+                </div>
+                <div class="detail-item">
+                  <div class="skeleton-circle"></div>
+                  <div class="skeleton-text"></div>
+                </div>
+                <div class="detail-item">
+                  <div class="skeleton-circle"></div>
+                  <div class="skeleton-text"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Empty state -->
+        <div v-else-if="orderStore.orders.length === 0" class="no-orders">
           <div class="empty-state-content">
             <div class="empty-state-icon">
               <ion-icon :icon="cartOutline"></ion-icon>
@@ -22,6 +58,7 @@
           </div>
         </div>
         
+        <!-- Orders list -->
         <div v-else class="orders-list">
           <div class="orders-header">
             <h2 class="orders-list-title">Order History</h2>
@@ -32,7 +69,7 @@
             <div v-for="order in orderStore.orders" 
                  :key="order.orderId" 
                  class="order-card"
-                 @click="navigateToOrderDetails(order.orderId)">
+                 @click="navigateToOrderDetails(order.orderId, getOrderType(order))">
               <div class="order-header">
                 <h3 class="order-number">Order #{{ order.orderId }}</h3>
                 <span :class="['status-badge', order.status.toLowerCase()]">{{ order.status }}</span>
@@ -42,9 +79,18 @@
                   <ion-icon :icon="calendarOutline"></ion-icon>
                   <span>{{ new Date(order.createdAt).toLocaleDateString() }}</span>
                 </div>
+
                 <div class="detail-item">
                   <ion-icon :icon="cashOutline"></ion-icon>
-                  <span class="order-total">₱{{ order.totalAmount.toFixed(2) }}</span>
+                  <span class="order-total">
+
+                    <template v-if="isCustomOrder(order)">
+                      ₱{{ (order.totalAmount || 0).toFixed(2) }}
+                    </template>
+                    <template v-else>
+                      Pending Pricing
+                    </template>
+                  </span>
                 </div>
               </div>
             </div>
@@ -56,25 +102,82 @@
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonIcon, IonButton } from '@ionic/vue';
-import { cartOutline, calendarOutline, cashOutline, arrowForward } from 'ionicons/icons';
+import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonIcon, IonButton, IonRefresher, IonRefresherContent } from '@ionic/vue';
+import { cartOutline, calendarOutline, cashOutline, arrowForward, pricetagOutline } from 'ionicons/icons';
 import { useOrderStore } from '../../stores/orderStore';
 import { useRouter } from 'vue-router';
-import { onMounted, onUnmounted } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
+
+// Type definitions
+interface BaseOrder {
+  orderId: string;
+  userId: string;
+  customerName: string;
+  customerEmail: string;
+  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  createdAt: number;
+}
+
+interface NonCustomOrder extends BaseOrder {
+  type: 'non-custom';
+  totalAmount: number;
+  items: any[];
+}
+
+interface CustomOrder extends BaseOrder {
+  orderType: 'custom';
+  pricingStatus: 'pending' | 'priced' | 'accepted';
+  totalAmount?: number;
+  updatedAt: number;
+  items: {
+    needsPricing: boolean;
+  };
+}
+
+type Order = NonCustomOrder | CustomOrder;
 
 const orderStore = useOrderStore();
 const router = useRouter();
+const isLoading = ref(true);
 
-onMounted(() => {
-  orderStore.loadOrders();
+onMounted(async () => {
+  await loadOrders();
 });
 
 onUnmounted(() => {
   orderStore.cleanup();
 });
 
-const navigateToOrderDetails = (orderId: string) => {
-  router.push(`/orders/${orderId}`);
+const loadOrders = async () => {
+  isLoading.value = true;
+  await orderStore.loadOrders();
+  isLoading.value = false;
+};
+
+const handleRefresh = async (event: CustomEvent) => {
+  await loadOrders();
+  if (event.target) {
+    (event.target as HTMLIonRefresherElement).complete();
+  }
+};
+
+// Type guard for custom order
+const isCustomOrder = (order: any): order is CustomOrder => {
+  return order.totalAmount !== 0;
+};
+
+// Type guard for non-custom order
+const isNonCustomOrder = (order: any): order is NonCustomOrder => {
+  return order.orderType === 'non-custom';
+};
+
+// Helper function to determine order type
+const getOrderType = (order: any): 'custom' | 'non-custom' => {
+  return isCustomOrder(order) ? 'custom' : 'non-custom';
+};
+
+const navigateToOrderDetails = (orderId: string, orderType: string) => {
+  router.push(`/orders/${orderId}?type=${orderType}`);
 };
 </script>
 
@@ -220,14 +323,19 @@ ion-toolbar {
   color: #856404;
 }
 
-.status-badge.completed {
+.status-badge.accepted {
   background: #D4EDDA;
   color: #155724;
 }
 
-.status-badge.cancelled {
+.status-badge.declined {
   background: #F8D7DA;
   color: #721C24;
+}
+
+.status-badge.processing {
+  background: #CCE5FF;
+  color: #004085;
 }
 
 .order-details {
@@ -253,6 +361,11 @@ ion-toolbar {
   color: #7A5C1E;
 }
 
+.order-type {
+  font-weight: 500;
+  color: #555;
+}
+
 .start-shopping-btn {
   --background: #7A5C1E;
   --background-hover: #8B6B2F;
@@ -261,6 +374,52 @@ ion-toolbar {
   --box-shadow: 0 4px 12px rgba(122, 92, 30, 0.2);
   height: 48px;
   font-weight: 600;
+}
+
+/* Skeleton Loading Styles */
+.skeleton {
+  pointer-events: none;
+}
+
+.skeleton-text {
+  height: 16px;
+  background: linear-gradient(90deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.12) 50%, rgba(0,0,0,0.06) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  width: 70%;
+}
+
+.skeleton-title {
+  height: 20px;
+  width: 50%;
+}
+
+.skeleton-badge {
+  height: 26px;
+  width: 80px;
+  background: linear-gradient(90deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.12) 50%, rgba(0,0,0,0.06) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 20px;
+}
+
+.skeleton-circle {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.12) 50%, rgba(0,0,0,0.06) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 @media (max-width: 768px) {
