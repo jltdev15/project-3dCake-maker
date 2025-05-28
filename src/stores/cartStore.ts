@@ -7,13 +7,25 @@ import { toastController } from '@ionic/vue'
 
 interface CartItem {
   id: string
-  cakeId: string
+  cakeId?: string
   name: string
   size?: string
   quantity: number
-  unitPrice: number
-  totalPrice: number
+  unitPrice?: number
+  totalPrice?: number
   imageUrl: string
+  isCustomCake?: boolean
+  needsPricing?: boolean
+  customDetails?: {
+    designData?: {
+      cakeLayers: any[]
+      layerIdCounter: number
+    }
+    layers: number
+    flavor: any
+    greeting: any
+    message?: string
+  }
 }
 
 interface Order {
@@ -169,14 +181,14 @@ export const useCartStore = defineStore('cart', () => {
       const updatedItem = {
         ...existingItem,
         quantity: newQuantity,
-        totalPrice: existingItem.unitPrice * newQuantity
+        totalPrice: existingItem.unitPrice ? existingItem.unitPrice * newQuantity : undefined
       };
       
       try {
         const cartRef = dbRef(database, `users/${authStore.user.uid}/cart/${existingItem.id}`);
         await update(cartRef, updatedItem);
         existingItem.quantity = newQuantity;
-        existingItem.totalPrice = existingItem.unitPrice * newQuantity;
+        existingItem.totalPrice = existingItem.unitPrice ? existingItem.unitPrice * newQuantity : undefined;
       } catch (error) {
         console.error('Error updating item quantity:', error);
       }
@@ -217,14 +229,14 @@ export const useCartStore = defineStore('cart', () => {
       const updatedItem = {
         ...item,
         quantity,
-        totalPrice: item.unitPrice * quantity
+        totalPrice: item.unitPrice ? item.unitPrice * quantity : undefined
       }
       
       try {
         const cartRef = dbRef(database, `users/${authStore.user.uid}/cart/${id}`)
         await update(cartRef, updatedItem)
         item.quantity = quantity
-        item.totalPrice = item.unitPrice * quantity
+        item.totalPrice = item.unitPrice ? item.unitPrice * quantity : undefined
       } catch (error) {
         console.error('Error updating item quantity:', error)
       }
@@ -232,7 +244,13 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   const cartTotal = computed(() => {
-    return items.value.reduce((total, item) => total + item.totalPrice, 0)
+    return items.value.reduce((total, item) => {
+      // Only add to total if it's not a custom cake
+      if (!item.isCustomCake && item.totalPrice) {
+        return total + item.totalPrice;
+      }
+      return total;
+    }, 0)
   })
 
   const itemCount = computed(() => {

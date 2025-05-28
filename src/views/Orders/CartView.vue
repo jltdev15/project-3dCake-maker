@@ -35,7 +35,7 @@
                 <h3 class="item-name">{{ item.name }}</h3>
                 <p v-if="item.size" class="item-size">Size: {{ item.size }}</p>
                 <p v-if="(item as CartItem).isCustomCake" class="item-custom-badge">Custom Design</p>
-                <p v-if="!(item as CartItem).isCustomCake" class="item-price">₱{{ item.unitPrice.toFixed(2) }} each</p>
+                <p v-if="!(item as CartItem).isCustomCake" class="item-price">₱{{ item.unitPrice?.toFixed(2) || '0.00' }} each</p>
                 <p v-else class="item-price-pending">Price to be determined</p>
               </div>
               <div class="item-controls">
@@ -67,7 +67,10 @@
               </div>
               <div class="summary-item total">
                 <span>Total Amount</span>
-                <span class="total-price">₱{{ cartStore.cartTotal.toFixed(2) }}</span>
+                <span class="total-price">
+                  <template v-if="hasCustomItemsOnly">Price to be determined</template>
+                  <template v-else>₱{{ cartStore.cartTotal?.toFixed(2) || '0.00' }}</template>
+                </span>
               </div>
             </div>
             <ion-button expand="block" class="checkout-btn" @click="handleCheckout" :disabled="isCheckingOut">
@@ -94,18 +97,31 @@
         ]" @didDismiss="showDeleteAlert = false"></ion-alert>
 
       <!-- Success Modal -->
-      <ion-modal :is-open="showSuccessModal" :breakpoints="[0, 0.5, 0.8]" :initial-breakpoint="0.5" @didDismiss="handleSuccessModalDismiss">
-        <ion-content class="ion-padding">
-          <div class="success-modal-content">
-            <ion-icon :icon="checkmarkCircle" class="success-icon"></ion-icon>
+      <div v-if="showSuccessModal" class="custom-success-modal">
+        <div class="custom-modal-overlay" @click="handleSuccessModalDismiss"></div>
+        <div class="custom-modal-content">
+          <div class="custom-modal-body">
+            <div class="success-icon-container">
+              <ion-icon :icon="checkmarkCircle" class="success-icon"></ion-icon>
+            </div>
             <h2 class="success-title">Order Placed Successfully!</h2>
-            <p class="success-message">Thank you for your order. We'll process it right away.</p>
-            <ion-button expand="block" class="success-button" @click="handleSuccessModalDismiss">
+            <p class="success-message">
+              <template v-if="hasCustomItemsOnly">
+                Thank you for your custom cake order. We'll review your design and provide pricing soon.
+              </template>
+              <template v-else-if="cartStore.items.some(item => (item as CartItem).isCustomCake)">
+                Thank you for your order. We'll process standard items right away and provide pricing for your custom cake(s) soon.
+              </template>
+              <template v-else>
+                Thank you for your order. We'll process it right away.
+              </template>
+            </p>
+            <button class="custom-success-button" @click="handleSuccessModalDismiss">
               Continue Shopping
-            </ion-button>
+            </button>
           </div>
-        </ion-content>
-      </ion-modal>
+        </div>
+      </div>
     </ion-content>
   </ion-page>
 </template>
@@ -125,7 +141,7 @@ import {
 } from '@ionic/vue';
 import { cartOutline, addOutline, removeOutline, trashOutline, arrowForward, checkmarkCircle } from 'ionicons/icons';
 import { useCartStore } from '../../stores/cartStore';
-import { onMounted, ref, onUnmounted } from 'vue';
+import { onMounted, ref, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { toastController } from '@ionic/vue';
 import { useAuthStore } from '../../stores/authStore';
@@ -140,8 +156,8 @@ interface CartItem {
   name: string;
   size?: string;
   quantity: number;
-  unitPrice: number;
-  totalPrice: number;
+  unitPrice: number | undefined;
+  totalPrice: number | undefined;
   imageUrl: string;
   isCustomCake?: boolean;
   needsPricing?: boolean;
@@ -207,8 +223,8 @@ const handleCheckout = async () => {
     console.log('Starting checkout process...');
 
     // Separate custom and regular cakes
-    const customCakes = cartStore.items.filter((item: CartItem) => item.isCustomCake);
-    const regularCakes = cartStore.items.filter((item: CartItem) => !item.isCustomCake);
+    const customCakes = cartStore.items.filter((item) => (item as CartItem).isCustomCake);
+    const regularCakes = cartStore.items.filter((item) => !(item as CartItem).isCustomCake);
 
     const hasCustomCakes = customCakes.length > 0;
     const hasRegularCakes = regularCakes.length > 0;
@@ -220,8 +236,8 @@ const handleCheckout = async () => {
     console.log(`Generated order ID: ${orderId}`);
 
     // Calculate totals for different cake types
-    const customTotal = customCakes.reduce((sum, item) => sum + item.totalPrice, 0);
-    const regularTotal = regularCakes.reduce((sum, item) => sum + item.totalPrice, 0);
+    const customTotal = customCakes.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+    const regularTotal = regularCakes.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
 
     // Base order data common to both types
     const baseOrderData = {
@@ -267,8 +283,8 @@ const handleCheckout = async () => {
             const itemCopy = JSON.parse(JSON.stringify(item));
 
             // Remove price fields
-            delete itemCopy.unitPrice;
-            delete itemCopy.totalPrice;
+            itemCopy.unitPrice = null;
+            itemCopy.totalPrice = null;
 
             // Add pricing flag
             itemCopy.needsPricing = true;
@@ -311,11 +327,11 @@ const handleCheckout = async () => {
           name: item.name,
           size: item.size,
           quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.totalPrice,
+          unitPrice: item.unitPrice || 0,
+          totalPrice: item.totalPrice || 0,
           imageUrl: item.imageUrl,
           isCustomCake: false
-        }));
+        } as CartItem));
         orderItems = [...orderItems, ...regularCakesForOrder];
       }
 
@@ -327,7 +343,7 @@ const handleCheckout = async () => {
       const orderData = {
         ...baseOrderData,
         items: orderItems,
-        totalAmount: hasRegularCakes ? regularTotal : 0,
+        totalAmount: hasRegularCakes ? (regularTotal || 0) : 0,
         hasCustomItems: hasCustomCakes,
         hasRegularItems: hasRegularCakes,
         needsPricing: needsPricing,
@@ -394,6 +410,10 @@ const handleCheckout = async () => {
     isCheckingOut.value = false;
   }
 };
+
+const hasCustomItemsOnly = computed(() => {
+  return cartStore.items.length > 0 && cartStore.items.every(item => (item as CartItem).isCustomCake);
+});
 </script>
 
 <style scoped>
@@ -545,6 +565,7 @@ ion-toolbar {
   font-size: 0.8rem;
   font-weight: 600;
   margin-top: 4px;
+  display: inline-block;
 }
 
 .item-price {
@@ -935,73 +956,140 @@ ion-toolbar {
   }
 }
 
-/* Success Modal Styles */
-.success-modal-content {
+/* Custom Success Modal Styles */
+.custom-success-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.custom-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.custom-modal-content {
+  position: relative;
+  width: 90%;
+  max-width: 400px;
+  background: #FFFFFF;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  padding: 0;
+  z-index: 1001;
+  animation: modal-pop-in 0.3s ease-out forwards;
+}
+
+@keyframes modal-pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.custom-modal-body {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 32px 24px;
   text-align: center;
-  padding: 24px;
-  height: 100%;
+}
+
+.success-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: rgba(76, 175, 80, 0.1);
+  border-radius: 50%;
+  margin-bottom: 24px;
 }
 
 .success-icon {
-  font-size: 64px;
+  font-size: 48px;
   color: #4CAF50;
-  margin-bottom: 16px;
 }
 
 .success-title {
   font-size: 1.5rem;
   font-weight: 700;
   color: #7A5C1E;
-  margin: 0 0 12px 0;
+  margin: 0 0 16px 0;
 }
 
 .success-message {
   color: #666;
-  margin: 0 0 24px 0;
+  margin: 0 0 32px 0;
   font-size: 1rem;
   line-height: 1.5;
 }
 
-.success-button {
-  --background: #7A5C1E;
-  --background-hover: #8B6B2F;
-  --background-activated: #8B6B2F;
-  --border-radius: 8px;
-  --box-shadow: 0 2px 8px rgba(122, 92, 30, 0.2);
-  height: 44px;
-  font-weight: 600;
+.custom-success-button {
+  background: #7A5C1E;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
   font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
   width: 100%;
-  max-width: 300px;
+  max-width: 250px;
+  height: 48px;
+  box-shadow: 0 2px 8px rgba(122, 92, 30, 0.2);
+}
+
+.custom-success-button:hover {
+  background: #8B6B2F;
+}
+
+.custom-success-button:active {
+  background: #6B4D1A;
 }
 
 @media (max-width: 480px) {
-  .success-modal-content {
-    padding: 16px;
+  .success-icon-container {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
   }
-
+  
   .success-icon {
-    font-size: 48px;
-    margin-bottom: 12px;
+    font-size: 36px;
   }
 
   .success-title {
     font-size: 1.25rem;
-    margin-bottom: 8px;
   }
 
   .success-message {
     font-size: 0.9rem;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
   }
 
-  .success-button {
-    height: 40px;
+  .custom-success-button {
+    padding: 10px 20px;
     font-size: 0.95rem;
+    height: 44px;
   }
 }
 </style>

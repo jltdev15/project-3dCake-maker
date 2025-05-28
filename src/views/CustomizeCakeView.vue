@@ -211,7 +211,7 @@
         <canvas id="cakeCanvas"></canvas>
         <div class="controls-panel">
           <div class="tabs">
-            <button class="tab-button active" data-tab="tab-design">Design</button>
+            <button class="tab-button active" data-tab="tab-design">Action</button>
             <button class="tab-button" data-tab="tab-layer-editor">Layer Editor</button>
             <button class="tab-button" data-tab="tab-topper">Printed Topper</button>
             <button class="tab-button" data-tab="tab-icing">Icing</button>
@@ -220,13 +220,16 @@
           </div>
           <div class="tab-content active" id="tab-design">
             <div class="control-group">
-              <button id="addLayerBtn" class="action-button">Add New Layer</button>
-              <button id="saveCakeBtn" class="action-button">Save Design</button>
+              <button v-if="false"  id="addLayerBtn" class="action-button">Add New Layer</button>
+              <button v-if="false" id="saveCakeBtn" class="action-button">Save Design</button>
               <input type="file" id="loadCakeInput" accept=".json" style="display: none;">
-              <button id="loadCakeBtn" class="action-button" onclick="document.getElementById('loadCakeInput').click()">Load Design</button>
-              <button id="resetCakeBtn" class="action-button" @click="resetCakeDesign">Reset Design</button>
-              <button id="undoBtn" class="action-button" disabled>Undo Last Action</button>
-              <button id="addToCartBtn" class="action-button add-to-cart-btn" @click="showAddToCartModal">Add to Cart</button>
+              <button v-if="false" id="loadCakeBtn" class="action-button" onclick="document.getElementById('loadCakeInput').click()">Load Design</button>
+              <button v-if="false" id="resetCakeBtn" class="action-button" @click="resetCakeDesign">Reset Design</button>
+              <button v-if="false" id="undoBtn" class="action-button" disabled>Undo Last Action</button>
+              <button id="addToCartBtn" class="action-button add-to-cart-btn" @click="showAddToCartModal">
+                <span class="cart-icon">🛒</span>
+                <span class="btn-text">Add to Cart</span>
+              </button>
             </div>
           </div>
           <div class="tab-content" id="tab-layer-editor">
@@ -571,11 +574,11 @@ const initScene = () => {
   scene.add(cakeGroup);
 
   initTabs();
-  document.getElementById('addLayerBtn').addEventListener('click', addNewLayerAndSelect);
-  document.getElementById('saveCakeBtn').addEventListener('click', saveCakeConfiguration);
-  document.getElementById('loadCakeInput').addEventListener('change', loadCakeConfiguration);
-  document.getElementById('resetCakeBtn').addEventListener('click', resetCakeDesign);
-  document.getElementById('undoBtn').addEventListener('click', undoLastAction);
+  // document.getElementById('addLayerBtn').addEventListener('click', addNewLayerAndSelect);
+  // document.getElementById('saveCakeBtn').addEventListener('click', saveCakeConfiguration);
+  // document.getElementById('loadCakeInput').addEventListener('change', loadCakeConfiguration);
+  // document.getElementById('resetCakeBtn').addEventListener('click', resetCakeDesign);
+  // document.getElementById('undoBtn').addEventListener('click', undoLastAction);
 
   window.addEventListener('resize', onWindowResize, false);
   renderer.domElement.addEventListener('click', onCanvasClick, false);
@@ -2634,6 +2637,7 @@ const handleBackButton = (event) => {
 
 const confirmBack = () => {
   showBackConfirmModal.value = false;
+  resetCustomization();
   router.push('/home');
 };
 
@@ -2672,8 +2676,34 @@ const addToCart = async () => {
   isLoading.value = true;
   
   try {
+    // Ensure the scene is properly rendered from a good angle
+    const originalCameraPosition = { ...camera.position };
+    
+    // Move camera to a better position for capturing the cake
+    camera.position.set(
+      cakeLayers.length > 0 ? cakeLayers[0].radius * 2 : 5, 
+      cakeLayers.reduce((sum, layer) => sum + layer.height, 0) + 3, 
+      cakeLayers.length > 0 ? cakeLayers[0].radius * 2.5 : 5
+    );
+    camera.lookAt(0, cakeLayers.reduce((sum, layer) => sum + layer.height, 0) / 2, 0);
+    
+    // Force render to ensure scene is updated
+    renderer.render(scene, camera);
+    
     // Create a rendered image of the cake as base64
-    const cakeImageBase64 = renderer.domElement.toDataURL('image/png');
+    let cakeImageBase64;
+    try {
+      cakeImageBase64 = renderer.domElement.toDataURL('image/png');
+      console.log('Captured cake image successfully');
+    } catch (imageError) {
+      console.error('Error capturing cake image:', imageError);
+      cakeImageBase64 = null; // Will use a fallback image in the cart
+    }
+    
+    // Restore camera to original position
+    camera.position.set(originalCameraPosition.x, originalCameraPosition.y, originalCameraPosition.z);
+    camera.lookAt(0, 0, 0);
+    renderer.render(scene, camera);
     
     // Create a deep copy of the cake design data
     const cakeDesignData = {
@@ -2693,10 +2723,9 @@ const addToCart = async () => {
       name: 'Custom ' + (selectedFlavor.value ? selectedFlavor.value.name : '') + ' Cake',
       size: selectedSize.value ? selectedSize.value.name : '',
       quantity: 1,
-      unitPrice: selectedSize.value ? selectedSize.value.price : 0,
-      totalPrice: selectedSize.value ? selectedSize.value.price : 0,
       imageUrl: cakeImageBase64,
       isCustomCake: true,
+      needsPricing: true,
       customDetails: {
         // Save design data exactly as the Save Design button does
         designData: cakeDesignData,
@@ -4181,15 +4210,52 @@ ion-toolbar {
 
 /* Add to Cart Button Styles */
 .add-to-cart-btn {
-  background-color: #28a745 !important;
-  font-weight: 600;
-  margin-top: 10px;
+  background: #7a1e1e !important;
+  font-weight: 700;
+  margin-top: 15px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 12px rgba(122, 30, 30, 0.3);
+  border-radius: 50px;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
 }
 
 .add-to-cart-btn:hover {
-  background-color: #218838 !important;
+  background: #8f2424 !important;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(122, 30, 30, 0.4);
+}
+
+.add-to-cart-btn:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(122, 30, 30, 0.4);
+}
+
+.cart-icon {
+  font-size: 1.25rem;
+  margin-right: 10px;
+}
+
+.btn-text {
+  font-size: 1.1rem;
+}
+
+@media (max-width: 480px) {
+  .add-to-cart-btn {
+    padding: 14px 20px;
+  }
+  
+  .cart-icon {
+    font-size: 1.2rem;
+  }
+  
+  .btn-text {
+    font-size: 1rem;
+  }
 }
 
 /* Cart Modal Styles */

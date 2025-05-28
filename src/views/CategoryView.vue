@@ -452,7 +452,8 @@ ion-toolbar {
 
 /* Modal Styles */
 .cart-modal {
-  --height: 85%;
+  --height: 100%;
+  padding-top: 30px;
   --border-radius: 20px 20px 0 0;
   --background: #f8f8f8;
 }
@@ -460,17 +461,18 @@ ion-toolbar {
 .modal-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #7A5C1E;
+  color: #f9f9f9;
 }
 
 .close-button {
-  --color: #7A5C1E;
+  --color: #ffffff;
 }
 
 .modal-content {
   padding: 16px;
+
   max-width: 500px;
-  margin: 0 auto;
+  margin: 50px auto 0 auto;
   display: flex;
   flex-direction: column;
   gap: 20px;
