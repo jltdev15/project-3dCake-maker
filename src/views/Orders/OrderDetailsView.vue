@@ -64,10 +64,10 @@
                 <div class="info-item">
                   <ion-icon :icon="cashOutline"></ion-icon>
                   <div class="info-content">
-                    <template v-if="!isCustomOrder(order)">
-                      ₱{{ ((order as NonCustomOrder).totalAmount || 0).toFixed(2) }}
+                    <template v-if="isCustomOrder(order)">
+                      ₱{{ ((order as any).totalAmount || 0).toFixed(2) }}
                     </template>
-                    <span class="value pending" v-else-if="isCustomOrder(order)">
+                    <span class="value pending" v-else>
                       Pending Pricing
                     </span>
                   </div>

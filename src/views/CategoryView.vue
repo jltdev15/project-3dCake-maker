@@ -300,6 +300,8 @@ ion-toolbar {
   --background: #7A5C1E;
   --border-width: 0;
   padding: 8px 16px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .back-button {
@@ -316,59 +318,83 @@ ion-toolbar {
 .category-container {
   padding: 16px;
   padding-top: 80px;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .category-header {
   text-align: center;
   margin-bottom: 32px;
+  padding: 0 16px;
 }
 
 .cakes-title {
   font-size: 2rem;
   font-weight: 700;
   color: #7A5C1E;
-  margin: 0 0 8px 0;
+  margin: 0 0 12px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .cakes-subtitle {
-  font-size: 1rem;
+  font-size: 1.1rem;
   color: #666;
   margin: 0;
+  opacity: 0.9;
 }
 
 .cakes-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: 20px;
   padding: 8px;
 }
 
 .cake-card {
   background: rgba(255, 255, 255, 0.95);
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s ease;
+  transition: all 0.3s ease;
   cursor: pointer;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .cake-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .cake-image {
   width: 100%;
-  height: 200px;
+  height: 240px;
   overflow: hidden;
+  position: relative;
+}
+
+.cake-image::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.1));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.cake-card:hover .cake-image::after {
+  opacity: 1;
 }
 
 .cake-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  transition: transform 0.5s ease;
 }
 
 .cake-card:hover .cake-image img {
@@ -376,18 +402,19 @@ ion-toolbar {
 }
 
 .cake-info {
-  padding: 12px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.98);
 }
 
 .cake-name {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: #7A5C1E;
   margin: 0;
-  line-height: 1.2;
+  line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -396,26 +423,31 @@ ion-toolbar {
 }
 
 .cake-price {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: #7a1e1e;
   margin: 0;
 }
 
 .add-to-cart-btn {
-  --background: #7A5C1E;
-  --background-hover: #8B6B2F;
-  --background-activated: #8B6B2F;
-  --border-radius: 8px;
+  --background: linear-gradient(135deg, #7A5C1E 0%, #8B6B2F 100%);
+  --background-hover: linear-gradient(135deg, #8B6B2F 0%, #9D7B3F 100%);
+  --background-activated: linear-gradient(135deg, #8B6B2F 0%, #9D7B3F 100%);
+  --border-radius: 12px;
   --box-shadow: 0 2px 8px rgba(122, 92, 30, 0.15);
-  height: 36px;
-  font-size: 0.9rem;
+  height: 40px;
+  font-size: 0.95rem;
   font-weight: 600;
   margin-top: auto;
+  transition: all 0.3s ease;
+}
+
+.add-to-cart-btn:hover {
+  --box-shadow: 0 4px 12px rgba(122, 92, 30, 0.25);
 }
 
 .add-to-cart-btn ion-icon {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
 }
 
 /* Modal Styles */
@@ -436,32 +468,33 @@ ion-toolbar {
 }
 
 .modal-content {
-  padding: 12px;
+  padding: 16px;
   max-width: 500px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .selected-cake-info {
   text-align: center;
   background: white;
-  padding: 16px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .image-container {
   width: 100%;
-  height: 280px;
-  margin: 0 auto 12px;
-  border-radius: 12px;
+  height: 300px;
+  margin: 0 auto 16px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   display: flex;
   justify-content: center;
   align-items: center;
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .selected-cake-image {
@@ -472,27 +505,27 @@ ion-toolbar {
 }
 
 .selected-cake-name {
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: #7A5C1E;
   margin: 0;
 }
 
 .section-title {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: #7A5C1E;
-  margin-bottom: 8px;
-  padding-bottom: 4px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
   border-bottom: 1px solid rgba(122, 92, 30, 0.1);
 }
 
 .size-selection, .quantity-selection {
   background: white;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 16px;
+  border-radius: 16px;
   margin-bottom: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .size-list {
@@ -501,11 +534,11 @@ ion-toolbar {
 
 .size-item {
   --background: transparent;
-  --border-radius: 8px;
-  margin-bottom: 4px;
+  --border-radius: 12px;
+  margin-bottom: 8px;
   border: 1px solid rgba(122, 92, 30, 0.1);
   transition: all 0.3s ease;
-  --min-height: 44px;
+  --min-height: 48px;
 }
 
 .size-item.selected {
@@ -516,64 +549,64 @@ ion-toolbar {
 .size-label {
   font-weight: 500;
   color: #7A5C1E;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 
 .size-price {
   color: #7a1e1e;
   font-weight: 600;
-  margin-left: 6px;
-  font-size: 0.95rem;
+  margin-left: 8px;
+  font-size: 1rem;
 }
 
 .quantity-controls {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 20px;
   background: rgba(122, 92, 30, 0.05);
-  padding: 8px;
-  border-radius: 8px;
+  padding: 12px;
+  border-radius: 12px;
 }
 
 .quantity-btn {
   --border-color: #7A5C1E;
   --color: #7A5C1E;
-  --border-radius: 6px;
-  --padding-start: 8px;
-  --padding-end: 8px;
-  --height: 32px;
+  --border-radius: 8px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --height: 36px;
 }
 
 .quantity-value {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: #7A5C1E;
-  min-width: 32px;
+  min-width: 36px;
   text-align: center;
 }
 
 .price-summary {
   background: white;
-  border-radius: 12px;
-  padding: 12px;
+  border-radius: 16px;
+  padding: 16px;
   margin-bottom: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .summary-content {
   background: rgba(122, 92, 30, 0.05);
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: 12px;
+  padding: 16px;
 }
 
 .summary-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   padding: 4px 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 
 .summary-label {
@@ -587,8 +620,8 @@ ion-toolbar {
 }
 
 .summary-item.total {
-  margin-top: 8px;
-  padding-top: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid rgba(122, 92, 30, 0.2);
 }
 
@@ -599,25 +632,25 @@ ion-toolbar {
 
 .total-price {
   color: #7a1e1e;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 700;
 }
 
 .confirm-button {
-  --background: #7A5C1E;
-  --background-hover: #8B6B2F;
-  --background-activated: #8B6B2F;
-  --border-radius: 8px;
-  --box-shadow: 0 2px 8px rgba(122, 92, 30, 0.2);
-  height: 44px;
+  --background: linear-gradient(135deg, #7A5C1E 0%, #8B6B2F 100%);
+  --background-hover: linear-gradient(135deg, #8B6B2F 0%, #9D7B3F 100%);
+  --background-activated: linear-gradient(135deg, #8B6B2F 0%, #9D7B3F 100%);
+  --border-radius: 12px;
+  --box-shadow: 0 4px 12px rgba(122, 92, 30, 0.2);
+  height: 48px;
   font-weight: 600;
-  font-size: 1rem;
-  margin-top: 8px;
+  font-size: 1.1rem;
+  margin-top: 12px;
 }
 
 @media (max-width: 768px) {
   .cakes-grid {
-    gap: 12px;
+    gap: 16px;
   }
 
   .cake-image {
@@ -625,32 +658,36 @@ ion-toolbar {
   }
 
   .cake-info {
-    padding: 10px;
-    gap: 6px;
+    padding: 12px;
+    gap: 8px;
   }
 
   .cake-name {
-    font-size: 0.95rem;
+    font-size: 1rem;
   }
 
   .cake-price {
-    font-size: 0.95rem;
+    font-size: 1rem;
   }
 
   .add-to-cart-btn {
-    height: 32px;
-    font-size: 0.85rem;
+    height: 36px;
+    font-size: 0.9rem;
+  }
+
+  .image-container {
+    height: 260px;
   }
 }
 
 @media (max-width: 480px) {
   .modal-content {
-    padding: 8px;
-    gap: 12px;
+    padding: 12px;
+    gap: 16px;
   }
 
   .image-container {
-    height: 240px;
+    height: 220px;
   }
 
   .selected-cake-name {
@@ -658,23 +695,28 @@ ion-toolbar {
   }
 
   .section-title {
-    font-size: 1rem;
+    font-size: 1.1rem;
   }
 
   .size-selection, .quantity-selection, .price-summary {
-    padding: 10px;
+    padding: 12px;
   }
 
   .size-item {
-    --min-height: 40px;
+    --min-height: 44px;
   }
 
   .quantity-controls {
-    gap: 12px;
+    gap: 16px;
   }
 
   .summary-item {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+  }
+
+  .confirm-button {
+    height: 44px;
+    font-size: 1rem;
   }
 }
 </style> 

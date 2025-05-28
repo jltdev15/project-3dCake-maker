@@ -2,7 +2,6 @@
   <ion-page class="home-page">
     <ion-header class="ion-no-border">
       <ion-toolbar>
-
         <ion-title class="brand-title">
           PSALM CAKES
         </ion-title>
@@ -35,9 +34,11 @@
             >
               <div class="category-image">
                 <img :src="category.imageUrl" :alt="category.name" />
+                <div class="category-overlay"></div>
               </div>
               <div class="category-content">
                 <h3 class="category-name">{{ category.name }}</h3>
+                <ion-icon :icon="chevronForward" class="category-arrow"></ion-icon>
               </div>
             </div>
           </div>
@@ -67,7 +68,7 @@ import {
   IonBadge,
   toastController
 } from '@ionic/vue';
-import { createOutline, notificationsOutline, notifications } from 'ionicons/icons';
+import { createOutline, notificationsOutline, notifications, chevronForward } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 import { useCakeStore } from '@/stores/cakeStore';
 import { storeToRefs } from 'pinia';
@@ -132,6 +133,8 @@ ion-toolbar {
   --background: #7A5C1E;
   --border-width: 0;
   padding: 8px 16px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .brand-title {
@@ -141,14 +144,10 @@ ion-toolbar {
   letter-spacing: 0.5px;
 }
 
-.menu-button {
-  --color: #FFFFFF;
-  font-size: 24px;
-}
-
 .notification-button {
   --color: #FFFFFF;
   position: relative;
+  margin-right: 8px;
 }
 
 .notification-icon {
@@ -172,8 +171,10 @@ ion-toolbar {
 
 .content-wrapper {
   padding: 16px;
-  padding-top: 60px;
-  padding-bottom: 100px; /* Added padding for the floating button */
+  padding-top: 80px;
+  padding-bottom: 100px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 /* Categories Section */
@@ -183,69 +184,112 @@ ion-toolbar {
 
 .section-header {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+  padding: 0 16px;
 }
 
 .section-title {
-  font-size: 1.75rem;
+  font-size: 2rem;
   font-weight: 700;
   color: #7A5C1E;
-  margin: 0 0 8px 0;
+  margin: 0 0 12px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .section-subtitle {
-  font-size: 1rem;
+  font-size: 1.1rem;
   color: #666;
   margin: 0;
+  opacity: 0.9;
 }
 
 .categories-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
   padding: 8px;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .category-card {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
+  transition: all 0.3s ease;
   cursor: pointer;
+  position: relative;
 }
 
 .category-card:hover {
   transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .category-image {
   width: 100%;
-  height: 380px;
+  height: 280px;
   overflow: hidden;
+  position: relative;
 }
 
 .category-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  transition: transform 0.5s ease;
+}
+
+.category-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.3));
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .category-card:hover .category-image img {
   transform: scale(1.05);
 }
 
+.category-card:hover .category-overlay {
+  opacity: 1;
+}
+
 .category-content {
-  padding: 12px;
-  text-align: center;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.98);
 }
 
 .category-name {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: #7A5C1E;
   margin: 0;
+  transition: color 0.3s ease;
+}
+
+.category-arrow {
+  color: #7A5C1E;
+  font-size: 20px;
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+.category-card:hover .category-arrow {
+  transform: translateX(4px);
+  opacity: 1;
+}
+
+.category-card:hover .category-name {
+  color: #8B6B2F;
 }
 
 /* Floating Action Button */
@@ -254,34 +298,67 @@ ion-toolbar {
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  --background: #7A5C1E;
-  --background-hover: #8B6B2F;
-  --background-activated: #8B6B2F;
+  --background: linear-gradient(135deg, #7A5C1E 0%, #8B6B2F 100%);
+  --background-hover: linear-gradient(135deg, #8B6B2F 0%, #9D7B3F 100%);
+  --background-activated: linear-gradient(135deg, #8B6B2F 0%, #9D7B3F 100%);
   --border-radius: 50px;
   --box-shadow: 0 4px 16px rgba(122, 92, 30, 0.3);
-  --padding-start: 24px;
-  --padding-end: 24px;
-  height: 48px;
+  --padding-start: 32px;
+  --padding-end: 32px;
+  height: 52px;
   font-weight: 600;
+  font-size: 1.1rem;
   z-index: 1000;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .floating-customize-button ion-icon {
   margin-right: 8px;
+  font-size: 1.2rem;
 }
 
 @media (max-width: 768px) {
   .categories-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
+    gap: 16px;
   }
 
   .category-image {
-    height: 320px;
+    height: 240px;
+  }
+
+  .section-title {
+    font-size: 1.75rem;
+  }
+
+  .floating-customize-button {
+    bottom: 20px;
+    --padding-start: 24px;
+    --padding-end: 24px;
+    height: 48px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .categories-grid {
+    gap: 12px;
+  }
+
+  .category-image {
+    height: 200px;
+  }
+
+  .category-name {
+    font-size: 1rem;
   }
 
   .section-title {
     font-size: 1.5rem;
+  }
+
+  .section-subtitle {
+    font-size: 1rem;
   }
 
   .floating-customize-button {
@@ -289,28 +366,6 @@ ion-toolbar {
     --padding-start: 20px;
     --padding-end: 20px;
     height: 44px;
-  }
-}
-
-@media (max-width: 480px) {
-  .categories-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-  }
-
-  .category-image {
-    height: 280px;
-  }
-
-  .category-name {
-    font-size: 0.875rem;
-  }
-
-  .floating-customize-button {
-    bottom: 12px;
-    --padding-start: 16px;
-    --padding-end: 16px;
-    height: 40px;
     font-size: 0.9rem;
   }
 }

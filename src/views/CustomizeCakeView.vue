@@ -3,7 +3,7 @@
     <ion-header class="ion-no-border">
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-back-button default-href="/home" class="back-button"></ion-back-button>
+          <ion-back-button class="back-button" @click="handleBackButton($event)"></ion-back-button>
         </ion-buttons>
         <ion-title class="customize-title">Customize Cake</ion-title>
       </ion-toolbar>
@@ -87,7 +87,6 @@
                       <div>Diameter: {{ size.diameter }} in</div>
                       <div>Height: {{ size.height }} in</div>
                       <div>{{ size.servings }} servings</div>
-                      <div class="price">₱{{ size.price.toLocaleString() }}</div>
                     </div>
                   </div>
                 </button>
@@ -165,6 +164,22 @@
         </div>
       </div>
 
+      <!-- Back Button Confirmation Modal -->
+      <div class="modal-overlay" v-if="showBackConfirmModal">
+        <div class="confirmation-modal">
+          <div class="modal-header">
+            <h3>Leave Page?</h3>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to leave? Your cake design will be lost.</p>
+          </div>
+          <div class="modal-footer">
+            <button class="cancel-btn" @click="showBackConfirmModal = false">Stay</button>
+            <button class="confirm-btn" @click="confirmBack">Leave</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Add to Cart Confirmation Modal -->
       <div class="modal-overlay" v-if="showCartConfirmModal">
         <div class="confirmation-modal">
@@ -174,11 +189,6 @@
           <div class="modal-body">
             <p>Are you sure you want to add this cake design to your cart?</p>
             <div class="cart-info" v-if="selectedSize">
-              <div class="price-info">
-                <h4>Order Summary</h4>
-                <p>Custom Cake: ₱{{ selectedSize.price.toLocaleString() }}</p>
-                <p><strong>Total:</strong> ₱{{ selectedSize.price.toLocaleString() }}</p>
-              </div>
               <div class="contact-form">
                 <h4>Special Instructions</h4>
                 <div class="form-group">
@@ -391,11 +401,11 @@ const defaultLayerSettings = {
 
 // Move sizeOptions above selectedSize
 const sizeOptions = [
-  { name: '6 x 6', diameter: 6, height: 6, servings: '8-10', price: 999 },
-  { name: '6 x 7', diameter: 6, height: 7, servings: '10-14', price: 1299 },
-  { name: '6 x 8', diameter: 6, height: 8, servings: '12-16', price: 1649 },
-  { name: '6 x 9', diameter: 6, height: 9, servings: '16-20', price: 1949 },
-  { name: '6 x 10', diameter: 6, height: 10, servings: '20-25', price: 2399 }
+  { name: '6 x 6', diameter: 6, height: 6 },
+  { name: '6 x 7', diameter: 6, height: 7 },
+  { name: '6 x 8', diameter: 6, height: 8 },
+  { name: '6 x 9', diameter: 6, height: 9 },
+  { name: '6 x 10', diameter: 6, height: 10 }
 ];
 
 const flavorOptions = [
@@ -2613,7 +2623,19 @@ const addToppingsControlsUI = (layerConfig, container) => {
 
 // Add to Cart related reactive variables
 const showCartConfirmModal = ref(false);
+const showBackConfirmModal = ref(false);
 const isLoading = ref(false);
+
+const handleBackButton = (event) => {
+  // Prevent default back button behavior
+  event.preventDefault();
+  showBackConfirmModal.value = true;
+};
+
+const confirmBack = () => {
+  showBackConfirmModal.value = false;
+  router.push('/home');
+};
 
 // Special instructions for the order
 const customerInfo = reactive({
@@ -2694,10 +2716,8 @@ const addToCart = async () => {
     // Hide the cart confirmation modal
     showCartConfirmModal.value = false;
     
-    // Reset the customer info form
-    Object.keys(customerInfo).forEach(key => {
-      customerInfo[key] = '';
-    });
+    // Reset the customization
+    resetCustomization();
     
     // Show success toast
     const toast = await toastController.create({
@@ -2726,6 +2746,54 @@ const addToCart = async () => {
 };
 
 // Finish the order process - removed as we now redirect directly to cart
+
+const resetCustomization = () => {
+  // Reset selection modal state
+  showSelectionsModal.value = true;
+  currentStep.value = 1;
+  selectedLayers.value = 1;
+  selectedSize.value = null;
+  selectedFlavor.value = null;
+
+  // Reset cake layers
+  cakeLayers = [];
+  layerIdCounter = 0;
+  selectedLayerId = null;
+
+  // Clear history stack
+  historyStack = [];
+  const undoButton = document.getElementById('undoBtn');
+  if (undoButton) {
+    undoButton.disabled = true;
+  }
+
+  // Reset customer info
+  customerInfo.message = '';
+
+  // Reset 3D view
+  if (cakeGroup) {
+    while (cakeGroup.children.length) {
+      const child = cakeGroup.children[0];
+      child.traverse((object) => {
+        if (object.geometry) object.geometry.dispose();
+        if (object.material) {
+          if (Array.isArray(object.material)) {
+            object.material.forEach(material => material.dispose());
+          } else {
+            object.material.dispose();
+          }
+        }
+      });
+      cakeGroup.remove(child);
+    }
+  }
+
+  // Add initial layer
+  addNewLayerAndSelect();
+  renderCake();
+};
+
+
 </script>
 
 <style scoped>
@@ -2933,8 +3001,8 @@ select {
 
 /* Progress Bar Styles */
 .progress-container {
-  padding: 1.5rem 0;
-  margin-bottom: 1.5rem;
+  padding: 0.8rem 0;
+ 
 }
 
 .progress-steps {
@@ -3029,7 +3097,7 @@ select {
 
 .options-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
   margin-bottom: 2rem;
   padding: 0 1rem;
@@ -3137,7 +3205,7 @@ select {
 /* Small Mobile Adjustments */
 @media (max-width: 480px) {
   .options-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
   }
 
@@ -3347,10 +3415,10 @@ ion-toolbar {
 /* Updated Size Selection Styles */
 .options-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
   margin-bottom: 1.5rem;
-  padding: 0 0.5rem;
+  padding: 0 1rem;
 }
 
 .option-button {
@@ -3445,15 +3513,16 @@ ion-toolbar {
 }
 
 /* Mobile Responsive Adjustments */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .options-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
-    padding: 0 0.25rem;
+    gap: 0.75rem;
+    padding: 0 0.5rem;
   }
 
   .option-button {
-    padding: 0.5rem;
+    padding: 0.75rem;
+    min-height: 180px;
   }
 
   .option-icon {
@@ -3466,33 +3535,44 @@ ion-toolbar {
   }
 
   .size-details {
+    padding: 0.5rem;
+  }
+
+  .size-details div {
+    font-size: 0.8rem;
+    margin: 0.1rem 0;
+  }
+}
+
+/* Small Mobile Adjustments */
+@media (max-width: 480px) {
+  .options-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    padding: 0 0.25rem;
+  }
+
+  .option-button {
+    padding: 0.5rem;
+    min-height: 160px;
+  }
+
+  .option-icon {
+    width: 50px;
+    height: 50px;
+  }
+
+  .option-label {
+    font-size: 0.85rem;
+  }
+
+  .size-details {
     padding: 0.35rem;
   }
 
   .size-details div {
     font-size: 0.75rem;
-    margin: 0.1rem 0;
-  }
-
-  .size-details .price {
-    font-size: 0.85rem;
-  }
-
-  .modal-content {
-    padding: 0.5rem;
-  }
-
-  .selection-step {
-    padding: 0;
-  }
-
-  .selection-step h2 {
-    font-size: 1.1rem;
-  }
-
-  .step-description {
-    font-size: 0.8rem;
-    margin-bottom: 1rem;
+    margin: 0.08rem 0;
   }
 }
 
@@ -3570,7 +3650,7 @@ ion-toolbar {
 
 /* Flavor Selection Styles */
 .flavor-grid {
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(1, fr);
   gap: 1rem;
 }
 
@@ -3636,7 +3716,7 @@ ion-toolbar {
 /* Mobile Responsive Adjustments for Flavor Selection */
 @media (max-width: 480px) {
   .flavor-grid {
-    grid-template-columns: 1fr;
+
     gap: 0.75rem;
   }
 

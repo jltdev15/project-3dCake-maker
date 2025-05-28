@@ -21,22 +21,38 @@
                 </div>
 
                 <div class="account-actions">
-                    <ion-button expand="block" class="account-action-btn" @click="router.push({ name: 'accountEdit' })">
-                        <ion-icon :icon="personOutline" slot="start"></ion-icon>
-                        View Profile
-                    </ion-button>
-                    <ion-button expand="block" class="account-action-btn" @click="router.push({ name: 'accountMessage' })">
-                        <ion-icon :icon="chatbubbleOutline" slot="start"></ion-icon>
-                        Message
-                    </ion-button>
-                    <ion-button expand="block" class="account-action-btn">
-                        <ion-icon :icon="informationCircleOutline" slot="start"></ion-icon>
-                        About Us
-                    </ion-button>
-                    <ion-button expand="block" class="account-action-btn logout-btn" @click="handleLogout">
-                        <ion-icon :icon="logOutOutline" slot="start"></ion-icon>
-                        Log Out
-                    </ion-button>
+                    <div class="action-card" @click="router.push({ name: 'accountEdit' })">
+                        <div class="action-icon">
+                            <ion-icon :icon="personOutline"></ion-icon>
+                        </div>
+                        <div class="action-content">
+                            <h3>View Profile</h3>
+                            <p>Manage your personal information</p>
+                        </div>
+                        <ion-icon :icon="chevronForward" class="action-arrow"></ion-icon>
+                    </div>
+
+                    <div class="action-card">
+                        <div class="action-icon">
+                            <ion-icon :icon="informationCircleOutline"></ion-icon>
+                        </div>
+                        <div class="action-content">
+                            <h3>About Us</h3>
+                            <p>Learn more about our service</p>
+                        </div>
+                        <ion-icon :icon="chevronForward" class="action-arrow"></ion-icon>
+                    </div>
+
+                    <div class="action-card logout" @click="handleLogout">
+                        <div class="action-icon">
+                            <ion-icon :icon="logOutOutline"></ion-icon>
+                        </div>
+                        <div class="action-content">
+                            <h3>Log Out</h3>
+                            <p>Sign out of your account</p>
+                        </div>
+                        <ion-icon :icon="chevronForward" class="action-arrow"></ion-icon>
+                    </div>
                 </div>
             </div>
         </ion-content>
@@ -45,7 +61,7 @@
 
 <script setup>
 import { IonPage, IonHeader, IonToolbar, IonContent, IonButton, IonIcon, IonTitle, alertController } from '@ionic/vue';
-import { mailOutline, personOutline, chatbubbleOutline, informationCircleOutline, logOutOutline } from 'ionicons/icons';
+import { mailOutline, personOutline, chatbubbleOutline, informationCircleOutline, logOutOutline, chevronForward } from 'ionicons/icons';
 import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'vue-router';
 import { computed } from 'vue';
@@ -178,49 +194,120 @@ ion-toolbar {
 }
 
 .account-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 8px;
 }
 
-.account-action-btn {
-  --background: rgba(255, 255, 255, 0.95);
-  --background-hover: rgba(255, 255, 255, 0.98);
-  --background-activated: rgba(255, 255, 255, 0.98);
-  --color: #7A5C1E;
-  --border-radius: 12px;
-  --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  height: 56px;
-  font-weight: 500;
-  font-size: 1.1rem;
+.action-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
 }
 
-.account-action-btn ion-icon {
-  font-size: 20px;
-  margin-right: 8px;
+.action-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(122, 92, 30, 0.1) 0%, rgba(200, 173, 126, 0.1) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
-.logout-btn {
-  --background: #dc3545;
-  --background-hover: #c82333;
-  --background-activated: #c82333;
-  --color: white;
-  margin-top: 8px;
+.action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+.action-card:hover::before {
+    opacity: 1;
+}
+
+.action-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #7A5C1E 0%, #C8AD7E 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.action-icon ion-icon {
+    font-size: 24px;
+    color: white;
+}
+
+.action-content {
+    flex-grow: 1;
+}
+
+.action-content h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #7A5C1E;
+}
+
+.action-content p {
+    margin: 4px 0 0;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.action-arrow {
+    color: #7A5C1E;
+    font-size: 20px;
+    opacity: 0.5;
+    transition: transform 0.3s ease;
+}
+
+.action-card:hover .action-arrow {
+    transform: translateX(4px);
+    opacity: 1;
+}
+
+.logout {
+    border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+.logout .action-icon {
+    background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%);
+}
+
+.logout .action-content h3 {
+    color: #dc3545;
 }
 
 @media (max-width: 480px) {
-  .profile-section {
-    padding: 24px;
-  }
+    .action-card {
+        padding: 16px;
+    }
 
-  .account-avatar {
-    width: 80px;
-    height: 80px;
-    font-size: 32px;
-  }
+    .action-icon {
+        width: 40px;
+        height: 40px;
+    }
 
-  .account-name {
-    font-size: 1.5rem;
-  }
+    .action-content h3 {
+        font-size: 1rem;
+    }
+
+    .action-content p {
+        font-size: 0.8rem;
+    }
 }
 </style>

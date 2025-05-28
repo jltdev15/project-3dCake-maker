@@ -28,7 +28,7 @@
 
           <div class="cart-items">
             <div v-for="item in cartStore.items" :key="item.id" class="cart-item">
-              <div class="item-image">
+              <div v-if="item.imageUrl" class="item-image">
                 <img :src="item.imageUrl" :alt="item.name">
               </div>
               <div class="item-details">
@@ -92,6 +92,20 @@
             handler: removeItem
           }
         ]" @didDismiss="showDeleteAlert = false"></ion-alert>
+
+      <!-- Success Modal -->
+      <ion-modal :is-open="showSuccessModal" :breakpoints="[0, 0.5, 0.8]" :initial-breakpoint="0.5" @didDismiss="handleSuccessModalDismiss">
+        <ion-content class="ion-padding">
+          <div class="success-modal-content">
+            <ion-icon :icon="checkmarkCircle" class="success-icon"></ion-icon>
+            <h2 class="success-title">Order Placed Successfully!</h2>
+            <p class="success-message">Thank you for your order. We'll process it right away.</p>
+            <ion-button expand="block" class="success-button" @click="handleSuccessModalDismiss">
+              Continue Shopping
+            </ion-button>
+          </div>
+        </ion-content>
+      </ion-modal>
     </ion-content>
   </ion-page>
 </template>
@@ -106,9 +120,10 @@ import {
   IonButton,
   IonIcon,
   IonSpinner,
-  IonAlert
+  IonAlert,
+  IonModal
 } from '@ionic/vue';
-import { cartOutline, addOutline, removeOutline, trashOutline, arrowForward } from 'ionicons/icons';
+import { cartOutline, addOutline, removeOutline, trashOutline, arrowForward, checkmarkCircle } from 'ionicons/icons';
 import { useCartStore } from '../../stores/cartStore';
 import { onMounted, ref, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
@@ -150,6 +165,7 @@ const authStore = useAuthStore();
 const isCheckingOut = ref(false);
 const showDeleteAlert = ref(false);
 const itemToDelete = ref<string | null>(null);
+const showSuccessModal = ref(false);
 
 onMounted(async () => {
   await cartStore.loadCartItems();
@@ -176,6 +192,11 @@ const removeItem = () => {
     itemToDelete.value = null;
   }
   showDeleteAlert.value = false;
+};
+
+const handleSuccessModalDismiss = () => {
+  showSuccessModal.value = false;
+  router.replace('/');
 };
 
 const handleCheckout = async () => {
@@ -358,14 +379,7 @@ const handleCheckout = async () => {
     }
 
     console.log('Checkout completed successfully!');
-    const toast = await toastController.create({
-      message: 'Order placed successfully!',
-      duration: 2000,
-      position: 'top',
-      color: 'success'
-    });
-    await toast.present();
-    router.replace('/');
+    showSuccessModal.value = true;
   } catch (error) {
     console.error('Checkout error:', error);
     const errorMessage = (error as Error).message || 'Failed to place order. Please try again.';
@@ -918,6 +932,76 @@ ion-toolbar {
     min-height: 40px;
     font-size: 0.95rem;
     margin: 6px;
+  }
+}
+
+/* Success Modal Styles */
+.success-modal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  height: 100%;
+}
+
+.success-icon {
+  font-size: 64px;
+  color: #4CAF50;
+  margin-bottom: 16px;
+}
+
+.success-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #7A5C1E;
+  margin: 0 0 12px 0;
+}
+
+.success-message {
+  color: #666;
+  margin: 0 0 24px 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.success-button {
+  --background: #7A5C1E;
+  --background-hover: #8B6B2F;
+  --background-activated: #8B6B2F;
+  --border-radius: 8px;
+  --box-shadow: 0 2px 8px rgba(122, 92, 30, 0.2);
+  height: 44px;
+  font-weight: 600;
+  font-size: 1rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+@media (max-width: 480px) {
+  .success-modal-content {
+    padding: 16px;
+  }
+
+  .success-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
+
+  .success-title {
+    font-size: 1.25rem;
+    margin-bottom: 8px;
+  }
+
+  .success-message {
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+  }
+
+  .success-button {
+    height: 40px;
+    font-size: 0.95rem;
   }
 }
 </style>

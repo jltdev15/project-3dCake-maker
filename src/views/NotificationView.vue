@@ -51,7 +51,7 @@
 
                     <div class="notifications-grid">
                         <div v-for="notification in orderNotification.notifications" 
-                             :key="notification.orderId"
+                             :key="notification.key || notification.orderId"
                              :class="['notification-card', { 'unread': !notification.read }]"
                              @click="handleNotificationClick(notification)">
                             <div class="notification-content">
@@ -129,7 +129,7 @@ function getStatusColor(status) {
 
 async function handleNotificationClick(notification) {
     if (auth.user) {
-        await orderNotification.markAsRead(auth.user.uid, notification.orderId);
+        await orderNotification.markAsRead(auth.user.uid, notification.orderId, notification.key);
         router.push(`/orders/${notification.orderId}`);
     }
 }
