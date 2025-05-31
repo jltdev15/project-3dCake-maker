@@ -7,7 +7,7 @@
     </ion-header>
 
     <ion-content>
-      <div class="cart-container">
+      <div class="cart-container px-2">
         <div v-if="cartStore.items.length === 0" class="empty-cart">
           <div class="empty-cart-content">
             <ion-icon :icon="cartOutline" class="empty-cart-icon"></ion-icon>
@@ -21,22 +21,23 @@
         </div>
 
         <template v-else>
-          <div class="cart-header">
+          <!-- <div class="cart-header">
             <h2 class="cart-items-title">Cart Items</h2>
             <p class="cart-items-subtitle">{{ cartStore.itemCount }} items in your cart</p>
-          </div>
+          </div> -->
 
           <div class="cart-items">
-            <div v-for="item in cartStore.items" :key="item.id" class="cart-item">
-              <div v-if="item.imageUrl" class="item-image">
-                <img :src="item.imageUrl" :alt="item.name">
+            <ion-item-sliding v-for="item in cartStore.items" :key="item.id">
+              <ion-item class="cart-item">
+                <div v-if="item.imageUrl" class="item-image p-2 rounded-lg mr-3">
+                  <img :src="item.imageUrl" :alt="item.name" class="w-full p-1 rounded-lg">
               </div>
-              <div class="item-details">
+                <div class="item-details ">
                 <h3 class="item-name">{{ item.name }}</h3>
                 <p v-if="item.size" class="item-size">Size: {{ item.size }}</p>
                 <p v-if="(item as CartItem).isCustomCake" class="item-custom-badge">Custom Design</p>
                 <p v-if="!(item as CartItem).isCustomCake" class="item-price">₱{{ item.unitPrice?.toFixed(2) || '0.00' }} each</p>
-                <p v-else class="item-price-pending">Price to be determined</p>
+                <p v-if="!(item as CartItem).isCustomCake" class="item-price-pending">Price to be determined</p>
               </div>
               <div class="item-controls">
                 <div class="quantity-controls">
@@ -49,11 +50,15 @@
                     <ion-icon :icon="addOutline"></ion-icon>
                   </ion-button>
                 </div>
-                <ion-button fill="clear" class="remove-btn" @click="confirmRemoveItem(item.id)">
-                  <ion-icon :icon="trashOutline"></ion-icon>
-                </ion-button>
               </div>
-            </div>
+              </ion-item>
+
+              <ion-item-options side="end">
+                <ion-item-option color="danger" @click="confirmRemoveItem(item.id)">
+                  <ion-icon :icon="trashOutline" slot="icon-only"></ion-icon>
+                </ion-item-option>
+              </ion-item-options>
+            </ion-item-sliding>
           </div>
 
           <div class="cart-summary">
@@ -66,7 +71,7 @@
                 <span class="summary-value">{{ cartStore.itemCount }}</span>
               </div>
               <div class="summary-item total">
-                <span>Total Amount</span>
+                <span>Sub Total</span>
                 <span class="total-price">
                   <template v-if="hasCustomItemsOnly">Price to be determined</template>
                   <template v-else>₱{{ cartStore.cartTotal?.toFixed(2) || '0.00' }}</template>
@@ -122,11 +127,115 @@
           </div>
         </div>
       </div>
+
+      <!-- Checkout Modal -->
+      <ion-modal :is-open="showCheckoutModal" @didDismiss="showCheckoutModal = false" class="checkout-modal">
+        <ion-header class="ion-no-border">
+          <ion-toolbar>
+            <ion-title>Checkout</ion-title>
+            <ion-buttons slot="end">
+              <ion-button @click="showCheckoutModal = false">
+                <ion-icon :icon="closeOutline"></ion-icon>
+              </ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+
+        <ion-content class="ion-padding">
+          <div class="pt-24">
+            <!-- Order Summary Section -->
+            <div class="checkout-section">
+              <h2 class="section-title">Order Summary</h2>
+              <div class="order-items">
+                <div v-for="item in cartStore.items" :key="item.id" class="order-item">
+                  <div class="order-item-image" v-if="item.imageUrl">
+                    <img :src="item.imageUrl" :alt="item.name">
+                  </div>
+                  <div class="order-item-details">
+                    <h3 class="order-item-name">{{ item.name }}</h3>
+                    <p v-if="item.size" class="order-item-size">Size: {{ item.size }}</p>
+                    <p v-if="(item as CartItem).isCustomCake" class="order-item-custom">Custom Design</p>
+                  </div>
+                  <div class="order-item-quantity">
+                    <span class="quantity">x{{ item.quantity }}</span>
+                    <span v-if="!(item as CartItem).isCustomCake" class="price">
+                      ₱{{ ((item.unitPrice || 0) * item.quantity).toFixed(2) }}
+                    </span>
+                    <span v-else class="price-pending">Price pending</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Payment Method Section -->
+            <div class="checkout-section">
+              <h2 class="section-title">Payment Method</h2>
+              <div class="payment-options">
+                <ion-radio-group v-model="selectedPaymentMethod">
+                  <ion-item class="payment-option">
+                    <ion-radio value="cod" label-placement="end" justify="start">
+                      <div class="payment-option-content">
+                        <ion-icon :icon="cashOutline" class="payment-icon"></ion-icon>
+                        <div class="payment-details">
+                          <span class="payment-title">Cash on Delivery</span>
+                          <span class="payment-description">Pay when you receive your order</span>
+                        </div>
+                      </div>
+                    </ion-radio>
+                  </ion-item>
+
+                  <ion-item class="payment-option paypal-option">
+                    <div class="paypal-container">
+                      <div v-if="showCheckoutModal && cartStore.cartTotal > 0" id="paypal-button-container" class="w-full" style="min-height: 150px;">
+                        <div v-if="!paypalLoaded" class="paypal-loading">
+                          <ion-spinner name="dots"></ion-spinner>
+                          <p>Loading payment options...</p>
+                        </div>
+                      </div>
+                      <div v-else-if="showCheckoutModal && cartStore.cartTotal <= 0" class="paypal-disabled">
+                        <p>Add items to cart to enable PayPal payment</p>
+                      </div>
+                    </div>
+                  </ion-item>
+                </ion-radio-group>
+              </div>
+            </div>
+
+            <!-- Bottom Spacer -->
+            <div class="bottom-spacer"></div>
+          </div>
+
+          <!-- Fixed Bottom Section -->
+          <div class="checkout-bottom-section">
+            <div class="total-section">
+              <div class="total-row">
+                <span>Subtotal</span>
+                <span class="total-amount">
+                  <template v-if="hasCustomItemsOnly">Price to be determined</template>
+                  <template v-else>₱{{ cartStore.cartTotal?.toFixed(2) || '0.00' }}</template>
+                </span>
+              </div>
+              <div class="total-row grand-total">
+                <span>Total Amount</span>
+                <span class="grand-total-amount">
+                  <template v-if="hasCustomItemsOnly">Price to be determined</template>
+                  <template v-else>₱{{ cartStore.cartTotal?.toFixed(2) || '0.00' }}</template>
+                </span>
+              </div>
+            </div>
+            <ion-button expand="block" class="place-order-btn" @click="placeOrder" :disabled="!selectedPaymentMethod || isPlacingOrder">
+              <ion-spinner v-if="isPlacingOrder" name="dots"></ion-spinner>
+              <span v-else>Place Order</span>
+            </ion-button>
+          </div>
+        </ion-content>
+      </ion-modal>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
+// @ts-ignore - These imports are used in the template
 import {
   IonPage,
   IonHeader,
@@ -137,17 +246,32 @@ import {
   IonIcon,
   IonSpinner,
   IonAlert,
-  IonModal
+  IonModal,
+  IonItem,
+  IonItemSliding,
+  IonItemOptions,
+  IonItemOption,
+  IonRadioGroup,
+  IonRadio,
+  IonButtons
 } from '@ionic/vue';
-import { cartOutline, addOutline, removeOutline, trashOutline, arrowForward, checkmarkCircle } from 'ionicons/icons';
+
+// @ts-ignore - These icons are used in the template
+import { cartOutline, addOutline, removeOutline, trashOutline, arrowForward, checkmarkCircle, closeOutline, cashOutline, logoPaypal } from 'ionicons/icons';
+
 import { useCartStore } from '../../stores/cartStore';
-import { onMounted, ref, onUnmounted, computed } from 'vue';
+import { onMounted, ref, onUnmounted, computed, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { toastController } from '@ionic/vue';
 import { useAuthStore } from '../../stores/authStore';
 import type { UserData } from '../../stores/authStore';
 import { database, ref as dbRef, push, set } from '../../config/firebase';
 import { storeToRefs } from 'pinia';
+import { createPayPalOrder, capturePayPalOrder } from '@/api/paypal';
+
+// PayPal configuration
+const PAYPAL_CLIENT_ID = 'AbnTUyrjf9HNGPd041AS7o7BI1jxhhQVB6pZG6cKJvUCgUciUjH-NHGVE-4fB9OZUTEamm_vdP_p49y2';
+const PAYPAL_SDK_URL = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=PHP&intent=capture&components=buttons&enable-funding=paylater,venmo&disable-funding=paylater,card`;
 
 // Define interface for cart items including custom cake properties
 interface CartItem {
@@ -182,14 +306,224 @@ const isCheckingOut = ref(false);
 const showDeleteAlert = ref(false);
 const itemToDelete = ref<string | null>(null);
 const showSuccessModal = ref(false);
+const showCheckoutModal = ref(false);
+const selectedPaymentMethod = ref('paypal');
+const isPlacingOrder = ref(false);
 
+// PayPal Integration
+const paypalLoaded = ref(false);
+const isProcessingPayment = ref(false);
+
+// Add PayPal SDK loading function
+const loadPayPalSDK = () => {
+  return new Promise<void>((resolve, reject) => {
+    // Check if PayPal SDK is already loaded
+    // @ts-ignore - PayPal types
+    if (window.paypal) {
+      console.log('PayPal SDK already loaded');
+      // Verify that required components are available
+      // @ts-ignore - PayPal types
+      if (window.paypal.Buttons) {
+        resolve();
+      } else {
+        // If SDK is loaded but buttons component is missing, reload it
+        console.log('PayPal SDK loaded but buttons component missing, reloading...');
+        const existingScript = document.querySelector(`script[src*="paypal.com/sdk/js"]`);
+        if (existingScript) {
+          existingScript.remove();
+        }
+        // Continue with loading new script
+      }
+    }
+
+    // Remove any existing PayPal script
+    const existingScript = document.querySelector(`script[src*="paypal.com/sdk/js"]`);
+    if (existingScript) {
+      existingScript.remove();
+    }
+
+    const script = document.createElement('script');
+    script.src = PAYPAL_SDK_URL;
+    script.async = true;
+    
+    script.onload = () => {
+      console.log('PayPal SDK loaded successfully');
+      // Add a small delay to ensure SDK is fully initialized
+      setTimeout(() => {
+        // @ts-ignore - PayPal types
+        if (window.paypal && window.paypal.Buttons) {
+          console.log('PayPal SDK and buttons component initialized successfully');
+          resolve();
+        } else {
+          console.error('PayPal SDK loaded but buttons component not available');
+          reject(new Error('PayPal buttons component not available'));
+        }
+      }, 500); // Increased delay to ensure full initialization
+    };
+    
+    script.onerror = (error) => {
+      console.error('Failed to load PayPal SDK:', error);
+      reject(new Error('Failed to load PayPal SDK'));
+    };
+
+    document.head.appendChild(script);
+  });
+};
+
+// Add a helper function to wait for element
+const waitForElement = (selector: string, timeout = 5000): Promise<HTMLElement> => {
+  return new Promise((resolve, reject) => {
+    const startTime = Date.now();
+    
+    const checkElement = () => {
+      const element = document.getElementById(selector);
+      if (element) {
+        resolve(element);
+        return;
+      }
+      
+      if (Date.now() - startTime >= timeout) {
+        reject(new Error(`Element ${selector} not found after ${timeout}ms`));
+        return;
+      }
+      
+      requestAnimationFrame(checkElement);
+    };
+    
+    checkElement();
+  });
+};
+
+// Update onMounted to load PayPal SDK
 onMounted(async () => {
+  console.log('Component mounted, loading cart items...');
   await cartStore.loadCartItems();
+  try {
+    await loadPayPalSDK();
+    console.log('PayPal SDK loaded during component mount');
+  } catch (error) {
+    console.error('Failed to load PayPal SDK during mount:', error);
+  }
 });
 
 onUnmounted(() => {
   cartStore.cleanup();
+  // Only reset PayPal state if we're actually unloading the component
+  if (!showCheckoutModal.value) {
+    paypalLoaded.value = false;
+  }
 });
+
+// Update the watcher for checkout modal
+watch(showCheckoutModal, async (isOpen) => {
+  if (isOpen) {
+    console.log('Checkout modal opened');
+    paypalLoaded.value = false; // Reset the loaded state
+    
+    try {
+      // Ensure PayPal SDK is loaded
+      await loadPayPalSDK();
+      
+      // Wait for next tick to ensure DOM is updated
+      await nextTick();
+      
+      // Wait for the PayPal container to be available
+      console.log('Waiting for PayPal container...');
+      await waitForElement('paypal-button-container');
+      console.log('PayPal container found, initializing buttons...');
+      
+      // Add a small delay to ensure the container is fully rendered
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      await initializePayPalButtons();
+    } catch (error) {
+      console.error('Failed to initialize PayPal:', error);
+      const toast = await toastController.create({
+        message: 'Failed to initialize payment system. Please try again.',
+        duration: 5000,
+        position: 'top',
+        color: 'danger'
+      });
+      await toast.present();
+    }
+  } else {
+    console.log('Checkout modal closed');
+    // Clear PayPal container when modal is closed
+    const container = document.getElementById('paypal-button-container');
+    if (container) {
+      container.innerHTML = '';
+    }
+    paypalLoaded.value = false;
+  }
+});
+
+const initializePayPalButtons = async () => {
+  try {
+    console.log('Initializing PayPal buttons...');
+    const paypal = window.paypal;
+    
+    if (!paypal) {
+      throw new Error('PayPal SDK not loaded');
+    }
+
+    // Remove any existing buttons
+    const container = document.getElementById('paypal-button-container');
+    if (container) {
+      container.innerHTML = '';
+    }
+
+    // Create PayPal buttons
+    await paypal.Buttons({
+      style: {
+        layout: 'vertical',
+        color: 'blue',
+        shape: 'rect',
+        label: 'pay'
+      },
+      fundingSource: paypal.FUNDING.PAYPAL,
+      createOrder: async () => {
+        try {
+          console.log('Creating PayPal order...');
+          const order = await createPayPalOrder(
+            cartStore.cartTotal.toFixed(2),
+            'PHP',
+            '3D Cake Maker Order'
+          );
+          console.log('PayPal order created:', order);
+          return order.id;
+        } catch (error) {
+          console.error('Error creating PayPal order:', error);
+          throw error;
+        }
+      },
+      onApprove: async (data: any) => {
+        try {
+          console.log('Payment approved:', data);
+          const captureData = await capturePayPalOrder(data.orderID);
+          console.log('Payment captured:', captureData);
+          
+          // Handle successful payment
+          await handleSuccessfulPayment(captureData);
+        } catch (error) {
+          console.error('Error capturing payment:', error);
+          throw error;
+        }
+      },
+      onError: (err: any) => {
+        console.error('PayPal error:', err);
+        alert('An error occurred with PayPal. Please try again.');
+      },
+      onCancel: () => {
+        console.log('Payment cancelled');
+      }
+    }).render('#paypal-button-container');
+
+    console.log('PayPal buttons initialized successfully');
+  } catch (error) {
+    console.error('Error initializing PayPal buttons:', error);
+    alert('Failed to initialize PayPal. Please refresh the page and try again.');
+  }
+};
 
 const updateItemQuantity = async (id: string, newQuantity: number) => {
   if (newQuantity >= 1) {
@@ -215,205 +549,146 @@ const handleSuccessModalDismiss = () => {
   router.replace('/');
 };
 
-const handleCheckout = async () => {
-  if (isCheckingOut.value) return;
+const handleCheckout = () => {
+  showCheckoutModal.value = true;
+};
 
-  isCheckingOut.value = true;
+const processOrderWithPayPal = async (paypalOrder: any) => {
+  console.log('Starting order processing...');
+  if (isPlacingOrder.value) {
+    console.log('Order already being placed, ignoring request');
+    return;
+  }
+  
+  isPlacingOrder.value = true;
   try {
-    console.log('Starting checkout process...');
-
-    // Separate custom and regular cakes
-    const customCakes = cartStore.items.filter((item) => (item as CartItem).isCustomCake);
-    const regularCakes = cartStore.items.filter((item) => !(item as CartItem).isCustomCake);
-
-    const hasCustomCakes = customCakes.length > 0;
-    const hasRegularCakes = regularCakes.length > 0;
-
-    console.log(`Cart contains: ${customCakes.length} custom cakes, ${regularCakes.length} regular cakes`);
-
-    // Generate a common order ID
+    console.log('Generating order ID...');
     const orderId = await cartStore.generateOrderId('order');
-    console.log(`Generated order ID: ${orderId}`);
-
-    // Calculate totals for different cake types
-    const customTotal = customCakes.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
-    const regularTotal = regularCakes.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
-
-    // Base order data common to both types
-    const baseOrderData = {
-      userId: authStore.user?.uid ?? '',
-      customerName: authStore.user?.name ?? 'Anonymous User',
-      customerEmail: authStore.user?.email ?? '',
-      status: 'pending',
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      orderId: orderId
+    console.log('Order ID generated:', orderId);
+    
+    // Add PayPal payment details to order data
+    const orderData = {
+      orderId,
+      items: cartStore.items,
+      total: cartStore.cartTotal,
+      paymentMethod: 'paypal',
+      paymentDetails: {
+        paypalOrderId: paypalOrder.id,
+        status: paypalOrder.status,
+        captureId: paypalOrder.purchase_units[0].payments.captures[0].id,
+        amount: paypalOrder.purchase_units[0].amount.value,
+        currency: paypalOrder.purchase_units[0].amount.currency_code
+      },
+      timestamp: new Date().toISOString()
     };
 
-    // Save reference to order in user's node
-    if (authStore.user?.uid) {
-      try {
-        console.log('Saving order reference to user profile...');
-        const userOrderRef = dbRef(database, `users/${authStore.user.uid}/orders/${orderId}`);
-        await set(userOrderRef, {
-          orderId,
-          createdAt: Date.now()
-        });
-        console.log('Order reference saved to user profile');
-      } catch (userRefError) {
-        console.error('Error saving order reference to user profile:', userRefError);
-        // Continue with checkout even if this fails
-      }
+    console.log('Saving order to Firebase:', orderData);
+    // Save order to Firebase
+    const orderRef = dbRef(database, `orders/${orderId}`);
+    await set(orderRef, orderData);
+    console.log('Order saved successfully');
+
+    // Clear cart after successful order
+    console.log('Clearing cart...');
+    const cartItemIds = [...cartStore.items].map(item => item.id);
+    for (const itemId of cartItemIds) {
+      await cartStore.removeItem(itemId);
     }
+    console.log('Cart cleared');
 
-    // Process all items in a single order
-    try {
-      console.log('Processing order items...');
-
-      // Process custom cakes
-      let orderItems: CartItem[] = [];
-      let needsPricing = false;
-
-      if (hasCustomCakes) {
-        console.log('Processing custom cakes...');
-        // Safely prepare custom cakes data
-        const customCakesForOrder = customCakes.map(item => {
-          try {
-            // Create a deep copy to avoid reference issues
-            const itemCopy = JSON.parse(JSON.stringify(item));
-
-            // Remove price fields
-            itemCopy.unitPrice = null;
-            itemCopy.totalPrice = null;
-
-            // Add pricing flag
-            itemCopy.needsPricing = true;
-
-            // Log for debugging
-            if (itemCopy.customDetails &&
-              itemCopy.customDetails.designData &&
-              itemCopy.customDetails.designData.cakeLayers) {
-              console.log('Successfully prepared cake design data for saving');
-            } else {
-              console.warn('Custom cake missing design data for 3D view');
-            }
-
-            return itemCopy;
-          } catch (err) {
-            console.error('Error processing custom cake item:', err);
-            // Return a simplified version if processing fails
-            return {
-              id: item.id,
-              name: item.name,
-              size: item.size,
-              quantity: item.quantity,
-              imageUrl: item.imageUrl,
-              isCustomCake: true,
-              needsPricing: true
-            };
-          }
-        });
-        orderItems = [...orderItems, ...customCakesForOrder];
-        needsPricing = true;
-      }
-
-      // Process regular cakes
-      if (hasRegularCakes) {
-        console.log('Processing regular cakes...');
-
-        // Prepare regular cakes data (simplified)
-        const regularCakesForOrder = regularCakes.map(item => ({
-          id: item.id,
-          name: item.name,
-          size: item.size,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice || 0,
-          totalPrice: item.totalPrice || 0,
-          imageUrl: item.imageUrl,
-          isCustomCake: false
-        } as CartItem));
-        orderItems = [...orderItems, ...regularCakesForOrder];
-      }
-
-      // Save unified order to Firebase
-      console.log('Saving order to Firebase...');
-      const orderRef = dbRef(database, `orders/${orderId}`);
-      
-      // Build the complete order data
-      const orderData = {
-        ...baseOrderData,
-        items: orderItems,
-        totalAmount: hasRegularCakes ? (regularTotal || 0) : 0,
-        hasCustomItems: hasCustomCakes,
-        hasRegularItems: hasRegularCakes,
-        needsPricing: needsPricing,
-        pricingStatus: needsPricing ? 'pending' : 'completed'
-      };
-      
-      // Save the order
-      await set(orderRef, orderData);
-      console.log('Order saved successfully');
-
-      // Create admin notification
-      const notificationType = hasCustomCakes ? (hasRegularCakes ? 'mixed' : 'custom') : 'regular';
-      const notificationMessage = hasCustomCakes
-        ? `New order #${orderId} from ${authStore.user?.name ?? 'Anonymous User'} - Needs pricing`
-        : `New order #${orderId} from ${authStore.user?.name ?? 'Anonymous User'}`;
-        
-      const adminNotificationRef = dbRef(database, 'admin_notifications');
-      const newNotificationRef = push(adminNotificationRef);
-      await set(newNotificationRef, {
-        orderId,
-        userId: authStore.user?.uid ?? '',
-        customerName: authStore.user?.name ?? 'Anonymous User',
-        status: 'pending',
-        type: notificationType,
-        createdAt: Date.now(),
-        read: false,
-        message: notificationMessage,
-        has3DData: hasCustomCakes
-      });
-
-      console.log('Admin notification created');
-    } catch (error) {
-      console.error('Error saving order:', error);
-      throw new Error(`Failed to save order: ${(error as Error).message || 'Unknown error'}`);
-    }
-
-    // Clear the cart after successful checkout
-    try {
-      console.log('Clearing cart...');
-      // Instead of using cartStore.clearCart() which might not exist, clear items one by one
-      const cartItemIds = [...cartStore.items].map(item => item.id);
-      for (const itemId of cartItemIds) {
-        await cartStore.removeItem(itemId);
-      }
-      console.log('Cart cleared successfully');
-    } catch (clearError) {
-      console.error('Error clearing cart:', clearError);
-      // Don't throw here, since the order was already saved
-    }
-
-    console.log('Checkout completed successfully!');
-    showSuccessModal.value = true;
   } catch (error) {
-    console.error('Checkout error:', error);
-    const errorMessage = (error as Error).message || 'Failed to place order. Please try again.';
-    const toast = await toastController.create({
-      message: errorMessage,
-      duration: 3000,
-      position: 'top',
-      color: 'danger'
-    });
-    await toast.present();
+    console.error('Error processing PayPal order:', error);
+    throw error;
   } finally {
-    isCheckingOut.value = false;
+    isPlacingOrder.value = false;
+    console.log('Order processing completed');
   }
+};
+
+const placeOrder = async () => {
+  if (!selectedPaymentMethod.value) return;
+  
+  if (selectedPaymentMethod.value === 'cod') {
+    isPlacingOrder.value = true;
+    try {
+      // Your existing COD order logic here
+      await handleCheckout();
+      showCheckoutModal.value = false;
+      showSuccessModal.value = true;
+    } catch (error) {
+      console.error('Error placing COD order:', error);
+      const toast = await toastController.create({
+        message: 'Failed to place order. Please try again.',
+        duration: 3000,
+        position: 'top',
+        color: 'danger'
+      });
+      await toast.present();
+    } finally {
+      isPlacingOrder.value = false;
+    }
+  }
+  // PayPal orders are handled by the PayPal button
 };
 
 const hasCustomItemsOnly = computed(() => {
   return cartStore.items.length > 0 && cartStore.items.every(item => (item as CartItem).isCustomCake);
 });
+
+// Add the handleSuccessfulPayment function
+const handleSuccessfulPayment = async (captureData: any) => {
+  try {
+    console.log('Processing successful payment:', captureData);
+    
+    // Create order in Firebase
+    const orderRef = push(dbRef(database, 'orders'));
+    const orderData = {
+      id: orderRef.key,
+      userId: authStore.user?.uid,
+      items: cartStore.items,
+      total: cartStore.cartTotal,
+      status: 'paid',
+      paymentMethod: 'paypal',
+      paymentDetails: {
+        transactionId: captureData.id,
+        status: captureData.status,
+        amount: captureData.purchase_units[0].payments.captures[0].amount.value,
+        currency: captureData.purchase_units[0].payments.captures[0].amount.currency_code,
+        captureTime: captureData.purchase_units[0].payments.captures[0].create_time
+      },
+      createdAt: new Date().toISOString()
+    };
+
+    await set(orderRef, orderData);
+    console.log('Order created in Firebase:', orderData);
+
+    // Clear the cart by setting items to empty array
+    cartStore.$patch({ items: [] });
+
+    // Close checkout modal and show success modal
+    showCheckoutModal.value = false;
+    showSuccessModal.value = true;
+
+    // Show success message
+    const toast = await toastController.create({
+      message: 'Payment successful! Your order has been placed.',
+      duration: 3000,
+      position: 'top',
+      color: 'success'
+    });
+    await toast.present();
+  } catch (error) {
+    console.error('Error processing successful payment:', error);
+    const toast = await toastController.create({
+      message: 'Error processing payment. Please contact support.',
+      duration: 3000,
+      position: 'top',
+      color: 'danger'
+    });
+    await toast.present();
+    throw error;
+  }
+};
 </script>
 
 <style scoped>
@@ -432,7 +707,7 @@ ion-header {
 }
 
 ion-toolbar {
-  --background: #7A5C1E;
+  --background: #F0E68D;
   --border-width: 0;
   padding: 8px 16px;
 }
@@ -440,8 +715,9 @@ ion-toolbar {
 .cart-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #58091F;
   letter-spacing: 0.5px;
+  text-align: center;
 }
 
 .empty-cart {
@@ -457,21 +733,24 @@ ion-toolbar {
   background: rgba(255, 255, 255, 0.95);
   padding: 32px;
   border-radius: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(88, 9, 31, 0.1);
   max-width: 400px;
   width: 100%;
 }
 
 .empty-cart-icon {
   font-size: 64px;
-  color: #7A5C1E;
+  color: #58091F;
   margin-bottom: 16px;
+  background: rgba(240, 230, 141, 0.2);
+  padding: 24px;
+  border-radius: 50%;
 }
 
 .empty-cart-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #7A5C1E;
+  color: #58091F;
   margin: 0 0 8px 0;
 }
 
@@ -481,7 +760,7 @@ ion-toolbar {
 }
 
 .cart-container {
-  padding: 16px;
+
   padding-top: 80px;
   padding-bottom: 180px;
   /* Space for fixed summary */
@@ -496,12 +775,12 @@ ion-toolbar {
 .cart-items-title {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #7A5C1E;
+  color: #58091F;
   margin: 0 0 8px 0;
 }
 
 .cart-items-subtitle {
-  color: #666;
+  color: #58091F;
   margin: 0;
 }
 
@@ -510,16 +789,22 @@ ion-toolbar {
   flex-direction: column;
   gap: 12px;
   margin-bottom: 16px;
+  margin-top: 16px;
 }
 
 .cart-item {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 12px;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --background: transparent;
+  --border-radius: 12px;
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --padding-top: 8px;
+  --padding-bottom: 8px;
+  --min-height: 60px;
+  --border-width: 0;
+  --border-color: transparent;
+  margin: 1px 0;
+
+  box-shadow: 0 32px 8px rgba(0, 0, 0, 0.08);
 }
 
 .item-image {
@@ -544,7 +829,7 @@ ion-toolbar {
 .item-name {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #7A5C1E;
+  color: #58091F;
   margin: 0 0 4px 0;
   white-space: nowrap;
   overflow: hidden;
@@ -558,8 +843,8 @@ ion-toolbar {
 }
 
 .item-custom-badge {
-  background: #7A5C1E;
-  color: #FFFFFF;
+  background: #F0E68D;
+  color: #58091F;
   padding: 4px 8px;
   border-radius: 4px;
   font-size: 0.8rem;
@@ -592,8 +877,8 @@ ion-toolbar {
 .quantity-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(122, 92, 30, 0.05);
+  gap: 4px;
+  background: rgba(240, 230, 141, 0.05);
   padding: 6px;
   border-radius: 10px;
 }
@@ -606,11 +891,11 @@ ion-toolbar {
   margin: 0;
   --border-radius: 8px;
   --border-width: 1.5px;
-  --border-color: #7A5C1E;
-  --color: #7A5C1E;
+  --border-color: #58091F;
+  --color: #58091F;
   --background: rgba(255, 255, 255, 0.9);
-  --background-hover: rgba(122, 92, 30, 0.1);
-  --background-activated: rgba(122, 92, 30, 0.15);
+  --background-hover: rgba(240, 230, 141, 0.1);
+  --background-activated: rgba(240, 230, 141, 0.15);
 }
 
 .quantity-controls ion-button::part(native) {
@@ -626,7 +911,7 @@ ion-toolbar {
 .quantity-value {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #7A5C1E;
+  color: #58091F;
   min-width: 28px;
   text-align: center;
   padding: 0 6px;
@@ -657,7 +942,7 @@ ion-toolbar {
 .summary-header h3 {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #7A5C1E;
+  color: #58091F;
   margin: 0;
 }
 
@@ -670,7 +955,7 @@ ion-toolbar {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
-  color: #666;
+  color: #58091F;
   font-size: 0.9rem;
 }
 
@@ -679,7 +964,7 @@ ion-toolbar {
   padding-top: 12px;
   border-top: 1px solid rgba(0, 0, 0, 0.1);
   font-weight: 600;
-  color: #7A5C1E;
+  color: #58091F;
 }
 
 .total-price {
@@ -688,174 +973,51 @@ ion-toolbar {
 }
 
 .checkout-btn {
-  --background: #7A5C1E;
+  --background: #58091F;
   --background-hover: #8B6B2F;
   --background-activated: #8B6B2F;
   --border-radius: 8px;
-  --box-shadow: 0 2px 8px rgba(122, 92, 30, 0.2);
+  --box-shadow: 0 2px 8px rgba(240, 230, 141, 0.2);
   height: 44px;
   font-weight: 600;
   font-size: 1rem;
+  color: #fff;
 }
 
 .start-shopping-btn {
-  --background: #7A5C1E;
+  --background: #58091F;
+  --color: #F0E68D;
   --background-hover: #8B6B2F;
   --background-activated: #8B6B2F;
   --border-radius: 12px;
-  --box-shadow: 0 4px 12px rgba(122, 92, 30, 0.2);
+  --box-shadow: 0 4px 12px rgba(88, 9, 31, 0.2);
   height: 48px;
   font-weight: 600;
+  width: 100%;
+  max-width: 240px;
 }
 
-@media (max-width: 768px) {
-  .cart-container {
-    padding: 12px;
-    padding-top: 70px;
-    padding-bottom: 160px;
-  }
-
-  .cart-item {
-    padding: 10px;
-    gap: 10px;
-  }
-
-  .item-image {
-    width: 60px;
-    height: 60px;
-  }
-
-  .item-name {
-    font-size: 0.9rem;
-  }
-
-  .item-size {
-    font-size: 0.75rem;
-  }
-
-  .item-price {
-    font-size: 0.8rem;
-  }
-
-  .quantity-controls {
-    gap: 6px;
-    padding: 4px;
-  }
-
-  .quantity-controls ion-button {
-    --height: 30px;
-    --width: 30px;
-  }
-
-  .quantity-controls ion-button::part(native) {
-    min-width: 30px;
-    min-height: 30px;
-  }
-
-  .quantity-controls ion-icon {
-    font-size: 16px;
-  }
-
-  .quantity-value {
-    font-size: 1rem;
-    min-width: 24px;
-  }
-
-  .cart-summary {
-    padding: 12px;
-  }
-
-  .summary-header h3 {
-    font-size: 1rem;
-  }
-
-  .summary-item {
-    font-size: 0.85rem;
-  }
-
-  .total-price {
-    font-size: 1rem;
-  }
-
-  .checkout-btn {
-    height: 40px;
-    font-size: 0.95rem;
-  }
+ion-item-sliding {
+  margin-bottom: 12px;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
-@media (max-width: 480px) {
-  .cart-container {
-    padding: 8px;
-    padding-top: 60px;
-    padding-bottom: 150px;
-  }
+ion-item-options {
+  border-radius: 12px;
+  min-width: 40px;
+}
 
-  .cart-item {
-    padding: 8px;
-    gap: 8px;
-  }
+ion-item-option {
+  --background: #7a1e1e;
+  --color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  .item-image {
-    width: 50px;
-    height: 50px;
-  }
-
-  .item-name {
-    font-size: 0.85rem;
-  }
-
-  .item-size {
-    font-size: 0.7rem;
-  }
-
-  .item-price {
-    font-size: 0.75rem;
-  }
-
-  .quantity-controls {
-    gap: 4px;
-    padding: 3px;
-  }
-
-  .quantity-controls ion-button {
-    --height: 28px;
-    --width: 28px;
-  }
-
-  .quantity-controls ion-button::part(native) {
-    min-width: 28px;
-    min-height: 28px;
-  }
-
-  .quantity-controls ion-icon {
-    font-size: 15px;
-  }
-
-  .quantity-value {
-    font-size: 0.95rem;
-    min-width: 22px;
-  }
-
-  .cart-summary {
-    padding: 10px;
-  }
-
-  .summary-header h3 {
-    font-size: 0.95rem;
-  }
-
-  .summary-item {
-    font-size: 0.8rem;
-  }
-
-  .total-price {
-    font-size: 0.95rem;
-  }
-
-  .checkout-btn {
-    height: 36px;
-    font-size: 0.9rem;
-  }
+ion-item-option ion-icon {
+  font-size: 20px;
 }
 
 /* Custom Alert Styles */
@@ -877,7 +1039,7 @@ ion-toolbar {
 }
 
 .custom-alert::part(header) {
-  color: #7A5C1E;
+  color: #F0E68D;
   font-size: 1.2rem;
   font-weight: 600;
   padding: 16px 16px 8px;
@@ -891,13 +1053,13 @@ ion-toolbar {
 
 .alert-button-cancel {
   --color: #ffffff;
-  --background: #7A5C1E;
+  --background: #F0E68D;
   --background-hover: #8B6B2F;
   --background-activated: #6B4D1A;
   font-weight: 500;
   margin: 0 8px;
   border-radius: 8px;
-  --box-shadow: 0 2px 8px rgba(122, 92, 30, 0.2);
+  --box-shadow: 0 2px 8px rgba(240, 230, 141, 0.2);
 }
 
 .alert-button-remove {
@@ -923,7 +1085,7 @@ ion-toolbar {
 }
 
 .custom-alert::part(button.alert-button-cancel) {
-  --background: #7A5C1E;
+  --background: #F0E68D;
   --background-hover: #8B6B2F;
   --background-activated: #6B4D1A;
 }
@@ -1031,7 +1193,7 @@ ion-toolbar {
 .success-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #7A5C1E;
+  color: #58091F;
   margin: 0 0 16px 0;
 }
 
@@ -1043,7 +1205,7 @@ ion-toolbar {
 }
 
 .custom-success-button {
-  background: #7A5C1E;
+  background: #58091F;
   color: #FFFFFF;
   border: none;
   border-radius: 8px;
@@ -1055,7 +1217,7 @@ ion-toolbar {
   width: 100%;
   max-width: 250px;
   height: 48px;
-  box-shadow: 0 2px 8px rgba(122, 92, 30, 0.2);
+  box-shadow: 0 2px 8px rgba(240, 230, 141, 0.2);
 }
 
 .custom-success-button:hover {
@@ -1091,5 +1253,298 @@ ion-toolbar {
     font-size: 0.95rem;
     height: 44px;
   }
+}
+
+.checkout-modal {
+  --height: 100%;
+  --border-radius: 16px 16px 0 0;
+}
+
+.checkout-container {
+  padding: 180px 0; /* Space for fixed bottom section */
+}
+
+.checkout-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #58091F;
+  margin: 0 0 20px 0;
+}
+
+.order-items {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.order-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.order-item-image {
+  width: 70px;
+  height: 70px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.order-item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.order-item-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.order-item-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #58091F;
+  margin: 0 0 6px 0;
+}
+
+.order-item-size {
+  font-size: 0.95rem;
+  color: #666;
+  margin: 0;
+}
+
+.order-item-custom {
+  font-size: 0.9rem;
+  color: #58091F;
+  background: rgba(240, 230, 141, 0.2);
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-top: 6px;
+}
+
+.order-item-quantity {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.quantity {
+  font-size: 1rem;
+  color: #666;
+}
+
+.price {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #58091F;
+}
+
+.price-pending {
+  font-size: 0.95rem;
+  color: #666;
+  font-style: italic;
+}
+
+.payment-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.payment-option {
+  --background: transparent;
+  --border-color: transparent;
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  --min-height: 80px;
+}
+
+.payment-option-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.payment-icon {
+  font-size: 32px;
+  color: #58091F;
+}
+
+.payment-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.payment-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #58091F;
+}
+
+.payment-description {
+  font-size: 0.95rem;
+  color: #666;
+}
+
+.bottom-spacer {
+  height: 16px;
+}
+
+.checkout-bottom-section {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding: 20px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.total-section {
+  background: #F0E68D;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  font-size: 1.1rem;
+  color: #58091F;
+}
+
+.total-row.grand-total {
+  border-top: 1px solid rgba(88, 9, 31, 0.1);
+  margin-top: 12px;
+  padding-top: 16px;
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.total-amount, .grand-total-amount {
+  font-weight: 600;
+}
+
+.place-order-btn {
+  --background: #58091F;
+  --background-hover: #8B6B2F;
+  --background-activated: #8B6B2F;
+  --border-radius: 12px;
+  height: 56px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+ion-radio::part(container) {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #58091F;
+}
+
+ion-radio::part(mark) {
+  background: #58091F;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.payment-option.paypal-option {
+  --padding-end: 16px;
+  --background: transparent;
+  --border-color: transparent;
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  --min-height: auto;
+  padding: 8px 0;
+}
+
+.paypal-container {
+  width: 100%;
+  min-height: 150px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+#paypal-button-container {
+  width: 100%;
+  min-height: 150px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.paypal-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #666;
+  width: 100%;
+  height: 100%;
+}
+
+.paypal-loading p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.paypal-disabled {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  color: #666;
+  text-align: center;
+  padding: 20px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.paypal-disabled p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.paypal-error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  color: #dc3545;
+  text-align: center;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #dc3545;
+  font-size: 0.9rem;
 }
 </style>

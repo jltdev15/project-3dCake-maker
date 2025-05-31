@@ -22,14 +22,14 @@ interface Category {
 const sampleCategories: Category[] = [
   {
     id: '1',
-    name: 'Birthday Cake',
+    name: 'birthday',
     description: 'Celebrate birthdays with our custom-designed birthday cakes',
     imageUrl: '/categories/birthday.png',
     cakes: [
       {
             id: '1',
             name: 'Cocomelon',
-            description: 'Rich chocolate cake with chocolate ganache',
+            description: 'Rich chocolate cake with chocolate ganache and chocolate frosting.',
             price: 1399,
             imageUrl: '/birthdays/1.png',
 
@@ -99,7 +99,7 @@ const sampleCategories: Category[] = [
   },
   {
     id: '2',
-    name: 'Wedding Cake',
+    name: 'Wedding',
     description: 'Elegant and sophisticated wedding cake designs for your special day',
     imageUrl: '/categories/wedding.png',
     cakes: [
@@ -135,7 +135,7 @@ const sampleCategories: Category[] = [
   },
   {
     id: '3',
-    name: 'Anniversary Cake',
+    name: 'Anniversary ',
     description: 'Commemorate your love story with our beautiful anniversary cakes',
     imageUrl: '/categories/anniversary.png',
     cakes: [
@@ -164,7 +164,7 @@ const sampleCategories: Category[] = [
   },
   {
     id: '4',
-    name: 'Christening Cake',
+    name: 'Christening',
     description: 'Celebrate your child\'s christening with our special christening cakes',
     imageUrl: '/categories/christening.png',
     cakes: [
@@ -194,7 +194,7 @@ const sampleCategories: Category[] = [
         name: 'Dove of Peace',
         description: 'White cake with dove decorations and religious symbols',
         price: 899.99,
-        imageUrl: '/christening/4.jpg'
+        imageUrl: '/christening/4.jpeg'
       }
     ]
   }
@@ -208,7 +208,7 @@ export const useCakeStore = defineStore('cake', () => {
 
   // Getters
   const getCategoryById = computed(() => {
-    return (id: string) => categories.value.find(category => category.id === id)
+    return (name: string) => categories.value.find(category => category.name === name)
   })
 
   const getAllCategories = computed(() => categories.value)

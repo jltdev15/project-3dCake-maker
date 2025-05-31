@@ -80,8 +80,8 @@ onMounted(() => {
 }
 
 ion-tab-button {
-    --color: #7A5C1E;
-    --color-selected: #7A5C1E;
+    --color: #58091F;
+    --color-selected: #58091F;
     --ripple-color: transparent;
     transition: all 0.3s ease;
     position: relative;

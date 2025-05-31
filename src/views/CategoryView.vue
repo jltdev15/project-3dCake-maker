@@ -5,33 +5,64 @@
         <ion-buttons slot="start">
           <ion-back-button default-href="/home" class="back-button"></ion-back-button>
         </ion-buttons>
-        <ion-title class="category-title ion-text-center pr-12">{{ category?.name }}</ion-title>
+        <ion-title class="category-title ion-text-center pr-12 capitalize">{{ category?.name }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content>
       <div v-if="category" class="category-container">
-        <div class="category-header">
-          <h2 class="cakes-title">Available Cakes</h2>
-          <p class="cakes-subtitle">Select from our delicious {{ category.name.toLowerCase() }} collection</p>
+        <!-- Show cake details if a cake ID is provided in query -->
+        <div v-if="selectedCake" class="cake-detail-container">
+          <div class="cake-image-container">
+            <img :src="selectedCake.imageUrl" :alt="selectedCake.name" class="cake-detail-image" />
+          </div>
+
+          <div class="cake-info-container">
+            <h1 class="cake-name">{{ selectedCake.name }}</h1>
+            
+            <div class="price-section">
+              <p class="cake-price">
+                ₱{{ typeof selectedCake.price === 'number' 
+                  ? selectedCake.price.toFixed(2) 
+                  : `${selectedCake.price.min.toFixed(2)} - ${selectedCake.price.max.toFixed(2)}` }}
+              </p>
+            </div>
+
+            <div v-if="selectedCake.description" class="description-section">
+              <h2 class="section-title">Description</h2>
+              <p class="cake-description">{{ selectedCake.description }}</p>
+            </div>
+
+            <div v-if="selectedCake.sizes" class="sizes-section">
+              <h2 class="section-title">Available Sizes</h2>
+              <div class="sizes-grid">
+                <div v-for="(price, size) in selectedCake.sizes" :key="size" class="size-card">
+                  <span class="size-name">{{ size }}</span>
+                  <span class="size-price">₱{{ price.toFixed(2) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <ion-button expand="block" @click="addToCart(selectedCake)" class="add-to-cart-btn" fill="solid">
+              <ion-icon :icon="cartOutline" slot="start"></ion-icon>
+              Add to Cart
+            </ion-button>
+          </div>
         </div>
 
-        <div class="cakes-grid">
-          <div v-for="cake in category.cakes" :key="cake.id" class="cake-card" >
+        <!-- Show category listing if no cake ID is provided -->
+        <div v-else class="cakes-grid">
+          <div v-for="cake in category.cakes" :key="cake.id" class="cake-card" @click="viewCakeDetails(cake.id)">
             <div class="cake-image">
               <img :src="cake.imageUrl" :alt="cake.name" />
             </div>
             <div class="cake-info">
               <h3 class="cake-name">{{ cake.name }}</h3>
               <p class="cake-price">
-                ₱{{ typeof cake.price === 'number' 
+                ₱ {{ typeof cake.price === 'number' 
                   ? cake.price.toFixed(2) 
                   : `${cake.price.min.toFixed(2)} - ${cake.price.max.toFixed(2)}` }}
               </p>
-              <ion-button class="add-to-cart-btn" @click.stop="addToCart(cake)" fill="solid">
-                <ion-icon :icon="cartOutline" slot="start"></ion-icon>
-                Add to Cart
-              </ion-button>
             </div>
           </div>
         </div>
@@ -153,12 +184,20 @@ const category = computed(() => {
   return cakeStore.getCategoryById(route.params.id);
 });
 
+const selectedCake = computed(() => {
+  if (!category.value || !route.query.id) return null;
+  return category.value.cakes.find(cake => cake.id === route.query.id);
+});
+
 const viewCakeDetails = (cakeId) => {
-  router.push(`/cake/${cakeId}`);
+  router.push({
+    name: 'cakeDetail',
+    params: { categoryId: route.params.id },
+    query: { id: cakeId }
+  });
 };
 
 const isModalOpen = ref(false);
-const selectedCake = ref(null);
 const selectedSize = ref('');
 const quantity = ref(1);
 
@@ -297,7 +336,7 @@ ion-header {
 }
 
 ion-toolbar {
-  --background: #7A5C1E;
+  --background: #F0E68D;
   --border-width: 0;
   padding: 8px 16px;
   backdrop-filter: blur(10px);
@@ -305,13 +344,13 @@ ion-toolbar {
 }
 
 .back-button {
-  --color: #FFFFFF;
+  --color: #58091F;
 }
 
 .category-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #58091F;
   letter-spacing: 0.5px;
 }
 
@@ -331,14 +370,14 @@ ion-toolbar {
 .cakes-title {
   font-size: 2rem;
   font-weight: 700;
-  color: #7A5C1E;
+  color: #58091F;
   margin: 0 0 12px 0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .cakes-subtitle {
   font-size: 1.1rem;
-  color: #666;
+  color: #58091F;
   margin: 0;
   opacity: 0.9;
 }
@@ -352,7 +391,7 @@ ion-toolbar {
 
 .cake-card {
   background: rgba(255, 255, 255, 0.95);
-  border-radius: 16px;
+  border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
@@ -402,19 +441,18 @@ ion-toolbar {
 }
 
 .cake-info {
-  padding: 16px;
+
   display: flex;
   flex-direction: column;
-  gap: 12px;
+
   background: rgba(255, 255, 255, 0.98);
 }
 
 .cake-name {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
-  color: #7A5C1E;
+  color: #58091F;
   margin: 0;
-  line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -425,12 +463,12 @@ ion-toolbar {
 .cake-price {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #7a1e1e;
+  color: #58091F;
   margin: 0;
 }
 
 .add-to-cart-btn {
-  --background: linear-gradient(135deg, #7A5C1E 0%, #8B6B2F 100%);
+  --background: linear-gradient(#58091F );
   --background-hover: linear-gradient(135deg, #8B6B2F 0%, #9D7B3F 100%);
   --background-activated: linear-gradient(135deg, #8B6B2F 0%, #9D7B3F 100%);
   --border-radius: 12px;
@@ -440,6 +478,7 @@ ion-toolbar {
   font-weight: 600;
   margin-top: auto;
   transition: all 0.3s ease;
+  color: #fff;
 }
 
 .add-to-cart-btn:hover {
@@ -461,11 +500,11 @@ ion-toolbar {
 .modal-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #f9f9f9;
+  color: #58091F;
 }
 
 .close-button {
-  --color: #ffffff;
+  --color: #58091F;
 }
 
 .modal-content {
@@ -639,7 +678,7 @@ ion-toolbar {
 }
 
 .confirm-button {
-  --background: linear-gradient(135deg, #7A5C1E 0%, #8B6B2F 100%);
+  --background: #58091F;
   --background-hover: linear-gradient(135deg, #8B6B2F 0%, #9D7B3F 100%);
   --background-activated: linear-gradient(135deg, #8B6B2F 0%, #9D7B3F 100%);
   --border-radius: 12px;
@@ -660,8 +699,8 @@ ion-toolbar {
   }
 
   .cake-info {
-    padding: 12px;
-    gap: 8px;
+    padding: 8px;
+
   }
 
   .cake-name {
@@ -693,7 +732,7 @@ ion-toolbar {
   }
 
   .selected-cake-name {
-    font-size: 1.2rem;
+    font-size: 1rem;
   }
 
   .section-title {
@@ -719,6 +758,158 @@ ion-toolbar {
   .confirm-button {
     height: 44px;
     font-size: 1rem;
+  }
+}
+
+/* Add styles for cake detail view */
+.cake-detail-container {
+  padding: 16px;
+  padding-top: 80px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.cake-image-container {
+  width: 100%;
+  height: 400px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+  background: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.cake-detail-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.cake-info-container {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cake-name {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #58091F;
+  margin: 0;
+}
+
+.price-section {
+  margin-bottom: 24px;
+}
+
+.cake-price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #7a1e1e;
+  margin: 0;
+}
+
+.section-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #7A5C1E;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(122, 92, 30, 0.1);
+}
+
+.description-section {
+  margin-bottom: 24px;
+}
+
+.cake-description {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #666;
+  margin: 0;
+}
+
+.sizes-section {
+  margin-bottom: 24px;
+}
+
+.sizes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.size-card {
+  background: rgba(122, 92, 30, 0.05);
+  border: 1px solid rgba(122, 92, 30, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.size-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #7A5C1E;
+}
+
+.size-price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #7a1e1e;
+}
+
+@media (max-width: 768px) {
+  .cake-image-container {
+    height: 300px;
+  }
+
+  .cake-name {
+    font-size: 1.75rem;
+  }
+
+  .cake-price {
+    font-size: 1.25rem;
+  }
+
+  .cake-description {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .cake-detail-container {
+    padding: 12px;
+    padding-top: 70px;
+  }
+
+  .cake-image-container {
+    height: 250px;
+    border-radius: 16px;
+  }
+
+  .cake-info-container {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .cake-name {
+    font-size: 1.2rem;
+  }
+
+  .cake-price {
+    font-size: 0.9rem;
+  }
+
+  .sizes-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style> 

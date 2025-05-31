@@ -42,28 +42,36 @@
           <div class="step-content">
             <!-- Step 1: Number of Layers -->
             <div class="selection-step" v-if="currentStep === 1">
-              <h2>Choose Your Layers</h2>
-              <p class="step-description">Select how many layers you'd like for your cake</p>
-              <div class="options-grid">
-                <button 
+              <div class="step-header">
+                <h2 class="step-title">Choose Your Cake Layers</h2>
+                <p class="step-description">Select how many layers you'd like for your custom cake design</p>
+              </div>
+              
+              <div class="layers-container">
+                <div 
                   v-for="num in [1, 2, 3]" 
                   :key="num"
-                  :class="['option-button', { selected: selectedLayers === num }]"
+                  :class="['layer-option', { 'selected': selectedLayers === num }]"
                   @click="selectLayers(num)"
                 >
-                  <div class="option-content">
-                    <div class="option-icon">
-                      <div class="layer-preview">
-                        <div 
-                          v-for="i in num" 
-                          :key="i"
-                          class="preview-layer"
-                        ></div>
-                      </div>
+                  <div class="layer-preview-container">
+                    <div class="layer-preview">
+                      <div 
+                        v-for="i in num" 
+                        :key="i"
+                        class="preview-layer"
+                        :style="{
+                          '--layer-color': i === 1 ? '#F0E68D' : i === 2 ? '#E6D77A' : '#DCC867',
+                          '--layer-height': `${100 / num}%`
+                        }"
+                      ></div>
                     </div>
-                    <div class="option-label">{{ num }} Layer{{ num > 1 ? 's' : '' }}</div>
                   </div>
-                </button>
+                  <div class="layer-info">
+                    <span class="layer-number">{{ num }}</span>
+                    <span class="layer-label">{{ num === 1 ? 'Single Layer' : num === 2 ? 'Double Layer' : 'Triple Layer' }}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -3092,7 +3100,7 @@ select {
 
 .progress-fill {
   height: 100%;
-  background: #007bff;
+  background: #58091F;
   border-radius: 3px;
   transition: width 0.3s ease;
 }
@@ -3104,9 +3112,6 @@ select {
   padding: 1rem 0;
 }
 
-.selection-step {
-  padding: 0 1rem;
-}
 
 .selection-step h2 {
   font-size: 2rem;
@@ -3120,7 +3125,7 @@ select {
   text-align: center;
   color: #666;
   margin-bottom: 2.5rem;
-  font-size: 1.1rem;
+  font-size: 0.8rem;
   line-height: 1.5;
 }
 
@@ -3300,7 +3305,7 @@ select {
 }
 
 .nav-button.next {
-  background: #007bff;
+  background: #58091F;
   color: white;
   margin-left: auto;
   box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
@@ -3397,19 +3402,19 @@ ion-header {
 }
 
 ion-toolbar {
-  --background: #7A5C1E;
+  --background: #F0E68D;
   --border-width: 0;
   padding: 8px 16px;
 }
 
 .back-button {
-  --color: #FFFFFF;
+  --color: #58091F;
 }
 
 .customize-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #58091F;
   letter-spacing: 0.5px;
   padding-left: 32px;
 }
@@ -4351,6 +4356,161 @@ ion-toolbar {
   .form-group input,
   .form-group textarea {
     font-size: 16px; /* Prevents zoom on mobile */
+  }
+}
+
+.step-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.step-title {
+  color: #58091F;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.step-description {
+  color: #666;
+  font-size: 1rem;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.layers-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.layer-option {
+  background: #FFFFFF;
+  border: 2px solid #E0E0E0;
+  border-radius: 16px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.layer-option:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #F0E68D;
+}
+
+.layer-option.selected {
+  border-color: #58091F;
+  background: rgba(240, 230, 141, 0.1);
+  box-shadow: 0 4px 16px rgba(88, 9, 31, 0.1);
+}
+
+.layer-preview-container {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.layer-preview {
+  width: 100%;
+  height: 100%;
+  max-width: 120px;
+  max-height: 120px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+.preview-layer {
+  width: 100%;
+  height: var(--layer-height);
+  background: var(--layer-color);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.layer-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.layer-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #58091F;
+}
+
+.layer-label {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.layer-option.selected .layer-number,
+.layer-option.selected .layer-label {
+  color: #58091F;
+}
+
+@media (max-width: 768px) {
+  .layers-container {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    padding: 0.5rem;
+  }
+
+  .layer-option {
+    padding: 1rem;
+  }
+
+  .step-title {
+    font-size: 1.5rem;
+  }
+
+  .step-description {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .layers-container {
+    grid-template-columns: 1fr;
+    max-width: 280px;
+  }
+
+  .layer-option {
+    flex-direction: row;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .layer-preview-container {
+    width: 80px;
+    aspect-ratio: 1;
+  }
+
+  .layer-info {
+    align-items: flex-start;
+  }
+
+  .step-title {
+    font-size: 1.25rem;
   }
 }
 </style> 

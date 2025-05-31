@@ -35,12 +35,8 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('../views/HomeView.vue'),
         meta: { requiresAuth: true },
       },
-      {
-        path: '/category/:id',
-        name: 'category',
-        component: () => import('../views/CategoryView.vue'),
-        meta: { requiresAuth: true },
-      },
+
+
       {
         path: '/orders',
         name: 'orders',
@@ -74,6 +70,24 @@ const routes: Array<RouteRecordRaw> = [
 
 
     ],
+  },
+  {
+    path: '/category/:id',
+    name: 'category',
+    component: () => import('../views/CategoryView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/category/:categoryId/cake',
+    name: 'cakeDetail',
+    component: () => import('../views/CakeDetailView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/categories',
+    name: 'categories',
+    component: () => import('../views/CategoryListView.vue'),
+    meta: { requiresAuth: true },
   },
   {
     path: '/chat/:id',

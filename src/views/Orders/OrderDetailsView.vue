@@ -5,129 +5,248 @@
         <ion-buttons slot="start">
           <ion-back-button default-href="/orders" class="back-button"></ion-back-button>
         </ion-buttons>
-        <ion-title class="details-title ion-text-center pr-12">Order Details</ion-title>
+        <ion-title class="details-title ion-text-center pr-12" >Order Details</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content>
-      <div class="details-container">
-        <div v-if="isLoading" class="loading-state">
-          <ion-spinner name="crescent"></ion-spinner>
-          <p>Loading order details...</p>
+      <!-- Loading State -->
+      <div v-if="isLoading" class="loading-state">
+        <ion-spinner name="crescent" color="primary"></ion-spinner>
+        <p>Loading order details...</p>
+      </div>
+
+      <!-- Error State - Only show when orders have been loaded -->
+      <div v-else-if="hasLoadedOrders && !order" class="error-state">
+        <div class="error-content">
+          <ion-icon :icon="alertCircleOutline" class="error-icon"></ion-icon>
+          <h2>Order Not Found</h2>
+          <p>The order you're looking for doesn't exist or has been removed.</p>
+          <ion-button router-link="/orders" expand="block" class="action-button">
+            Back to Orders
+          </ion-button>
         </div>
+      </div>
 
-        <div v-else-if="!order" class="error-state">
-          <div class="error-content">
-            <ion-icon :icon="alertCircleOutline" class="error-icon"></ion-icon>
-            <h2>Order Not Found</h2>
-            <p>The order you're looking for doesn't exist or has been removed.</p>
-            <ion-button router-link="/orders" class="back-to-orders-btn" fill="solid">
-              Back to Orders
-              <ion-icon :icon="arrowBack" slot="start"></ion-icon>
-            </ion-button>
-          </div>
-        </div>
-
-        <template v-else>
-          <div class="order-header">
-            <div class="header-content">
-              <h1 class="order-number">Order #{{ order.orderId }}</h1>
-              <span :class="['status-badge', order.status.toLowerCase()]">{{ order.status }}</span>
-            </div>
-          </div>
-
-          <div class="order-info-card">
-            <!-- Order Type Badge -->
-            <div class="type-badge-container">
-              <span class="type-badge" :class="{'custom': isCustomOrder(order)}">
-                {{ isCustomOrder(order) ? 'Custom Cake' : 'Standard Cake' }}
-              </span>
-            </div>
-
-            <div class="info-section">
-              <h3 class="section-title">Order Information</h3>
-              <div class="info-grid">
-                <div class="info-item">
-                  <ion-icon :icon="calendarOutline"></ion-icon>
-                  <div class="info-content">
-                    <span class="label">Order Date</span>
-                    <span class="value">{{ new Date(order.createdAt).toLocaleDateString() }}</span>
-                  </div>
+      <!-- Order Details Content -->
+      <div v-else-if="order" class="details-container">
+        <!-- Order Summary Card -->
+        <section class="order-section">
+          <ion-card class="order-summary-card">
+            <!-- Order Header with ID and Status -->
+            <ion-card-header>
+              <div class="order-header-content">
+                <div class="order-id-container">
+                  <h2 class="order-id">Order #{{ order.orderId.slice(-6) }}</h2>
+                  <p class="order-date">Placed on {{ formatDate(order.createdAt) }}</p>
                 </div>
-                <div class="info-item">
-                  <ion-icon :icon="timeOutline"></ion-icon>
-                  <div class="info-content">
-                    <span class="label">Order Time</span>
-                    <span class="value">{{ new Date(order.createdAt).toLocaleTimeString() }}</span>
-                  </div>
+                <ion-badge :class="['status-badge', order.status.toLowerCase()]">
+                  {{ order.status }}
+                </ion-badge>
+              </div>
+            </ion-card-header>
+            
+            <ion-card-content>
+              <div class="order-summary-content">
+                <!-- Order Type -->
+                <div class="order-type-container">
+                  <ion-chip :class="{'custom-chip': isCustomOrder(order), 'standard-chip': !isCustomOrder(order)}">
+                    <ion-label class="px-1">{{ !isCustomOrder(order) ? 'Custom Cake' : 'Standard Cake' }}</ion-label>
+                  </ion-chip>
                 </div>
-                <div class="info-item">
-                  <ion-icon :icon="cashOutline"></ion-icon>
-                  <div class="info-content">
-                    <template v-if="isCustomOrder(order)">
-                      ₱{{ ((order as any).totalAmount || 0).toFixed(2) }}
-                    </template>
-                    <span class="value pending" v-else>
-                      Pending Pricing
-                    </span>
+                
+                <!-- Order Details List -->
+                <div class="details-list">
+                  <!-- Date and Time -->
+                  <div class="flex items-center flex-row gap-2">
+                    <ion-icon class="text-2xl" :icon="calendarOutline"></ion-icon>
+                    <div class="detail-content">
+                      <span class="detail-label">Order Date</span>
+                      <span class="detail-value">{{ formatDate(order.createdAt) }}</span>
+                    </div>
                   </div>
+                  
+                  <div class="flex items-center flex-row gap-2">
+                    <ion-icon class="text-2xl" :icon="timeOutline"></ion-icon>
+                    <div class="detail-content">
+                      <span class="detail-label">Order Time</span>
+                      <span class="detail-value">{{ formatTime(order.createdAt) }}</span>
+                    </div>
+                  </div>
+                  
+                  <!-- Order Cost -->
+                  <div class="flex items-center flex-row gap-2">
+                    <ion-icon class="text-2xl" :icon="cashOutline"></ion-icon>
+                    <div class="detail-content">
+                      <span class="detail-label">Total Amount</span>
+                      <template v-if="isCustomOrder(order) && order.totalAmount">
+                        
+                        <span class="detail-value price">₱{{ order.totalAmount.toFixed(2) }}</span>
+                      </template>
+                      <template v-else>
+                        <ion-badge class="pricing-badge">Pending Pricing</ion-badge>
+                        
+                      </template>
+                    </div>
+                  </div>
+                  
+                  <!-- Order Status -->
+                  <!-- <div class="detail-item">
+                    <ion-icon :icon="checkmarkCircleOutline"></ion-icon>
+                    <div class="detail-content">
+                      <span class="detail-label">Status</span>
+                      <span class="detail-value status-text" :class="order.status.toLowerCase()">
+                        {{ order.status }}
+                      </span>
+                    </div>
+                  </div> -->
                 </div>
               </div>
-            </div>
+            </ion-card-content>
+          </ion-card>
+        </section>
 
-            <!-- Custom Order Details -->
-            <div class="info-section" v-if="isCustomOrder(order)">
-              <h3 class="section-title">Custom Cake Details</h3>
-              <div class="custom-cake-details">
+        <!-- Custom Order Details Section -->
+        <section v-if="isCustomOrder(order)" class="order-section">
+          <h3 class="section-title">Custom Cake Details</h3>
+          
+          <ion-card class="details-card">
+            <ion-card-content>
+              <div class="custom-cake-content">
                 <p class="custom-description">
-                  Your custom cake order has been received. Our team will review your design request and provide pricing
-                  information shortly.
+                  Your custom cake order has been received. Our team will review your design request and provide pricing information shortly.
                 </p>
-                <div class="pricing-status">
-                  <span class="status-label">Status:</span>
-                  <span :class="['status-value', order.pricingStatus]">
-                    {{ order.pricingStatus === 'pending' ? 'Awaiting Pricing' :
-                    order.pricingStatus === 'priced' ? 'Price Quoted' : 'Price Accepted' }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Standard Order Items -->
-            <div class="info-section" v-if="isNonCustomOrder(order)">
-              <h3 class="section-title">Order Items</h3>
-              <div v-if="!order.items?.length" class="no-items">
-                <p>No items in this order</p>
-              </div>
-              <div v-else class="order-items">
-                <div v-for="(item, index) in order.items" :key="index" class="order-item">
-                  <div class="item-image">
-                    <img :src="item.imageUrl" :alt="item.name" />
-                  </div>
-                  <div class="item-details">
-                    <h4 class="item-name">{{ item.name || 'Unnamed Item' }}</h4>
-                    <div class="item-meta">
-                      <span class="quantity">Quantity: {{ item.quantity || 0 }}</span>
-                      <span v-if="item.size" class="size">Size: {{ item.size }}</span>
-                      <span class="price">₱{{ item.unitPrice?.toFixed(2) || '0.00' }}</span>
+                
+                <!-- Pricing Status Timeline -->
+                <div class="pricing-status-container">
+                  <h4 class="status-heading">Pricing Status</h4>
+                  
+                  <div class="status-timeline">
+                    <div class="timeline-connector"></div>
+                    
+                    <div class="timeline-item" 
+                         :class="{'active': order.pricingStatus === 'pending' || order.pricingStatus === 'priced' || order.pricingStatus === 'accepted',
+                                  'completed': order.pricingStatus === 'priced' || order.pricingStatus === 'accepted'}">
+                      <div class="timeline-marker"></div>
+                      <div class="timeline-content">
+                        <div class="timeline-title">Request Received</div>
+                        <div class="timeline-date" v-if="order.createdAt">{{ getTimeAgo(order.createdAt) }}</div>
+                      </div>
+                    </div>
+                    
+                    <div class="timeline-item" 
+                         :class="{'active': order.pricingStatus === 'priced' || order.pricingStatus === 'accepted',
+                                  'completed': order.pricingStatus === 'accepted'}">
+                      <div class="timeline-marker"></div>
+                      <div class="timeline-content">
+                        <div class="timeline-title">Price Quoted</div>
+                        <div class="timeline-date" v-if="order.pricingStatus === 'priced' || order.pricingStatus === 'accepted'">
+                          {{ order.updatedAt ? getTimeAgo(order.updatedAt) : '' }}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="timeline-item" 
+                         :class="{'active': order.pricingStatus === 'accepted'}">
+                      <div class="timeline-marker"></div>
+                      <div class="timeline-content">
+                        <div class="timeline-title">Price Accepted</div>
+                        <div class="timeline-date" v-if="order.pricingStatus === 'accepted'">
+                          {{ order.updatedAt ? getTimeAgo(order.updatedAt) : '' }}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </template>
+            </ion-card-content>
+          </ion-card>
+          
+          <!-- Customer Notes (if available) -->
+          <ion-card v-if="order.notes" class="details-card">
+            <ion-card-header>
+              <ion-card-subtitle>Customer Notes</ion-card-subtitle>
+            </ion-card-header>
+            <ion-card-content>
+              <p class="customer-notes">{{ order.notes }}</p>
+            </ion-card-content>
+          </ion-card>
+        </section>
+
+        <!-- Standard Order Items Section -->
+        <section v-if="isNonCustomOrder(order)" class="order-section">
+          <h3 class="section-title">Order Items</h3>
+          
+          <ion-card class="details-card">
+            <ion-card-content>
+              <!-- Empty state for no items -->
+              <div v-if="!order.items?.length" class="empty-items">
+                <ion-icon :icon="cartOutline" class="empty-icon"></ion-icon>
+                <p>No items in this order</p>
+              </div>
+              
+              <!-- Items list -->
+              <ion-list v-else class="item-list">
+                <ion-item v-for="(item, index) in order.items" :key="index" class="order-item" lines="none">
+                  <ion-thumbnail slot="start" class="item-image">
+                    <img :src="item.imageUrl || 'https://via.placeholder.com/80'" :alt="item.name" />
+                  </ion-thumbnail>
+                  
+                  <ion-label>
+                    <h3>{{ item.name || 'Unnamed Item' }}</h3>
+                    <p>
+                      <ion-text color="medium">Quantity: {{ item.quantity || 0 }}</ion-text>
+                      <ion-text v-if="item.size" color="medium"> • Size: {{ item.size }}</ion-text>
+                    </p>
+                  </ion-label>
+                  
+                  <div slot="end" class="item-price">
+                    ₱{{ item.unitPrice?.toFixed(2) || '0.00' }}
+                  </div>
+                </ion-item>
+                
+                <!-- Order summary (subtotal, shipping, total) -->
+                <div class="order-summary">
+                  <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span>₱{{ calculateSubtotal(order).toFixed(2) }}</span>
+                  </div>
+                  <div class="summary-row">
+                    <span>Shipping</span>
+                    <span>₱{{ (order.shippingCost || 0).toFixed(2) }}</span>
+                  </div>
+                  <div class="summary-row total">
+                    <span>Total</span>
+                    <span>₱{{ order.totalAmount?.toFixed(2) || '0.00' }}</span>
+                  </div>
+                </div>
+              </ion-list>
+            </ion-card-content>
+          </ion-card>
+        </section>
+      </div>
+      
+      <!-- Extended Loading State - Show when not loading but orders might not be loaded yet -->
+      <div v-else class="loading-state">
+        <ion-spinner name="crescent" color="primary"></ion-spinner>
+        <p>Retrieving order details...</p>
       </div>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonButtons, IonBackButton, IonIcon, IonSpinner, IonButton } from '@ionic/vue';
-import { calendarOutline, timeOutline, cashOutline, alertCircleOutline, arrowBack, pricetagOutline } from 'ionicons/icons';
+// @ts-nocheck
+import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonButtons, 
+         IonBackButton, IonIcon, IonSpinner, IonButton, IonCard, IonCardHeader, 
+         IonCardTitle, IonCardContent, IonBadge, IonChip, IonLabel, 
+         IonCardSubtitle, IonList, IonItem, IonThumbnail, IonText } from '@ionic/vue';
+import { calendarOutline, timeOutline, cashOutline, alertCircleOutline, 
+         arrowBack, pricetagOutline, cartOutline, locationOutline,
+         chatbubbleOutline, checkmarkCircleOutline, bicycleOutline, checkmarkDoneCircleOutline } from 'ionicons/icons';
 import { useRoute, useRouter } from 'vue-router';
 import { useOrderStore } from '../../stores/orderStore';
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 
 // Type definitions
 interface BaseOrder {
@@ -135,18 +254,35 @@ interface BaseOrder {
   userId: string;
   customerName: string;
   customerEmail: string;
-  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  status: 'pending' | 'accepted' | 'declined';
   createdAt: number;
+  notes?: string;
+  phone?: string;
+  shippingAddress?: ShippingAddress;
+  shippingCost?: number;
+  hasCustomItems?: boolean;
+  hasRegularItems?: boolean;
 }
 
-interface NonCustomOrder extends BaseOrder {
-  type: 'non-custom';
-  totalAmount: number;
-  items: any[];
+interface ShippingAddress {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+}
+
+interface OrderItem {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  size?: string;
+  imageUrl?: string;
 }
 
 interface CustomOrder extends BaseOrder {
-  orderType: 'custom';
+  hasCustomItems: true;
+  hasRegularItems: false;
   pricingStatus: 'pending' | 'priced' | 'accepted';
   totalAmount?: number;
   updatedAt: number;
@@ -155,12 +291,19 @@ interface CustomOrder extends BaseOrder {
   };
 }
 
-type Order = NonCustomOrder | CustomOrder;
+interface NonCustomOrder extends BaseOrder {
+  hasCustomItems: false;
+  hasRegularItems: true;
+  type: 'non-custom';
+  totalAmount: number;
+  items: OrderItem[];
+}
 
 const route = useRoute();
-const router = useRouter();
+
 const orderStore = useOrderStore();
 const isLoading = ref(true);
+const hasLoadedOrders = ref(false);
 
 // Type guard for custom order
 const isCustomOrder = (order: any): order is CustomOrder => {
@@ -169,7 +312,7 @@ const isCustomOrder = (order: any): order is CustomOrder => {
 
 // Type guard for non-custom order
 const isNonCustomOrder = (order: any): order is NonCustomOrder => {
-  return order?.hasCustomItems === false;
+  return order?.hasRegularItems === true;
 };
 
 const order = computed(() => {
@@ -182,391 +325,597 @@ const order = computed(() => {
   return foundOrder;
 });
 
-onMounted(async () => {
+// Reset loading state when route params change
+watch(() => route.params.id, () => {
+  isLoading.value = true;
+  loadOrderData();
+});
+
+// Function to load order data
+const loadOrderData = async () => {
   try {
     await orderStore.loadOrders();
     console.log('All orders:', orderStore.orders);
+    
+    // Check if the current order was found
+    const orderId = route.params.id as string;
+    const currentOrder = orderStore.orders.find(o => o.orderId === orderId);
+    
+    // If orders array exists but current order not found, try one more time
+    if (orderStore.orders.length > 0 && !currentOrder) {
+      console.log('Order not found in initial load, retrying...');
+      await orderStore.loadOrders();
+    }
+    
+    hasLoadedOrders.value = true;
   } catch (error) {
     console.error('Error loading orders:', error);
+    hasLoadedOrders.value = true;
   } finally {
-    isLoading.value = false;
+    // Add a small delay to ensure loading state is visible
+    setTimeout(() => {
+      isLoading.value = false;
+    }, 500);
   }
+};
+
+onMounted(() => {
+  loadOrderData();
 });
+
+// Helper functions for date formatting
+const formatDate = (timestamp: number): string => {
+  const date = new Date(timestamp);
+  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+  return date.toLocaleDateString('en-US', options);
+};
+
+const formatTime = (timestamp: number): string => {
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+};
+
+const getTimeAgo = (timestamp: number): string => {
+  const now = new Date();
+  const date = new Date(timestamp);
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  let interval = Math.floor(seconds / 31536000);
+  if (interval >= 1) {
+    return interval === 1 ? '1 year ago' : `${interval} years ago`;
+  }
+  
+  interval = Math.floor(seconds / 2592000);
+  if (interval >= 1) {
+    return interval === 1 ? '1 month ago' : `${interval} months ago`;
+  }
+  
+  interval = Math.floor(seconds / 86400);
+  if (interval >= 1) {
+    return interval === 1 ? '1 day ago' : `${interval} days ago`;
+  }
+  
+  interval = Math.floor(seconds / 3600);
+  if (interval >= 1) {
+    return interval === 1 ? '1 hour ago' : `${interval} hours ago`;
+  }
+  
+  interval = Math.floor(seconds / 60);
+  if (interval >= 1) {
+    return interval === 1 ? '1 minute ago' : `${interval} minutes ago`;
+  }
+  
+  return 'Just now';
+};
+
+// Calculate subtotal from items - with type assertion
+const calculateSubtotal = (order: any): number => {
+  if (!order.items || !Array.isArray(order.items)) return 0;
+  
+  return order.items.reduce((total: number, item: any) => {
+    const price = item.unitPrice || 0;
+    const quantity = item.quantity || 0;
+    return total + (price * quantity);
+  }, 0);
+};
+
+// Helper function to estimate delivery date (3-5 business days from order date)
+
+
+// Computed properties for conditional rendering
+
 </script>
 
 <style scoped>
 .order-details-page {
-  --background: linear-gradient(135deg, #FFF7D0 0%, #C8AD7E 100%);
+  --background: var(--ion-color-light);
 }
 
 ion-header {
-  --background: #FFFFFF;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --background: transparent;
 }
 
 ion-toolbar {
-  --background: #7A5C1E;
+  --background: #F0E68D;
+  --color: #58091F;
   --border-width: 0;
-  padding: 8px 16px;
-}
-
-.back-button {
-  --color: #FFFFFF;
 }
 
 .details-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #FFFFFF;
-  letter-spacing: 0.5px;
+  font-weight: 600;
+  font-size: 1.25rem;
 }
 
 .details-container {
-  padding: 16px;
-  padding-top: 80px;
+  padding: 12px;
   max-width: 800px;
   margin: 0 auto;
 }
 
-.order-header {
+/* Section Layout */
+.order-section {
   margin-bottom: 24px;
 }
 
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 20px;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #58091F;
+  margin: 0 0 12px 4px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid rgba(240, 230, 141, 0.4);
 }
 
-.order-number {
-  font-size: 1.5rem;
+/* Order Summary Card */
+.order-summary-card {
+  margin: 0 0 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+ion-card-header {
+  padding: 16px 16px 8px;
+}
+
+ion-card-content {
+  padding: 8px 16px 20px;
+}
+
+.order-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 4px 0;
+}
+
+.order-summary-content {
+  padding: 12px 0;
+}
+
+.order-id-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.order-id {
+  font-size: 1.25rem;
   font-weight: 700;
-  color: #7A5C1E;
+  color: var(--ion-color-dark);
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.order-date {
+  font-size: 0.85rem;
+  color: var(--ion-color-medium);
   margin: 0;
 }
 
-.status-badge {
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 0.875rem;
+.order-type-container {
+  margin-bottom: 12px;
+}
+
+.details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detail-item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 4px 0;
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--ion-color-medium);
+  margin: 0;
+}
+
+.detail-value {
+  font-size: 1rem;
   font-weight: 500;
+  color: var(--ion-color-dark);
+  margin: 0;
+}
+
+.price-item .detail-value.price {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #58091F;
+}
+
+.status-text {
+  font-weight: 600;
+}
+
+.status-text.pending {
+  color: #b37e00;
+}
+
+.status-text.processing {
+  color: #0040a0;
+}
+
+.status-text.completed {
+  color: #157539;
+}
+
+.status-text.cancelled {
+  color: #a01a30;
+}
+
+.status-badge {
+  --padding-start: 10px;
+  --padding-end: 10px;
+  --padding-top: 8px;
+  --padding-bottom: 8px;
+  height: auto;
+  border-radius: 8px;
   text-transform: capitalize;
+  font-weight: 500;
+  font-size: 0.8rem;
+  margin-top: 2px;
+  padding: 0.6rem;
 }
 
 .status-badge.pending {
-  background: #FFF3CD;
-  color: #856404;
-}
-
-.status-badge.completed {
-  background: #D4EDDA;
-  color: #155724;
-}
-
-.status-badge.cancelled {
-  background: #F8D7DA;
-  color: #721C24;
+  --background: rgba(255, 196, 9, 0.2);
+  --color: #b37e00;
 }
 
 .status-badge.processing {
-  background: #CCE5FF;
-  color: #004085;
+  --background: rgba(56, 128, 255, 0.2);
+  --color: #0040a0;
 }
 
-.order-info-card {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  position: relative;
+.status-badge.completed {
+  --background: rgba(45, 211, 111, 0.2);
+  --color: #157539;
 }
 
-.type-badge-container {
-  position: absolute;
-  top: -15px;
-  right: 20px;
+.status-badge.cancelled {
+  --background: rgba(235, 68, 90, 0.2);
+  --color: #a01a30;
 }
 
-.type-badge {
-  background: #7A5C1E;
-  color: white;
-  padding: 6px 12px;
+/* Details Cards */
+.details-card {
+  margin: 0;
   border-radius: 12px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.type-badge.custom {
-  background: #8e44ad;
-}
-
-.info-section {
-  margin-bottom: 32px;
-}
-
-.info-section:last-child {
-  margin-bottom: 0;
-}
-
-.section-title {
-  color: #7A5C1E;
-  font-size: 1.25rem;
+ion-card-title {
+  font-size: 1.1rem;
   font-weight: 600;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #F5E6D3;
+  color: #58091F;
 }
 
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
-}
-
-.info-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.info-item ion-icon {
-  color: #7A5C1E;
-  font-size: 1.25rem;
-  margin-top: 2px;
-}
-
-.info-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.info-content .label {
-  color: #666;
-  font-size: 0.875rem;
+ion-card-subtitle {
+  --color: #58091F;
+  font-weight: 500;
   margin-bottom: 4px;
 }
 
-.info-content .value {
-  color: #333;
-  font-weight: 500;
-}
-
-.info-content .value.price {
-  color: #7a1e1e;
-  font-weight: 600;
-}
-
-.info-content .value.pending {
-  color: #856404;
-  font-weight: 600;
-}
-
-.custom-cake-details {
-  background: #f8f9fa;
-  padding: 16px;
-  border-radius: 12px;
+/* Custom Cake Content */
+.custom-cake-content {
+  padding: 0 4px;
 }
 
 .custom-description {
-  margin-bottom: 16px;
-  color: #555;
+  margin-bottom: 24px;
+  color: var(--ion-color-medium);
+  line-height: 1.6;
 }
 
-.pricing-status {
+.pricing-status-container {
+  background: rgba(var(--ion-color-light-rgb), 0.5);
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.status-heading {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: var(--ion-color-dark);
+}
+
+.status-timeline {
   display: flex;
-  gap: 8px;
-  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  padding: 0 8px;
 }
 
-.status-label {
-  font-weight: 500;
-  color: #555;
+.timeline-connector {
+  position: absolute;
+  top: 15px;
+  left: 24px;
+  right: 24px;
+  height: 2px;
+  background: var(--ion-color-light-shade);
+  z-index: 1;
 }
 
-.status-value {
-  padding: 4px 10px;
-  border-radius: 10px;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.status-value.pending {
-  background: #FFF3CD;
-  color: #856404;
-}
-
-.status-value.priced {
-  background: #CCE5FF;
-  color: #004085;
-}
-
-.status-value.accepted {
-  background: #D4EDDA;
-  color: #155724;
-}
-
-.order-items {
+.timeline-item {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  align-items: center;
+  flex: 1;
+  z-index: 2;
+}
+
+.timeline-marker {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ion-color-light-shade);
+  border: 2px solid white;
+  margin-bottom: 8px;
+}
+
+.timeline-item.active .timeline-marker {
+  background: #F0E68D;
+  border-color: #58091F;
+}
+
+.timeline-content {
+  text-align: center;
+  padding: 0 8px;
+}
+
+.timeline-title {
+  font-size: 0.8rem;
+  color: var(--ion-color-medium);
+  font-weight: 500;
+}
+
+.timeline-date {
+  font-size: 0.7rem;
+  color: var(--ion-color-medium);
+  margin-top: 4px;
+}
+
+.timeline-item.active .timeline-title {
+  color: #58091F;
+  font-weight: 600;
+}
+
+.timeline-item.completed:before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: -50%;
+  width: 100%;
+  height: 2px;
+  background: #F0E68D;
+  z-index: 1;
+}
+
+/* Customer Notes */
+.customer-notes {
+  color: var(--ion-color-medium);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  font-style: italic;
+}
+
+/* Order Items List */
+.item-list {
+  background: transparent;
 }
 
 .order-item {
-  background: #FFFFFF;
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  gap: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --padding-start: 0;
+  --padding-end: 0;
+  --inner-padding-end: 0;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  --background: rgba(var(--ion-color-light-rgb), 0.5);
 }
 
 .item-image {
-  width: 80px;
-  height: 80px;
-  border-radius: 8px;
-  overflow: hidden;
-  flex-shrink: 0;
+  --border-radius: 6px;
+  --size: 60px;
+  margin: 8px;
 }
 
-.item-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.item-details {
-  flex: 1;
-}
-
-.item-name {
-  color: #7A5C1E;
-  font-size: 1.1rem;
+.order-item h3 {
   font-weight: 600;
-  margin: 0 0 8px 0;
+  color: var(--ion-color-dark);
+  font-size: 0.95rem;
+  margin-bottom: 4px;
 }
 
-.item-meta {
+.item-price {
+  font-weight: 600;
+  color: #58091F;
+  padding: 0 16px;
+}
+
+.order-summary {
+  padding: 16px;
+  border-top: 1px solid rgba(var(--ion-color-light-shade-rgb), 0.5);
+  margin-top: 16px;
+}
+
+.summary-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  color: #666;
+  justify-content: space-between;
+  padding: 4px 0;
+  color: var(--ion-color-medium);
   font-size: 0.9rem;
 }
 
-.size {
-  color: #7A5C1E;
-  font-weight: 500;
+.summary-row.total {
+  padding-top: 8px;
+  margin-top: 8px;
+  border-top: 1px dashed rgba(var(--ion-color-medium-rgb), 0.2);
+  font-weight: 700;
+  font-size: 1rem;
+  color: #58091F;
 }
 
-.price {
-  font-weight: 600;
-  color: #7A5C1E;
+/* Empty State */
+.empty-items {
+  padding: 32px 16px;
+  text-align: center;
 }
 
+.empty-icon {
+  font-size: 48px;
+  color: var(--ion-color-medium);
+  margin-bottom: 16px;
+}
+
+/* Loading State */
 .loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 80px);
+  height: 100%;
+  padding: 64px 0;
   gap: 16px;
 }
 
 .loading-state p {
-  color: #666;
-  font-size: 1.1rem;
+  color: var(--ion-color-medium);
 }
 
+/* Error State */
 .error-state {
   display: flex;
-  align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 80px);
+  align-items: center;
+  height: 100%;
+  padding: 48px 16px;
 }
 
 .error-content {
+  background: white;
+  border-radius: 16px;
+  padding: 32px 24px;
   text-align: center;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 32px;
-  border-radius: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  max-width: 400px;
-  width: 100%;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  max-width: 320px;
 }
 
 .error-icon {
   font-size: 48px;
-  color: #dc3545;
+  color: var(--ion-color-danger);
   margin-bottom: 16px;
 }
 
-.error-state h2 {
-  color: #333;
-  font-size: 1.5rem;
-  margin: 0 0 8px 0;
+.error-content h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--ion-color-dark);
 }
 
-.error-state p {
-  color: #666;
-  font-size: 1.1rem;
-  margin: 0 0 24px 0;
+.error-content p {
+  margin: 0 0 24px;
+  color: var(--ion-color-medium);
+  line-height: 1.5;
 }
 
-.back-to-orders-btn {
-  --background: #7A5C1E;
-  --background-hover: #8B6B2F;
-  --background-activated: #8B6B2F;
-  --border-radius: 12px;
-  --box-shadow: 0 4px 12px rgba(122, 92, 30, 0.2);
-  height: 48px;
+.action-button {
+  --background: #58091F;
+  --border-radius: 8px;
+  --box-shadow: 0 4px 12px rgba(88, 9, 31, 0.3);
   font-weight: 600;
 }
 
-.no-items {
-  text-align: center;
-  padding: 24px;
-  color: #666;
-  font-style: italic;
-}
-
-@media (max-width: 768px) {
-  .header-content {
-    flex-direction: column;
+@media (max-width: 480px) {
+  .details-grid {
+    grid-template-columns: 1fr;
     gap: 12px;
-    text-align: center;
   }
-
+  
+  .timeline-title {
+    font-size: 0.7rem;
+  }
+  
   .order-item {
     flex-direction: column;
   }
-
-  .item-image {
-    width: 100%;
-    height: 160px;
+  
+  .order-section {
+    margin-bottom: 16px;
+  }
+  
+  .section-title {
+    font-size: 1rem;
   }
 }
 
-@media (max-width: 480px) {
-  .order-info-card {
-    padding: 16px;
-  }
-
-  .info-grid {
+@media (max-width: 600px) {
+  .order-summary-layout {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
+  
+  .summary-column {
+    gap: 16px;
+  }
+}
 
-  .item-image {
-    height: 140px;
-  }
+.detail-value.success {
+  color: #157539;
+  font-weight: 600;
+}
+
+.detail-item ion-icon {
+  font-size: 1.8rem;
+  min-width: 24px;
+  color: #58091F;
+}
+
+.custom-chip ion-icon,
+.standard-chip ion-icon {
+  font-size: 1.4rem;
+  padding-right: 10px;
+}
+
+.order-type-container ion-chip {
+  --padding-start: 10px;
+  --padding-end: 10px;
+  height: auto;
+  padding: 8px 4px;
 }
 </style> 
