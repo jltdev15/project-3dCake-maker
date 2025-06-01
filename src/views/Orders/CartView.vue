@@ -265,7 +265,7 @@ import { onMounted, ref, onUnmounted, computed, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { toastController } from '@ionic/vue';
 import { useAuthStore } from '../../stores/authStore';
-import { database, ref as dbRef, push, set, remove, get } from '../../config/firebase';
+import { database, ref as dbRef, set, remove, get } from '../../config/firebase';
 import { createPayPalOrder, capturePayPalOrder } from '@/api/paypal';
 
 // PayPal configuration

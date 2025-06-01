@@ -248,6 +248,9 @@ export const useCakeStore = defineStore('cake', () => {
         ...cake,
         id: Date.now().toString()
       }
+      if (!category.cakes) {
+        category.cakes = []
+      }
       category.cakes.push(newCake)
     }
   }
@@ -264,7 +267,7 @@ export const useCakeStore = defineStore('cake', () => {
 
   function updateCake(categoryId: string, cakeId: string, cake: Partial<Cake>) {
     const category = categories.value.find(c => c.id === categoryId)
-    if (category) {
+    if (category && category.cakes) {
       const index = category.cakes.findIndex(c => c.id === cakeId)
       if (index !== -1) {
         category.cakes[index] = {
@@ -281,7 +284,7 @@ export const useCakeStore = defineStore('cake', () => {
 
   function deleteCake(categoryId: string, cakeId: string) {
     const category = categories.value.find(c => c.id === categoryId)
-    if (category) {
+    if (category && category.cakes) {
       category.cakes = category.cakes.filter(cake => cake.id !== cakeId)
     }
   }
