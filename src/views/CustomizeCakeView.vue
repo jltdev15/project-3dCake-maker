@@ -305,8 +305,7 @@ import { onMounted, onUnmounted, ref, computed, reactive, watch } from 'vue';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
-import * as TextGeometryModule from 'three/examples/jsm/geometries/TextGeometry.js';
-const TextGeometry = TextGeometryModule.TextGeometry;
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 import { getDatabase, ref as dbRef, push, set } from '../config/firebase';
 import { useRouter } from 'vue-router';
 

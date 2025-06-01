@@ -255,18 +255,15 @@ import {
   IonRadio,
   IonButtons
 } from '@ionic/vue';
-
 // @ts-ignore - These icons are used in the template
-import { cartOutline, addOutline, removeOutline, trashOutline, arrowForward, checkmarkCircle, closeOutline, cashOutline, logoPaypal } from 'ionicons/icons';
+import { cartOutline, addOutline, removeOutline, trashOutline, arrowForward, checkmarkCircle, closeOutline, cashOutline } from 'ionicons/icons';
 
 import { useCartStore } from '../../stores/cartStore';
 import { onMounted, ref, onUnmounted, computed, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { toastController } from '@ionic/vue';
 import { useAuthStore } from '../../stores/authStore';
-import type { UserData } from '../../stores/authStore';
 import { database, ref as dbRef, push, set } from '../../config/firebase';
-import { storeToRefs } from 'pinia';
 import { createPayPalOrder, capturePayPalOrder } from '@/api/paypal';
 
 // PayPal configuration
@@ -276,7 +273,7 @@ const PAYPAL_SDK_URL = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_
 // Define interface for cart items including custom cake properties
 interface CartItem {
   id: string;
-  cakeId?: string; // Make cakeId optional since we're using unified order structure
+  cakeId?: string;
   name: string;
   size?: string;
   quantity: number;
@@ -309,10 +306,31 @@ const showSuccessModal = ref(false);
 const showCheckoutModal = ref(false);
 const selectedPaymentMethod = ref('paypal');
 const isPlacingOrder = ref(false);
-
-// PayPal Integration
 const paypalLoaded = ref(false);
-const isProcessingPayment = ref(false);
+
+// Helper function to wait for element
+const waitForElement = (selector: string, timeout = 5000): Promise<HTMLElement> => {
+  return new Promise((resolve, reject) => {
+    const startTime = Date.now();
+    
+    const checkElement = () => {
+      const element = document.getElementById(selector);
+      if (element) {
+        resolve(element);
+        return;
+      }
+      
+      if (Date.now() - startTime >= timeout) {
+        reject(new Error(`Element ${selector} not found after ${timeout}ms`));
+        return;
+      }
+      
+      requestAnimationFrame(checkElement);
+    };
+    
+    checkElement();
+  });
+};
 
 // Add PayPal SDK loading function
 const loadPayPalSDK = () => {
@@ -332,7 +350,6 @@ const loadPayPalSDK = () => {
         if (existingScript) {
           existingScript.remove();
         }
-        // Continue with loading new script
       }
     }
 
@@ -358,7 +375,7 @@ const loadPayPalSDK = () => {
           console.error('PayPal SDK loaded but buttons component not available');
           reject(new Error('PayPal buttons component not available'));
         }
-      }, 500); // Increased delay to ensure full initialization
+      }, 500);
     };
     
     script.onerror = (error) => {
@@ -367,30 +384,6 @@ const loadPayPalSDK = () => {
     };
 
     document.head.appendChild(script);
-  });
-};
-
-// Add a helper function to wait for element
-const waitForElement = (selector: string, timeout = 5000): Promise<HTMLElement> => {
-  return new Promise((resolve, reject) => {
-    const startTime = Date.now();
-    
-    const checkElement = () => {
-      const element = document.getElementById(selector);
-      if (element) {
-        resolve(element);
-        return;
-      }
-      
-      if (Date.now() - startTime >= timeout) {
-        reject(new Error(`Element ${selector} not found after ${timeout}ms`));
-        return;
-      }
-      
-      requestAnimationFrame(checkElement);
-    };
-    
-    checkElement();
   });
 };
 
@@ -551,58 +544,6 @@ const handleSuccessModalDismiss = () => {
 
 const handleCheckout = () => {
   showCheckoutModal.value = true;
-};
-
-const processOrderWithPayPal = async (paypalOrder: any) => {
-  console.log('Starting order processing...');
-  if (isPlacingOrder.value) {
-    console.log('Order already being placed, ignoring request');
-    return;
-  }
-  
-  isPlacingOrder.value = true;
-  try {
-    console.log('Generating order ID...');
-    const orderId = await cartStore.generateOrderId('order');
-    console.log('Order ID generated:', orderId);
-    
-    // Add PayPal payment details to order data
-    const orderData = {
-      orderId,
-      items: cartStore.items,
-      total: cartStore.cartTotal,
-      paymentMethod: 'paypal',
-      paymentDetails: {
-        paypalOrderId: paypalOrder.id,
-        status: paypalOrder.status,
-        captureId: paypalOrder.purchase_units[0].payments.captures[0].id,
-        amount: paypalOrder.purchase_units[0].amount.value,
-        currency: paypalOrder.purchase_units[0].amount.currency_code
-      },
-      timestamp: new Date().toISOString()
-    };
-
-    console.log('Saving order to Firebase:', orderData);
-    // Save order to Firebase
-    const orderRef = dbRef(database, `orders/${orderId}`);
-    await set(orderRef, orderData);
-    console.log('Order saved successfully');
-
-    // Clear cart after successful order
-    console.log('Clearing cart...');
-    const cartItemIds = [...cartStore.items].map(item => item.id);
-    for (const itemId of cartItemIds) {
-      await cartStore.removeItem(itemId);
-    }
-    console.log('Cart cleared');
-
-  } catch (error) {
-    console.error('Error processing PayPal order:', error);
-    throw error;
-  } finally {
-    isPlacingOrder.value = false;
-    console.log('Order processing completed');
-  }
 };
 
 const placeOrder = async () => {

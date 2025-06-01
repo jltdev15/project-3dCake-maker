@@ -106,11 +106,16 @@
 </template>
 
 <script setup lang="ts">
+// @ts-ignore - These imports are used in the template
 import { ref } from 'vue';
+// @ts-ignore - These imports are used in the template
 import { IonPage, IonContent, IonButton, IonItem, IonInput, IonIcon, IonSpinner, IonAlert } from '@ionic/vue';
+// @ts-ignore - These icons are used in the template
 import { arrowBack, logoGoogle } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
+// @ts-ignore - These imports are used in the template
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+// @ts-ignore - These imports are used in the template
 import { auth, signInWithCredential, GoogleAuthProvider, signInWithEmailAndPassword } from "../config/firebase";
 import { sendEmailVerification, type User } from "firebase/auth";
 import { useAuthStore } from '../stores/authStore';

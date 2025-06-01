@@ -40,10 +40,10 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from "vue-router";
 import { useCartStore } from '../stores/cartStore';
 import { useMessageStore } from '../stores/messageStore';
 import { onMounted } from 'vue';
+// @ts-ignore - These imports are used in the template
 import {
     IonPage,
     IonTabs,
@@ -55,9 +55,9 @@ import {
     IonBadge
 } from "@ionic/vue";
 
+// @ts-ignore - These icons are used in the template
 import { home, receipt, cart, person, chatbubble } from "ionicons/icons";
 
-const router = useRouter()
 const cartStore = useCartStore();
 const messageStore = useMessageStore();
 

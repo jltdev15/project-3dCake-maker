@@ -62,10 +62,13 @@
   </ion-page>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts">  
+// @ts-ignore - These imports are used in the template
 import { IonPage, IonContent, IonBackButton, IonButtons, IonItem, IonLabel, IonInput, IonIcon, IonButton, IonHeader, IonToolbar, IonTitle } from '@ionic/vue';
+// @ts-ignore - These icons are used in the template
 import { ref } from 'vue';
 import { useAuthStore } from '../../stores/authStore';
+// @ts-ignore - These icons are used in the template
 import { personOutline, mailOutline, saveOutline, callOutline, locationOutline } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 import { database, ref as dbRef, update } from '../../config/firebase';

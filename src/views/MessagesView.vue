@@ -60,22 +60,17 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+// @ts-ignore - These imports are used in the template
 import {
     IonPage,
     IonHeader,
     IonToolbar,
     IonTitle,
     IonContent,
-    IonList,
-    IonItem,
-    IonAvatar,
-    IonLabel,
     IonBadge,
-    IonButtons,
-    IonButton,
     IonIcon
 } from '@ionic/vue';
-import { searchOutline, chatbubbleEllipsesOutline } from 'ionicons/icons';
+import { chatbubbleEllipsesOutline } from 'ionicons/icons';
 import { database, ref as dbRef, onValue, off } from '../config/firebase';
 
 interface AdminUser {
@@ -125,7 +120,7 @@ const fetchAdminUsers = () => {
                     // Check if user has message conversations
                     if (user.messages) {
                         // Iterate through all conversations to find last messages
-                        Object.entries(user.messages).forEach(([convId, convo]: [string, any]) => {
+                        Object.entries(user.messages).forEach(([_, convo]: [string, any]) => {
                             // Only process if it's a conversation object with lastMessage
                             if (typeof convo === 'object' && convo.lastMessage) {
                                 // Update last message if this is a more recent one

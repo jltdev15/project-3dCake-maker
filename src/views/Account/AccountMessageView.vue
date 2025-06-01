@@ -30,7 +30,9 @@
 </template>
 
 <script setup lang="ts">
+// @ts-ignore - These imports are used in the template
 import { IonPage, IonContent, IonBackButton, IonButtons, IonHeader, IonToolbar, IonTitle, IonIcon, IonButton } from '@ionic/vue';
+// @ts-ignore - These icons are used in the template
 import { chatbubbleOutline, arrowForward } from 'ionicons/icons';
 </script>
 

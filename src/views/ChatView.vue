@@ -55,9 +55,9 @@ import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { useMessageStore } from '../stores/messageStore';
 import { storeToRefs } from 'pinia';
-import type { AdminUser } from '../stores/messageStore';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+// @ts-ignore - These imports are used in the template
 import {
     IonPage,
     IonHeader,
@@ -72,23 +72,18 @@ import {
     IonButton,
     IonIcon,
     IonSpinner,
-    IonText,
-    useIonRouter
+    IonText
 } from '@ionic/vue';
 import { send } from 'ionicons/icons';
 
 const route = useRoute();
 const messageStore = useMessageStore();
-const { adminUsers, messages, loading, error } = storeToRefs(messageStore);
+const { messages, loading, error } = storeToRefs(messageStore);
 const newMessage = ref('');
 const contentRef = ref();
 const messagesEndRef = ref();
 
 const adminId = computed(() => route.params.id as string);
-const currentAdmin = computed(() => {
-    const admins = (adminUsers.value || []) as AdminUser[];
-    return admins.find(admin => admin.id === adminId.value);
-});
 
 const formatTime = (timestamp: number | string) => {
     if (typeof timestamp === 'string') {

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { database } from '@/config/firebase'
-import { ref as dbRef, onValue, off, push, set, update, get } from 'firebase/database'
+import { ref as dbRef, onValue, off, push, set, update } from 'firebase/database'
 import type { User } from 'firebase/auth'
 
 interface OrderNotification {

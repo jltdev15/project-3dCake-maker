@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { database, ref as dbRef, onValue, off, get } from '../config/firebase'
+import { database, ref as dbRef, onValue, get } from '../config/firebase'
 import { useAuthStore } from './authStore'
 
 interface OrderItem {

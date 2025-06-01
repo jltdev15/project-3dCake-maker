@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { auth, database, ref as dbRef, set, get, update, onValue } from '../config/firebase';
+import { auth, database, ref as dbRef, set, get } from '../config/firebase';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { Preferences } from '@capacitor/preferences';
 

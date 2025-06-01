@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { database, ref as dbRef, set, get, remove, update, push, onValue, off } from '../config/firebase'
+import { ref, computed, watch, onUnmounted } from 'vue'
+import { database, ref as dbRef, set, get, remove, update, onValue } from '../config/firebase'
 import { useAuthStore } from './authStore'
 import { useOrderStore } from './orderStore'
 import { toastController } from '@ionic/vue'
@@ -64,6 +64,12 @@ export const useCartStore = defineStore('cart', () => {
   const setupUserStatusListener = () => {
     if (!authStore.user?.uid) return
 
+    // Clean up existing listener if any
+    if (userStatusUnsubscribe) {
+      userStatusUnsubscribe()
+      userStatusUnsubscribe = null
+    }
+
     const userRef = dbRef(database, `users/${authStore.user.uid}`)
     userStatusUnsubscribe = onValue(userRef, async (snapshot) => {
       if (snapshot.exists() && authStore.user?.uid) {
@@ -109,7 +115,7 @@ export const useCartStore = defineStore('cart', () => {
     setupUserStatusListener()
   }
 
-  const generateOrderId = async (type: 'order' | 'custom' | 'non-custom' = 'order') => {
+  const generateOrderId = async () => {
     const ordersRef = dbRef(database, 'orders')
     const snapshot = await get(ordersRef)
     const orderCount = snapshot.exists() ? Object.keys(snapshot.val()).length : 0
@@ -263,6 +269,22 @@ export const useCartStore = defineStore('cart', () => {
       userStatusUnsubscribe = null
     }
   }
+
+  // Watch for auth state changes to setup/cleanup listener
+  watch(() => authStore.user, (newUser) => {
+    if (newUser?.uid) {
+      loadCartItems()
+      setupUserStatusListener()
+    } else {
+      cleanup()
+      items.value = []
+    }
+  })
+
+  // Cleanup on store destruction
+  onUnmounted(() => {
+    cleanup()
+  })
 
   return {
     items,

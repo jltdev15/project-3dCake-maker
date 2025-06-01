@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { database, auth } from '../config/firebase';
-import { ref as dbRef, push, set, onValue, update, serverTimestamp, get } from 'firebase/database';
+import { ref as dbRef, push, set, onValue, update, get } from 'firebase/database';
 
 interface Message {
     id: string;

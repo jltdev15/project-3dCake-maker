@@ -4,7 +4,7 @@ import OnBoardingPage from '@/views/OnBoarding.vue';
 import RegisterPage from '@/views/RegisterView.vue';
 import LoginPage from '@/views/LoginView.vue';
 import BottomNavigation from '@/components/BottomNavigation.vue';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '../stores/authStore';
 import MessagesView from '../views/MessagesView.vue'
 import ChatView from '../views/ChatView.vue'
 
@@ -127,7 +127,7 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
 });
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore();
   await authStore.loadUser();
 

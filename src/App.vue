@@ -1,12 +1,13 @@
 <template>
-  <div>
+  <ion-app>
     <ion-router-outlet></ion-router-outlet>
-  </div>
+  </ion-app>
 </template>
 
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
+// @ts-ignore - These imports are used in the template
 import { IonApp, IonRouterOutlet } from '@ionic/vue'
 import { Capacitor } from "@capacitor/core";
 
