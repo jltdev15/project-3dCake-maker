@@ -16,14 +16,10 @@
           <!-- Progress Bar -->
           <div class="progress-container">
             <div class="progress-steps">
-              <div 
-                v-for="step in 3" 
-                :key="step"
-                :class="['progress-step', { 
+              <div v-for="step in 3" :key="step" :class="['progress-step', { 
                   'completed': currentStep > step,
                   'active': currentStep === step 
-                }]"
-              >
+                }]">
                 <div class="step-number">{{ step }}</div>
                 <div class="step-label">
                   {{ step === 1 ? 'Layers' : step === 2 ? 'Size' : 'Flavor' }}
@@ -31,10 +27,7 @@
               </div>
             </div>
             <div class="progress-bar">
-              <div 
-                class="progress-fill"
-                :style="{ width: `${((currentStep - 1) / 2) * 100}%` }"
-              ></div>
+              <div class="progress-fill" :style="{ width: `${((currentStep - 1) / 2) * 100}%` }"></div>
             </div>
           </div>
 
@@ -43,58 +36,55 @@
             <!-- Step 1: Number of Layers -->
             <div class="selection-step" v-if="currentStep === 1">
               <div class="step-header">
-                <h2 class="step-title">Choose Your Cake Layers</h2>
-                <p class="step-description">Select how many layers you'd like for your custom cake design</p>
+                <h2 class="step-title">Choose Layers</h2>
+                <p class="step-description">How many layers would you like?</p>
               </div>
-              
+
               <div class="layers-container">
-                <div 
-                  v-for="num in [1, 2, 3]" 
-                  :key="num"
-                  :class="['layer-option', { 'selected': selectedLayers === num }]"
-                  @click="selectLayers(num)"
-                >
-                  <div class="layer-preview-container">
-                    <div class="layer-preview">
-                      <div 
-                        v-for="i in num" 
-                        :key="i"
-                        class="preview-layer"
-                        :style="{
-                          '--layer-color': i === 1 ? '#F0E68D' : i === 2 ? '#E6D77A' : '#DCC867',
-                          '--layer-height': `${100 / num}%`
-                        }"
-                      ></div>
-                    </div>
+                <button v-for="num in [1, 2, 3]" :key="num"
+                  :class="['layer-option', { 'selected': selectedLayers === num }]" @click="selectLayers(num)">
+                  <div class="layer-preview">
+                    <div v-for="i in num" :key="i" class="preview-layer" :style="{
+                        'background': i === 1 ? '#F0E68D' : i === 2 ? '#E6D77A' : '#DCC867',
+                        'transform': `translateY(${(num - i) * 12}px)`,
+                        'z-index': i
+                      }"></div>
                   </div>
                   <div class="layer-info">
-                    <span class="layer-number">{{ num }}</span>
-                    <span class="layer-label">{{ num === 1 ? 'Single Layer' : num === 2 ? 'Double Layer' : 'Triple Layer' }}</span>
+                    <div class="layer-main-info">
+                      <span class="layer-name">{{ num }} Layer<span v-if="num > 1">s</span></span>
+
+                    </div>
+
                   </div>
-                </div>
+                </button>
               </div>
             </div>
 
             <!-- Step 2: Cake Size -->
-            <div class="selection-step" v-if="currentStep === 2">
-              <h2>Select Size</h2>
-              <p class="step-description">Choose the perfect size for your occasion</p>
-              <div class="options-grid flavor-grid">
-                <button 
-                  v-for="size in sizeOptions" 
-                  :key="size.name"
-                  :class="['option-button', { selected: selectedSize && selectedSize.name === size.name }]"
-                  @click="selectSize(size)"
-                >
-                  <div class="option-content">
-                    <div class="option-icon">
-                      <div :class="['size-preview', size.name.toLowerCase().replace(' inch', '')]"></div>
+            <div class="selection-step mb-24" v-if="currentStep === 2">
+              <div class="">
+                <h2 class="step-title">Select Size</h2>
+                <p class="step-description">Choose your preferred cake size</p>
+              </div>
+
+              <div class="size-options grid  grid-cols-2  gap-4">
+                <button v-for="size in sizeOptions" :key="size.name"
+                  :class="['size-option', { selected: selectedSize && selectedSize.name === size.name }]"
+                  @click="selectSize(size)">
+                  <div class="">
+                    <div class="size-visual">
+                      <div class="cake-circle" :style="{
+                          width: size.diameter * 10 + 'px',
+                          height: size.diameter * 10 + 'px'
+                        }">
+                        <span class="size-label">{{ size.diameter }}"</span>
+                      </div>
                     </div>
-                    <div class="option-label">{{ size.name }}</div>
                     <div class="size-details">
-                      <div>Diameter: {{ size.diameter }} in</div>
-                      <div>Height: {{ size.height }} in</div>
-                      <div>{{ size.servings }} servings</div>
+                      <span class="size-name">{{ size.name }}</span>
+                      <!-- <span class="size-dimensions">{{ size.diameter }}″ × {{ size.height }}″</span> -->
+                      <span class="size-price">₱{{ size.price.toFixed(2) }}</span>
                     </div>
                   </div>
                 </button>
@@ -102,16 +92,13 @@
             </div>
 
             <!-- Step 3: Cake Flavor -->
-            <div class="selection-step" v-if="currentStep === 3">
+            <div class="selection-step mb-24" v-if="currentStep === 3">
               <h2>Choose Your Flavor</h2>
               <p class="step-description">Select your favorite cake flavor</p>
               <div class="options-grid flavor-grid">
-                <button 
-                  v-for="flavor in flavorOptions" 
-                  :key="flavor.name"
+                <button v-for="flavor in flavorOptions" :key="flavor.name"
                   :class="['option-button', { selected: selectedFlavor && selectedFlavor.name === flavor.name }]"
-                  @click="selectFlavor(flavor)"
-                >
+                  @click="selectFlavor(flavor)">
                   <div class="option-content">
                     <div class="option-icon">
                       <div :class="['flavor-preview', flavor.name.toLowerCase()]"></div>
@@ -125,31 +112,17 @@
           </div>
 
           <!-- Navigation Buttons -->
-          <div class="modal-navigation">
-            <button 
-              v-if="currentStep > 1" 
-              class="nav-button back"
-              @click="previousStep"
-            >
+          <div class="p-4 flex gap-3 absolute bottom-0 left-0 right-0 bg-gray-200">
+            <button v-if="currentStep > 1" class="nav-button back" @click="previousStep">
               <span class="back-icon">←</span>
               Back
             </button>
-            <button 
-              v-if="currentStep < 3" 
-              class="nav-button next"
-              @click="nextStep"
-              :disabled="!canProceed"
-            >
+            <button v-if="currentStep < 3" class="nav-button next" @click="nextStep" :disabled="!canProceed">
               Next
               <span class="next-icon">→</span>
             </button>
-            <button 
-              v-if="currentStep === 3" 
-              class="nav-button finish"
-              @click="finishSelection"
-              :disabled="!canProceed"
-            >
-              Create My Cake
+            <button v-if="currentStep === 3" class="nav-button finish" @click="finishSelection" :disabled="!canProceed">
+              3D Cake
               <span class="finish-icon">✓</span>
             </button>
           </div>
@@ -197,11 +170,19 @@
           <div class="modal-body">
             <p>Are you sure you want to add this cake design to your cart?</p>
             <div class="cart-info" v-if="selectedSize">
+              <div class="price-info">
+                <h4>Order Summary</h4>
+                <p><strong>Size:</strong> {{ selectedSize.name }}</p>
+                <p><strong>Layers:</strong> {{ selectedLayers }}</p>
+                <p><strong>Flavor:</strong> {{ selectedFlavor ? selectedFlavor.name : 'None' }}</p>
+                <p class="total-price"><strong>Total Price:</strong> ₱{{ totalPrice.toFixed(2) }}</p>
+              </div>
               <div class="contact-form">
                 <h4>Special Instructions</h4>
                 <div class="form-group">
                   <label for="customerMessage">Add any special requests or instructions:</label>
-                  <textarea id="customerMessage" v-model="customerInfo.message" placeholder="Any special requests or delivery instructions"></textarea>
+                  <textarea id="customerMessage" v-model="customerInfo.message"
+                    placeholder="Any special requests or delivery instructions"></textarea>
                 </div>
               </div>
             </div>
@@ -220,7 +201,7 @@
         <div class="controls-panel">
           <div class="tabs">
             <button class="tab-button active" data-tab="tab-design">Action</button>
-            <button class="tab-button" data-tab="tab-layer-editor">Layer Editor</button>
+            <button v-if="false" class="tab-button" data-tab="tab-layer-editor">Layer Editor</button>
             <button class="tab-button" data-tab="tab-topper">Printed Topper</button>
             <button class="tab-button" data-tab="tab-icing">Icing</button>
             <button class="tab-button" data-tab="tab-toppings">Toppings</button>
@@ -228,11 +209,13 @@
           </div>
           <div class="tab-content active" id="tab-design">
             <div class="control-group">
-              <button v-if="false"  id="addLayerBtn" class="action-button">Add New Layer</button>
+              <button v-if="false" id="addLayerBtn" class="action-button">Add New Layer</button>
               <button v-if="false" id="saveCakeBtn" class="action-button">Save Design</button>
               <input type="file" id="loadCakeInput" accept=".json" style="display: none;">
-              <button v-if="false" id="loadCakeBtn" class="action-button" onclick="document.getElementById('loadCakeInput').click()">Load Design</button>
-              <button v-if="false" id="resetCakeBtn" class="action-button" @click="resetCakeDesign">Reset Design</button>
+              <button v-if="false" id="loadCakeBtn" class="action-button"
+                onclick="document.getElementById('loadCakeInput').click()">Load Design</button>
+              <button v-if="false" id="resetCakeBtn" class="action-button" @click="resetCakeDesign">Reset
+                Design</button>
               <button v-if="false" id="undoBtn" class="action-button" disabled>Undo Last Action</button>
               <button id="addToCartBtn" class="action-button add-to-cart-btn" @click="showAddToCartModal">
                 <span class="cart-icon">🛒</span>
@@ -272,7 +255,8 @@
                 </div>
                 <div class="mt-2">
                   <label for="greeting_size">Text Size ({{ greetingConfig.size.toFixed(2) }}):</label>
-                  <input type="range" id="greeting_size" min="0.1" max="0.8" step="0.01" v-model.number="greetingConfig.size" @input="onGreetingChange">
+                  <input type="range" id="greeting_size" min="0.1" max="0.8" step="0.01"
+                    v-model.number="greetingConfig.size" @input="onGreetingChange">
                 </div>
                 <div class="mt-2">
                   <label for="greeting_layout">Layout:</label>
@@ -366,9 +350,9 @@ let selectedLayerId = null;
 let originalLayerMaterials = new Map();
 
 const defaultLayerSettings = {
-  radius: 1.5,
+  radius: 0.5,
   height: 0.5,
-  color: '#FFB6C1',
+  color: '',
   toppings: [],
   topper: {
     enabled: false,
@@ -410,13 +394,32 @@ const defaultLayerSettings = {
 };
 
 // Move sizeOptions above selectedSize
-const sizeOptions = [
-  { name: '6 x 6', diameter: 6, height: 6 },
-  { name: '6 x 7', diameter: 6, height: 7 },
-  { name: '6 x 8', diameter: 6, height: 8 },
-  { name: '6 x 9', diameter: 6, height: 9 },
-  { name: '6 x 10', diameter: 6, height: 10 }
+const oneTierSizeOptions = [
+  { name: "6 x 6", diameter: 6, height: 6, price: 999 },
+  { name: "7 x 6", diameter: 7, height: 6, price: 1299 },
+  { name: "8 x 6", diameter: 8, height: 6, price: 1649 },
+  { name: "9 x 6", diameter: 9, height: 6, price: 1949 },
+  { name: "10 x 6", diameter: 10, height: 6, price: 2399 }
 ];
+
+const twoTierSizeOptions = [
+  { name: "4 x 5 & 6 x 5", diameter: 6, height: 10, price: 2199 },
+  { name: "5 x 5 & 7 x 5", diameter: 7, height: 10, price: 2399 },
+  { name: "6 x 5 & 8 x 5", diameter: 8, height: 10, price: 2599 },
+  { name: "7 x 5 & 9 x 5", diameter: 9, height: 10, price: 2799 },
+  { name: "8 x 5 & 10 x 5", diameter: 10, height: 10, price: 3399 }
+];
+
+const threeTierSizeOptions = [
+  { name: "4 x 5 & 6 x 5 & 8 x 5", diameter: 8, height: 15, price: 3299 },
+  { name: "5 x 5 & 7 x 5 & 9 x 5", diameter: 9, height: 15, price: 3599 },
+  { name: "6 x 5 & 8 x 5 & 10 x 5", diameter: 10, height: 15, price: 4399 }
+];
+
+// Define computed sizeOptions based on the selected number of layers
+const sizeOptions = computed(() => {
+  return oneTierSizeOptions;
+});
 
 const flavorOptions = [
   { 
@@ -1807,7 +1810,7 @@ const addLayerControlsUI = (layerConfig, container) => {
 
   // Get the layer index and selected size
   const layerIndex = cakeLayers.findIndex(l => l.id === layerConfig.id);
-  const selectedSizeObj = selectedSize.value ? sizeOptions.find(size => size.name === selectedSize.value.name) : null;
+  const selectedSizeObj = selectedSize.value ? sizeOptions.value.find(size => size.name === selectedSize.value.name) : null;
   
   // Calculate initial dimensions
   const baseRadius = selectedSizeObj ? (selectedSizeObj.diameter / 2) : 3;
@@ -2164,8 +2167,11 @@ watch(selectedSize, (newVal, oldVal) => {
   }
 });
 
-// Add watcher for selectedLayers to regenerate cake after modal is closed
+// Add watcher for selectedLayers to reset selectedSize when layers change
 watch(selectedLayers, (newVal, oldVal) => {
+  // Reset the selected size when changing number of layers
+  selectedSize.value = null;
+  
   if (!showSelectionsModal.value) {
     generateCakeFromSelections();
   }
@@ -2259,68 +2265,107 @@ const addTopperControlsUI = (layerConfig, container) => {
   const topperImageControlsId = `topper_tab_image_controls_${layerConfig.id}`;
   
   topperControlsDiv.innerHTML = `
-    <p class="layer-header">Layer ${cakeLayers.findIndex(l => l.id === layerConfig.id) + 1} Topper</p>
-    <div class="topper-section">
-      <label class="checkbox-label">
-        <input type="checkbox" id="topper_tab_enabled_${layerConfig.id}" ${layerConfig.topper.enabled ? 'checked' : ''}>
-        Enable Printed Topper
-      </label>
+    <p class="text-xl p-2 my-2 font-bold text-center">Layer ${cakeLayers.findIndex(l => l.id === layerConfig.id) + 1} Topper</p>
+    <div class="topper-section flex flex-col gap-1 p-3 border border-b-2 border-gray-300 m-2">
+      <div class="flex items-center">
+        <div class="relative flex justify-between gap-2 items-center">
+          <div class="flex items-center h-5">
+            <input type="checkbox" id="topper_tab_enabled_${layerConfig.id}" ${layerConfig.topper.enabled ? 'checked' : ''} class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 transition duration-150 ease-in-out cursor-pointer">
+          </div>
+          <div class="ml-3 text-sm">
+            <label for="topper_tab_enabled_${layerConfig.id}" class="font-medium  text-gray-700 cursor-pointer select-none">Enable Printed Topper</label>
+            <p class="text-gray-500 text-sm mt-1">Add a custom topper to your cake design</p>
+          </div>
+        </div>
+      </div>
       <div id="${topperSubControlsId}" class="sub-controls mt-2 ${layerConfig.topper.enabled ? '' : 'hidden'}">
         <div class="mt-2">
-          <label for="topper_tab_type_${layerConfig.id}">Topper Type:</label>
-          <select id="topper_tab_type_${layerConfig.id}">
-            <option value="none" ${layerConfig.topper.type === 'none' ? 'selected' : ''}>Select Type</option>
-            <option value="text" ${layerConfig.topper.type === 'text' ? 'selected' : ''}>Text Only</option>
-            <option value="image" ${layerConfig.topper.type === 'image' ? 'selected' : ''}>Image</option>
-          </select>
+          <label for="topper_tab_type_${layerConfig.id}" class="block text-base p-1 font-semibold text-gray-700 tracking-wide">
+            Topper Type
+          </label>
+          <div class="relative">
+            <select id="topper_tab_type_${layerConfig.id}" class="block w-full px-4 py-3 pr-10 text-base border border-gray-300 rounded-lg bg-white shadow-sm transition-all duration-200 ease-in-out focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none hover:border-gray-400 appearance-none cursor-pointer">
+              <option value="none" ${layerConfig.topper.type === 'none' ? 'selected' : ''} class="text-gray-500">Select Type</option>
+              <option value="text" ${layerConfig.topper.type === 'text' ? 'selected' : ''} class="text-gray-900">Text Only</option>
+              <option value="image" ${layerConfig.topper.type === 'image' ? 'selected' : ''} class="text-gray-900">Image</option>
+            </select>
+            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <svg class="w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </div>
+          </div>
         </div>
         
-        <div class="mt-2" id="${topperTextControlsId}" style="display: ${layerConfig.topper.type === 'text' || layerConfig.topper.type === 'text_image' ? 'block' : 'none'}">
-          <label for="topper_tab_text_${layerConfig.id}">Text:</label>
-          <input type="text" id="topper_tab_text_${layerConfig.id}" value="${layerConfig.topper.text}" placeholder="Enter text for topper">
-          
-          <div class="mt-2">
-            <label for="topper_tab_font_size_${layerConfig.id}">Font Size (${layerConfig.topper.fontSize.toFixed(1)}):</label>
-            <input type="range" id="topper_tab_font_size_${layerConfig.id}" min="0.5" max="4" step="0.1" value="${layerConfig.topper.fontSize}">
+        <div class="mt-4 space-y-4" id="${topperTextControlsId}" style="display: ${layerConfig.topper.type === 'text' || layerConfig.topper.type === 'text_image' ? 'block' : 'none'}">
+          <div class="space-y-2">
+            <label for="topper_tab_text_${layerConfig.id}" class="block text-base font-medium text-gray-700">Text</label>
+            <input type="text" id="topper_tab_text_${layerConfig.id}" value="${layerConfig.topper.text}" placeholder="Enter text for topper" class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-base">
           </div>
           
-          <div class="mt-2">
-            <label for="topper_tab_font_style_${layerConfig.id}">Font Style:</label>
-            <select id="topper_tab_font_style_${layerConfig.id}">
+          <div class="space-y-2">
+            <label for="topper_tab_font_size_${layerConfig.id}" class="block text-base font-medium text-gray-700">Font Size (${layerConfig.topper.fontSize.toFixed(1)})</label>
+            <input type="range" id="topper_tab_font_size_${layerConfig.id}" min="0.5" max="4" step="0.1" value="${layerConfig.topper.fontSize}" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+          </div>
+          
+          <div class="space-y-2">
+            <label for="topper_tab_font_style_${layerConfig.id}" class="block text-base font-medium text-gray-700">Font Style</label>
+            <select id="topper_tab_font_style_${layerConfig.id}" class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-base">
               <option value="normal" ${layerConfig.topper.style === 'normal' ? 'selected' : ''}>Normal</option>
               <option value="bold" ${layerConfig.topper.style === 'bold' ? 'selected' : ''}>Bold</option>
               <option value="italic" ${layerConfig.topper.style === 'italic' ? 'selected' : ''}>Italic</option>
             </select>
           </div>
           
-          <div class="mt-2">
-            <label for="topper_tab_text_color_${layerConfig.id}">Text Color:</label>
-            <input type="color" id="topper_tab_text_color_${layerConfig.id}" value="${layerConfig.topper.color}">
+          <div class="space-y-2">
+            <label for="topper_tab_text_color_${layerConfig.id}" class="block text-base font-medium text-gray-700">Text Color</label>
+            <div class="flex items-center gap-3">
+              <input type="color" id="topper_tab_text_color_${layerConfig.id}" value="${layerConfig.topper.color}" class="w-14 h-10 border-0 rounded cursor-pointer">
+              <span class="text-sm font-mono">${layerConfig.topper.color}</span>
+            </div>
           </div>
         </div>
         
-        <div class="mt-2" id="${topperImageControlsId}" style="display: ${layerConfig.topper.type === 'image' || layerConfig.topper.type === 'text_image' ? 'block' : 'none'}">
-          <label for="topper_tab_image_${layerConfig.id}">Upload Image:</label>
-          <input type="file" id="topper_tab_image_${layerConfig.id}" accept="image/*">
-        </div>
-        
-        <div class="mt-2">
-          <label for="topper_tab_position_${layerConfig.id}">Position:</label>
-          <select id="topper_tab_position_${layerConfig.id}">
-            <option value="center" ${layerConfig.topper.position === 'center' ? 'selected' : ''}>Center</option>
-            <option value="top" ${layerConfig.topper.position === 'top' ? 'selected' : ''}>Top</option>
-            <option value="bottom" ${layerConfig.topper.position === 'bottom' ? 'selected' : ''}>Bottom</option>
-          </select>
-        </div>
-        
-        <div class="mt-2">
-          <label for="topper_tab_size_${layerConfig.id}">Topper Size (${layerConfig.topper.size || 1}):</label>
-          <input type="range" id="topper_tab_size_${layerConfig.id}" min="0.5" max="2" step="0.01" value="${layerConfig.topper.size || 1}">
-        </div>
-        
-        <div class="mt-2">
-          <label for="topper_tab_stick_height_${layerConfig.id}">Stick Height (${layerConfig.topper.stickHeight.toFixed(1)}):</label>
-          <input type="range" id="topper_tab_stick_height_${layerConfig.id}" min="0.1" max="1.5" step="0.1" value="${layerConfig.topper.stickHeight}">
+        <div class="mt-4 space-y-4" id="${topperImageControlsId}" style="display: ${layerConfig.topper.type === 'image' || layerConfig.topper.type === 'text_image' ? 'block' : 'none'}">
+          <div class="space-y-2">
+            <label for="topper_tab_image_${layerConfig.id}" class="block text-base font-medium text-gray-700">Upload Image</label>
+            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-indigo-400 transition-colors duration-200">
+              <div class="space-y-1 text-center">
+                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                  <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4h-12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <div class="flex text-sm text-gray-600">
+                  <label for="topper_tab_image_${layerConfig.id}" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none">
+                    <span>Upload a file</span>
+                    <input id="topper_tab_image_${layerConfig.id}" type="file" accept="image/*" class="sr-only">
+                  </label>
+                  <p class="pl-1">or drag and drop</p>
+                </div>
+                <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-4 space-y-4">
+            <div class="space-y-2">
+              <label for="topper_tab_position_${layerConfig.id}" class="block text-base font-medium text-gray-700">Position</label>
+              <select id="topper_tab_position_${layerConfig.id}" class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-base">
+                <option value="center" ${layerConfig.topper.position === 'center' ? 'selected' : ''}>Center</option>
+                <option value="top" ${layerConfig.topper.position === 'top' ? 'selected' : ''}>Top</option>
+                <option value="bottom" ${layerConfig.topper.position === 'bottom' ? 'selected' : ''}>Bottom</option>
+              </select>
+            </div>
+            
+            <div class="space-y-2">
+              <label for="topper_tab_size_${layerConfig.id}" class="block text-base font-medium text-gray-700">Topper Size (${layerConfig.topper.size || 1})</label>
+              <input type="range" id="topper_tab_size_${layerConfig.id}" min="0.5" max="2" step="0.01" value="${layerConfig.topper.size || 1}" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+            </div>
+            
+            <div class="space-y-2">
+              <label for="topper_tab_stick_height_${layerConfig.id}" class="block text-base font-medium text-gray-700">Stick Height (${layerConfig.topper.stickHeight.toFixed(1)})</label>
+              <input type="range" id="topper_tab_stick_height_${layerConfig.id}" min="0.1" max="1.5" step="0.1" value="${layerConfig.topper.stickHeight}" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2397,58 +2442,64 @@ const addIcingControlsUI = (layerConfig, container) => {
   const bottomIcingSubControlsId = `icing_tab_bottom_controls_${layerConfig.id}`;
   
   icingControlsDiv.innerHTML = `
-    <p class="layer-header">Layer ${cakeLayers.findIndex(l => l.id === layerConfig.id) + 1} Icing</p>
+    <p class="text-xl font-bold text-center p-2 my-2">Layer ${cakeLayers.findIndex(l => l.id === layerConfig.id) + 1} Icing</p>
     
-    <div class="icing-section">
-      <label class="checkbox-label">
-        <input type="checkbox" id="icing_tab_edge_enabled_${layerConfig.id}" ${layerConfig.edgeIcing.enabled ? 'checked' : ''}>
-        Enable Edge Icing
-      </label>
+    <div class="icing-section p-3 border border-b-2 border-gray-300 m-2">
+      <div class="flex items-center ">
+        <div class="relative flex items-start">
+          <div class="flex items-center h-5">
+            <input type="checkbox" id="icing_tab_edge_enabled_${layerConfig.id}" ${layerConfig.edgeIcing.enabled ? 'checked' : ''} class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 transition duration-150 ease-in-out cursor-pointer">
+          </div>
+          <div class="ml-3 text-sm">
+            <label for="icing_tab_edge_enabled_${layerConfig.id}" class="font-medium text-gray-700 cursor-pointer select-none">Enable Edge Icing</label>
+            <p class="text-gray-500 text-xs mt-1">Add decorative icing around the edge of your cake</p>
+          </div>
+        </div>
+      </div>
       <div id="${edgeIcingSubControlsId}" class="sub-controls mt-2 ${layerConfig.edgeIcing.enabled ? '' : 'hidden'}">
         <div class="mt-1">
-          <label for="icing_tab_edge_style_${layerConfig.id}">Edge Style:</label>
-          <select id="icing_tab_edge_style_${layerConfig.id}">
-            <option value="smooth" ${layerConfig.edgeIcing.style === 'smooth' ? 'selected' : ''}>Smooth Ring</option>
-            <option value="curl" ${layerConfig.edgeIcing.style === 'curl' ? 'selected' : ''}>Curl Pattern</option>
-            <option value="shell" ${layerConfig.edgeIcing.style === 'shell' ? 'selected' : ''}>Shell Pattern</option>
-            <option value="rosette" ${layerConfig.edgeIcing.style === 'rosette' ? 'selected' : ''}>Rosette Pattern</option>
-            <option value="ruffle" ${layerConfig.edgeIcing.style === 'ruffle' ? 'selected' : ''}>Ruffle Pattern</option>
-            <option value="zigzag" ${layerConfig.edgeIcing.style === 'zigzag' ? 'selected' : ''}>Zigzag Pattern</option>
-          </select>
+          <label for="icing_tab_edge_style_${layerConfig.id}" class="block text-sm font-medium text-gray-700 mb-1">Edge Style:</label>
+          <div class="relative">
+            <select id="icing_tab_edge_style_${layerConfig.id}" class="block w-full rounded-md border border-gray-300 shadow py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm appearance-none bg-white">
+              <option value="smooth" ${layerConfig.edgeIcing.style === 'smooth' ? 'selected' : ''}>Smooth Ring</option>
+              <option value="curl" ${layerConfig.edgeIcing.style === 'curl' ? 'selected' : ''}>Curl Pattern</option>
+              <option value="shell" ${layerConfig.edgeIcing.style === 'shell' ? 'selected' : ''}>Shell Pattern</option>
+              <option value="rosette" ${layerConfig.edgeIcing.style === 'rosette' ? 'selected' : ''}>Rosette Pattern</option>
+              <option value="ruffle" ${layerConfig.edgeIcing.style === 'ruffle' ? 'selected' : ''}>Ruffle Pattern</option>
+              <option value="zigzag" ${layerConfig.edgeIcing.style === 'zigzag' ? 'selected' : ''}>Zigzag Pattern</option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+              <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+            </div>
+          </div>
         </div>
         <div class="mt-2">
-          <label for="icing_tab_edge_color_${layerConfig.id}">Edge Color:</label>
-          <input type="color" id="icing_tab_edge_color_${layerConfig.id}" value="${layerConfig.edgeIcing.color}">
+          <label for="icing_tab_edge_color_${layerConfig.id}" class="block text-sm font-medium text-gray-700 mb-1">Edge Color:</label>
+          <input type="color" id="icing_tab_edge_color_${layerConfig.id}" value="${layerConfig.edgeIcing.color}" class="h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
         </div>
         <div class="mt-2">
-          <label for="icing_tab_edge_thickness_${layerConfig.id}">Edge Detail/Thickness (${layerConfig.edgeIcing.thickness.toFixed(2)}):</label>
-          <input type="range" id="icing_tab_edge_thickness_${layerConfig.id}" min="0.02" max="0.3" step="0.01" value="${layerConfig.edgeIcing.thickness}">
+          <label for="icing_tab_edge_thickness_${layerConfig.id}" class="block text-sm font-medium text-gray-700 mb-1">Edge Detail/Thickness (${layerConfig.edgeIcing.thickness.toFixed(2)}):</label>
+          <input type="range" id="icing_tab_edge_thickness_${layerConfig.id}" min="0.02" max="0.3" step="0.01" value="${layerConfig.edgeIcing.thickness}" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
         </div>
       </div>
     </div>
 
-    <div class="icing-section">
-      <label class="checkbox-label">
-        <input type="checkbox" id="icing_tab_middle_enabled_${layerConfig.id}" ${layerConfig.middleBandIcing.enabled ? 'checked' : ''}>
-        Enable Middle Band Icing
-      </label>
-      <div id="${middleIcingSubControlsId}" class="sub-controls mt-2 ${layerConfig.middleBandIcing.enabled ? '' : 'hidden'}">
-        <div class="mt-2">
-          <label for="icing_tab_middle_color_${layerConfig.id}">Middle Color:</label>
-          <input type="color" id="icing_tab_middle_color_${layerConfig.id}" value="${layerConfig.middleBandIcing.color}">
-        </div>
-        <div class="mt-2">
-          <label for="icing_tab_middle_thickness_${layerConfig.id}">Middle Thickness (${layerConfig.middleBandIcing.thickness.toFixed(2)}):</label>
-          <input type="range" id="icing_tab_middle_thickness_${layerConfig.id}" min="0.02" max="0.2" step="0.01" value="${layerConfig.middleBandIcing.thickness}">
+
+
+    <div class="icing-section p-3 border border-b-2 border-gray-300 m-2">
+      <div class="flex items-center">
+        <div class="relative flex items-start">
+          <div class="flex items-center h-5">
+            <input type="checkbox" id="icing_tab_bottom_enabled_${layerConfig.id}" ${layerConfig.bottomIcing.enabled ? 'checked' : ''} class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 transition duration-150 ease-in-out cursor-pointer">
+          </div>
+          <div class="ml-3 text-sm">
+            <label for="icing_tab_bottom_enabled_${layerConfig.id}" class="font-medium text-gray-700 cursor-pointer select-none">Enable Bottom Icing</label>
+            <p class="text-gray-500 text-xs mt-1">Add decorative icing to the bottom edge of your cake</p>
+          </div>
         </div>
       </div>
-    </div>
-
-    <div class="icing-section">
-      <label class="checkbox-label">
-        <input type="checkbox" id="icing_tab_bottom_enabled_${layerConfig.id}" ${layerConfig.bottomIcing.enabled ? 'checked' : ''}>
-        Enable Bottom Icing
-      </label>
       <div id="${bottomIcingSubControlsId}" class="sub-controls mt-2 ${layerConfig.bottomIcing.enabled ? '' : 'hidden'}">
         <div class="mt-1">
           <label for="icing_tab_bottom_style_${layerConfig.id}">Bottom Style:</label>
@@ -2544,53 +2595,61 @@ const addToppingsControlsUI = (layerConfig, container) => {
   const hasBlueberries = layerConfig.toppings.some(t => t.type === 'blueberries');
   
   toppingsControlsDiv.innerHTML = `
-    <p class="layer-header">Layer ${cakeLayers.findIndex(l => l.id === layerConfig.id) + 1} Toppings</p>
+    <p class="text-xl font-bold text-center p-2 my-2">Layer ${cakeLayers.findIndex(l => l.id === layerConfig.id) + 1} Toppings</p>
     
-    <div class="toppings-section">
-      <p class="section-title">Add toppings to your cake layer:</p>
+    <div class="toppings-section p-3 border border-b-2 border-gray-300 m-2">
+      <p class="text-sm font-medium text-gray-700 mb-3">Add toppings to your cake layer:</p>
       
-      <div class="topping-item">
-        <label class="checkbox-label">
-          <input type="checkbox" id="toppings_tab_sprinkles_${layerConfig.id}" ${hasSprinkles ? 'checked' : ''}>
-          Sprinkles
-        </label>
-        <div class="sub-controls mt-2 ${hasSprinkles ? '' : 'hidden'}" id="sprinkles_controls_${layerConfig.id}">
-          <p class="topping-description">Colorful sprinkles randomly distributed across the top of the cake</p>
+      <div class="mb-3">
+        <div class="flex items-center">
+          <div class="flex items-center h-5">
+            <input type="checkbox" id="toppings_tab_sprinkles_${layerConfig.id}" ${hasSprinkles ? 'checked' : ''} class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 transition cursor-pointer">
+          </div>
+          <label for="toppings_tab_sprinkles_${layerConfig.id}" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer select-none">Sprinkles</label>
+        </div>
+        <div class="sub-controls pl-8 mt-2 ${hasSprinkles ? '' : 'hidden'}" id="sprinkles_controls_${layerConfig.id}">
+          <p class="text-gray-500 text-xs">Colorful sprinkles randomly distributed across the top of the cake</p>
         </div>
       </div>
       
-      <div class="topping-item mt-3">
-        <label class="checkbox-label">
-          <input type="checkbox" id="toppings_tab_cherries_${layerConfig.id}" ${hasCherries ? 'checked' : ''}>
-          Cherries
-        </label>
-        <div class="sub-controls mt-2 ${hasCherries ? '' : 'hidden'}" id="cherries_controls_${layerConfig.id}">
-          <p class="topping-description">Red cherries with green stems placed on top of your cake</p>
+      <div class="mb-3">
+        <div class="flex items-center">
+          <div class="flex items-center h-5">
+            <input type="checkbox" id="toppings_tab_cherries_${layerConfig.id}" ${hasCherries ? 'checked' : ''} class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 transition cursor-pointer">
+          </div>
+          <label for="toppings_tab_cherries_${layerConfig.id}" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer select-none">Cherries</label>
+        </div>
+        <div class="sub-controls pl-8 mt-2 ${hasCherries ? '' : 'hidden'}" id="cherries_controls_${layerConfig.id}">
+          <p class="text-gray-500 text-xs">Red cherries with green stems placed on top of your cake</p>
         </div>
       </div>
       
-      <div class="topping-item mt-3">
-        <label class="checkbox-label">
-          <input type="checkbox" id="toppings_tab_strawberries_${layerConfig.id}" ${hasStrawberries ? 'checked' : ''}>
-          Strawberries
-        </label>
-        <div class="sub-controls mt-2 ${hasStrawberries ? '' : 'hidden'}" id="strawberries_controls_${layerConfig.id}">
-          <p class="topping-description">Fresh strawberries arranged around the top of your cake</p>
+      <div class="mb-3">
+        <div class="flex items-center">
+          <div class="flex items-center h-5">
+            <input type="checkbox" id="toppings_tab_strawberries_${layerConfig.id}" ${hasStrawberries ? 'checked' : ''} class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 transition cursor-pointer">
+          </div>
+          <label for="toppings_tab_strawberries_${layerConfig.id}" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer select-none">Strawberries</label>
+        </div>
+        <div class="sub-controls pl-8 mt-2 ${hasStrawberries ? '' : 'hidden'}" id="strawberries_controls_${layerConfig.id}">
+          <p class="text-gray-500 text-xs">Fresh strawberries arranged around the top of your cake</p>
         </div>
       </div>
       
-      <div class="topping-item mt-3">
-        <label class="checkbox-label">
-          <input type="checkbox" id="toppings_tab_blueberries_${layerConfig.id}" ${hasBlueberries ? 'checked' : ''}>
-          Blueberries
-        </label>
-        <div class="sub-controls mt-2 ${hasBlueberries ? '' : 'hidden'}" id="blueberries_controls_${layerConfig.id}">
-          <p class="topping-description">Fresh blueberries scattered across the top of your cake</p>
+      <div class="mb-3">
+        <div class="flex items-center">
+          <div class="flex items-center h-5">
+            <input type="checkbox" id="toppings_tab_blueberries_${layerConfig.id}" ${hasBlueberries ? 'checked' : ''} class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 transition cursor-pointer">
+          </div>
+          <label for="toppings_tab_blueberries_${layerConfig.id}" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer select-none">Blueberries</label>
+        </div>
+        <div class="sub-controls pl-8 mt-2 ${hasBlueberries ? '' : 'hidden'}" id="blueberries_controls_${layerConfig.id}">
+          <p class="text-gray-500 text-xs">Fresh blueberries scattered across the top of your cake</p>
         </div>
       </div>
       
       <div class="mt-4">
-        <p class="hint-text">More toppings coming soon!</p>
+        <p class="text-gray-500 text-xs italic">More toppings coming soon!</p>
       </div>
     </div>
   `;
@@ -2729,10 +2788,12 @@ const addToCart = async () => {
     const customCakeItem = {
       name: 'Custom ' + (selectedFlavor.value ? selectedFlavor.value.name : '') + ' Cake',
       size: selectedSize.value ? selectedSize.value.name : '',
+      unitPrice: totalPrice.value,
+      totalPrice: totalPrice.value,
       quantity: 1,
       imageUrl: cakeImageBase64,
       isCustomCake: true,
-      needsPricing: true,
+      cakeId: 'custom_' + Date.now(), // Generate a unique cakeId for each custom cake
       customDetails: {
         // Save design data exactly as the Save Design button does
         designData: cakeDesignData,
@@ -2829,6 +2890,15 @@ const resetCustomization = () => {
   renderCake();
 };
 
+// Add pricing calculation to consider layers as well
+// Add this computed property for displaying total price in the cart modal
+const totalPrice = computed(() => {
+  if (!selectedSize.value) return 0;
+  
+  // Use the direct price from the selected size option
+  // Since we now have separate pricing for each tier configuration
+  return selectedSize.value.price;
+});
 
 </script>
 
@@ -2957,7 +3027,7 @@ const resetCustomization = () => {
 }
 
 .layer-header {
-  font-weight: bold;
+  font-weight: 600;
   margin-bottom: 10px;
 }
 
@@ -3027,7 +3097,7 @@ select {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 1.5rem;
+  padding: 1.5rem 0;
   max-width: 100%;
   margin: 0;
   box-shadow: none;
@@ -3113,8 +3183,7 @@ select {
 
 
 .selection-step h2 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
+  font-size: 1.6rem;
   color: #333;
   text-align: center;
   font-weight: 700;
@@ -3131,34 +3200,285 @@ select {
 .options-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-  padding: 0 1rem;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 0 0.5rem;
 }
 
 .option-button {
-  padding: 1.5rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 16px;
-  background: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  height: 100%;
-  min-height: 240px;
+  padding: 0.75rem;
+  min-height: 10px;
+}
+
+.option-icon {
+  width: 60px;
+  height: 60px;
+}
+
+.preview-layer {
+  width: 40px;
+  height: 14px;
+}
+
+.option-label {
+  font-size: 0.9rem;
+}
+
+/* Navigation Buttons */
+.modal-navigation {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: white;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  position: sticky;
+  bottom: 0;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
+  z-index: 10;
+}
+
+.nav-button {
+  flex: 1;
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  border: none;
+  cursor: pointer;
+  display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 120px;
+  letter-spacing: 0.3px;
+}
+
+.nav-button.back {
+  background-color: #f5f5f5;
+  color: #666;
+  border: 1px solid #e0e0e0;
+}
+
+.nav-button.back:hover {
+  background-color: #eeeeee;
+  color: #444;
+}
+
+.nav-button.next,
+.nav-button.finish {
+  background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+}
+
+.nav-button.next:hover,
+.nav-button.finish:hover {
+  background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.nav-button:active {
+  transform: translateY(1px);
+}
+
+.nav-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Removed arrow icons */
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .modal-navigation {
+    flex-direction: column;
+    padding: 1rem;
+  }
+
+  .nav-button {
+    width: 100%;
+    min-width: unset;
+  }
+}
+
+/* Layer Selection Styles */
+.layers-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+  max-width: 600px;
+  margin: 0 auto;
+
+}
+
+.layer-card {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  background: #FFFFFF;
+  border: 2px solid #E8E8E8;
+  border-radius: 16px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.layer-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: #F0E68D;
+}
+
+.layer-card.selected {
+  border-color: #58091F;
+  background: rgba(240, 230, 141, 0.05);
+  box-shadow: 0 8px 24px rgba(88, 9, 31, 0.12);
+}
+
+.layer-visual {
+  flex: 0 0 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.layer-stack {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cake-layer {
+  position: absolute;
+  width: 80px;
+  height: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.layer-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.layer-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.layer-description {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+.layer-features {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #555;
+  background: #f5f5f5;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+}
+
+.feature ion-icon {
+  font-size: 1.1rem;
+  color: #58091F;
+}
+
+.layer-card.selected .layer-title {
+  color: #58091F;
+}
+
+
+
+.step-title {
+  color: #58091F;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  line-height: 1.2;
+}
+
+.step-description {
+  color: #666;
+  font-size: 1.1rem;
+  max-width: 500px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .layer-card {
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.25rem;
+    align-items: center;
+    text-align: center;
+  }
+
+  .layer-details {
+    align-items: center;
+  }
+
+  .layer-features {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .step-title {
+    font-size: 1.75rem;
+  }
+
+  .step-description {
+    font-size: 1rem;
+  }
+}
+
+/* Confirmation Modal */
+.confirmation-modal {
+  width: 95%;
+  max-width: none;
+}
+
+.form-group input,
+.form-group textarea {
+  font-size: 16px; /* Prevents zoom on mobile */
 }
 
 .option-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+
   width: 100%;
 }
 
@@ -3168,18 +3488,10 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1rem;
+  margin: 1rem 0;
 }
 
-.layer-preview {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-  justify-content: center;
-}
+
 
 .preview-layer {
   width: 60px;
@@ -3242,10 +3554,7 @@ select {
     gap: 0.75rem;
   }
 
-  .option-button {
-    padding: 0.75rem;
-    min-height: 180px;
-  }
+
 
   .option-icon {
     width: 60px;
@@ -3265,8 +3574,9 @@ select {
 /* Navigation Buttons */
 .modal-navigation {
   display: flex;
-  justify-content: space-between;
-  padding: 2rem;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
   background: white;
   border-top: 1px solid #e0e0e0;
   position: sticky;
@@ -3275,17 +3585,18 @@ select {
 }
 
 .nav-button {
-  padding: 1.25rem 2.5rem;
+  width: 100%;
+  padding: 1rem;
+  font-size: 1rem;
+  min-width: unset;
   border: none;
   border-radius: 16px;
   cursor: pointer;
-  font-size: 1.25rem;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 1rem;
   transition: all 0.3s ease;
-  min-width: 200px;
   justify-content: center;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -3306,14 +3617,12 @@ select {
 .nav-button.next {
   background: #58091F;
   color: white;
-  margin-left: auto;
   box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
 }
 
 .nav-button.finish {
   background: #28a745;
   color: white;
-  margin-left: auto;
   box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
 }
 
@@ -3329,8 +3638,7 @@ select {
 }
 
 .back-icon, .next-icon, .finish-icon {
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: 1.3rem;
 }
 
 /* Mobile Responsive Adjustments for Navigation */
@@ -3376,9 +3684,7 @@ select {
     grid-template-columns: 1fr;
   }
 
-  .option-button {
-    padding: 0.75rem;
-  }
+
 
   .option-icon {
     width: 60px;
@@ -3390,6 +3696,7 @@ select {
   }
 }
 
+/* Mobile-First Header Styles */
 ion-header {
   --background: #FFFFFF;
   position: fixed;
@@ -3411,17 +3718,19 @@ ion-toolbar {
 }
 
 .customize-title {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #58091F;
   letter-spacing: 0.5px;
-  padding-left: 32px;
+  padding-left: 16px;
 }
 
+/* Mobile-First Form Styles */
 .topper-section {
   background-color: #f8f9fa;
-  padding: 15px;
+  padding: 12px;
   border-radius: 8px;
+  margin: 0.5rem;
 }
 
 .topper-section select,
@@ -3431,6 +3740,7 @@ ion-toolbar {
   margin-top: 5px;
   border: 1px solid #ddd;
   border-radius: 4px;
+  font-size: 16px;
 }
 
 .topper-section input[type="file"] {
@@ -3439,229 +3749,181 @@ ion-toolbar {
 }
 
 .topper-section .sub-controls {
-  padding: 10px;
-  background-color: white;
+  padding: 8px;
+  background-color: rgb(255, 0, 0);
   border-radius: 4px;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
-/* Updated Size Selection Styles */
-.options-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding: 0 1rem;
+/* Mobile-First Step Content */
+.step-content {
+  padding: 1rem;
 }
 
-.option-button {
-  padding: 0.75rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  background: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  height: 100%;
+.selection-step {
+  padding: 0.5rem;
+}
+
+
+
+/* Mobile-First Progress Bar */
+.progress-container {
+  padding: 1rem 0.5rem;
+}
+
+.progress-steps {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  margin-bottom: 1rem;
 }
 
-.option-content {
+.progress-step {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
 }
 
-.option-icon {
-  width: 70px;
-  height: 70px;
+.step-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #e0e0e0;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.25rem;
-  position: relative;
+  font-size: 0.9rem;
+  color: #666;
 }
 
-.size-preview {
+.step-label {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.progress-step.active .step-number {
+  background: #58091F;
+  color: white;
+}
+
+.progress-step.completed .step-number {
+  background: #28a745;
+  color: white;
+}
+
+.progress-bar {
+  height: 4px;
+  background: #e0e0e0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #58091F;
+  transition: width 0.3s ease;
+}
+
+/* Mobile-First Modal */
+.selections-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
   width: 100%;
   height: 100%;
-  background: #ffb6c1;
-  border-radius: 50%;
+  overflow-y: auto;
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
 }
 
-.size-preview::after {
-  content: '';
-  position: absolute;
-  width: 80%;
-  height: 80%;
-  border: 2px dashed #fff;
-  border-radius: 50%;
+/* Mobile-First Confirmation Modal */
+.confirmation-modal {
+  width: 95%;
+  padding: 1rem;
+  border-radius: 12px;
+  background: white;
 }
 
-.option-label {
+.confirmation-header {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.confirmation-title {
+  font-size: 1.25rem;
+  color: #58091F;
+  margin-bottom: 0.5rem;
+}
+
+.confirmation-subtitle {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.confirmation-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.confirmation-button {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
-  color: #333;
-  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.size-details {
-  width: 100%;
+.cancel-btn {
   background: #f8f9fa;
-  padding: 0.5rem;
-  border-radius: 8px;
-  margin-top: 0.25rem;
-}
-
-.size-details div {
-  text-align: center;
-  margin: 0.15rem 0;
   color: #666;
-  font-size: 0.8rem;
+  border: 1px solid #ddd;
 }
 
-.size-details .price {
-  font-weight: 600;
-  color: #28a745;
-  font-size: 0.9rem;
-  margin-top: 0.25rem;
-}
-
-.option-button:hover {
-  border-color: #007bff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.option-button.selected {
-  border-color: #007bff;
-  background: #e6f0ff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* Mobile Responsive Adjustments */
-@media (max-width: 768px) {
-  .options-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-    padding: 0 0.5rem;
-  }
-
-  .option-button {
-    padding: 0.75rem;
-    min-height: 180px;
-  }
-
-  .option-icon {
-    width: 60px;
-    height: 60px;
-  }
-
-  .option-label {
-    font-size: 0.9rem;
-  }
-
-  .size-details {
-    padding: 0.5rem;
-  }
-
-  .size-details div {
-    font-size: 0.8rem;
-    margin: 0.1rem 0;
-  }
-}
-
-/* Small Mobile Adjustments */
-@media (max-width: 480px) {
-  .options-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
-    padding: 0 0.25rem;
-  }
-
-  .option-button {
-    padding: 0.5rem;
-    min-height: 160px;
-  }
-
-  .option-icon {
-    width: 50px;
-    height: 50px;
-  }
-
-  .option-label {
-    font-size: 0.85rem;
-  }
-
-  .size-details {
-    padding: 0.35rem;
-  }
-
-  .size-details div {
-    font-size: 0.75rem;
-    margin: 0.08rem 0;
-  }
-}
-
-/* Tablet and Desktop Adjustments */
-@media (min-width: 481px) {
-  .options-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    padding: 0 1rem;
-  }
-
-  .option-button {
-    padding: 1rem;
-  }
-
-  .option-icon {
-    width: 80px;
-    height: 80px;
-  }
-
-  .option-label {
-    font-size: 1.1rem;
-  }
-
-  .size-details {
-    padding: 0.75rem;
-  }
-
-  .size-details div {
-    font-size: 0.9rem;
-  }
-
-  .size-details .price {
-    font-size: 1rem;
-  }
-}
-
-/* Progress Bar Mobile Adjustments */
-@media (max-width: 480px) {
-  .progress-steps {
-    padding: 0 0.25rem;
-  }
-
-  .step-number {
-    width: 24px;
-    height: 24px;
-    font-size: 0.8rem;
-  }
-
-  .step-label {
-    font-size: 0.7rem;
-  }
-
-  .progress-bar {
-    margin: 0 0.25rem;
-  }
+.success-btn {
+  background: #28a745;
+  color: white;
 }
 
 .greeting-control-group {
@@ -3684,7 +3946,7 @@ ion-toolbar {
 /* Flavor Selection Styles */
 .flavor-grid {
   grid-template-columns: repeat(1, fr);
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .flavor-preview {
@@ -3730,9 +3992,9 @@ ion-toolbar {
 .flavor-description {
   text-align: center;
   color: #666;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   margin-top: 0.5rem;
-  padding: 0.5rem;
+  padding: 0.35rem;
   background: #f8f9fa;
   border-radius: 4px;
 }
@@ -3746,24 +4008,11 @@ ion-toolbar {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* Mobile Responsive Adjustments for Flavor Selection */
-@media (max-width: 480px) {
-  .flavor-grid {
-
-    gap: 0.75rem;
-  }
-
-  .flavor-description {
-    font-size: 0.8rem;
-    padding: 0.35rem;
-  }
-}
-
 /* Topper Controls Styles */
 .topper-section {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-  padding: 1rem;
+  padding: 0.75rem;
   margin-bottom: 1rem;
 }
 
@@ -3804,7 +4053,7 @@ ion-toolbar {
 .icing-section {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-  padding: 1rem;
+  padding: 0.75rem;
   margin-bottom: 1rem;
 }
 
@@ -3867,7 +4116,7 @@ ion-toolbar {
 
 /* Tab Styles */
 .tab-button {
-  padding: 0.75rem 1.25rem;
+
   border: 1px solid #7A5C1E;
   border-radius: 8px;
   color: #333;
@@ -3893,24 +4142,12 @@ ion-toolbar {
 
 .tab-content {
   display: none;
-  padding: 1rem;
+  padding:0;
+
 }
 
 .tab-content.active {
   display: block;
-}
-
-/* Responsive Styles */
-@media (max-width: 768px) {
-  .topper-section,
-  .icing-section {
-    padding: 0.75rem;
-  }
-  
-  .tab-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-  }
 }
 
 .toppings-section {
@@ -4108,27 +4345,6 @@ ion-toolbar {
   font-size: 1.1rem;
 }
 
-/* Mobile responsiveness adjustments */
-@media (max-width: 480px) {
-  .mobile-control-item {
-    padding: 12px;
-  }
-  
-  .mobile-label {
-    font-size: 0.9rem;
-  }
-  
-  .mobile-slider {
-    height: 20px;
-  }
-  
-  .mobile-slider::-webkit-slider-thumb,
-  .mobile-slider::-moz-range-thumb {
-    width: 24px;
-    height: 24px;
-  }
-}
-
 /* Confirmation Modal Styles */
 .modal-overlay {
   position: fixed;
@@ -4146,8 +4362,8 @@ ion-toolbar {
 .confirmation-modal {
   background-color: white;
   border-radius: 12px;
-  width: 90%;
-  max-width: 400px;
+  width: 95%;
+  max-width: none;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   overflow: hidden;
 }
@@ -4248,20 +4464,6 @@ ion-toolbar {
   font-size: 1.1rem;
 }
 
-@media (max-width: 480px) {
-  .add-to-cart-btn {
-    padding: 14px 20px;
-  }
-  
-  .cart-icon {
-    font-size: 1.2rem;
-  }
-  
-  .btn-text {
-    font-size: 1rem;
-  }
-}
-
 /* Cart Modal Styles */
 .cart-info {
   margin-top: 20px;
@@ -4313,7 +4515,7 @@ ion-toolbar {
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 1rem;
+  font-size: 16px;
 }
 
 .form-group textarea {
@@ -4345,23 +4547,7 @@ ion-toolbar {
   background-color: #218838;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  .confirmation-modal {
-    width: 95%;
-    max-width: none;
-  }
-  
-  .form-group input,
-  .form-group textarea {
-    font-size: 16px; /* Prevents zoom on mobile */
-  }
-}
 
-.step-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
 
 .step-title {
   color: #58091F;
@@ -4377,20 +4563,13 @@ ion-toolbar {
   margin: 0 auto;
 }
 
-.layers-container {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 1rem;
-}
+
 
 .layer-option {
   background: #FFFFFF;
   border: 2px solid #E0E0E0;
   border-radius: 16px;
-  padding: 1.5rem;
+  padding: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
@@ -4413,7 +4592,7 @@ ion-toolbar {
 }
 
 .layer-preview-container {
-  width: 100%;
+  width: 80px;
   aspect-ratio: 1;
   display: flex;
   align-items: center;
@@ -4421,18 +4600,7 @@ ion-toolbar {
   padding: 1rem;
 }
 
-.layer-preview {
-  width: 100%;
-  height: 100%;
-  max-width: 120px;
-  max-height: 120px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 4px;
-}
+
 
 .preview-layer {
   width: 100%;
@@ -4446,7 +4614,7 @@ ion-toolbar {
 .layer-info {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.25rem;
 }
 
@@ -4467,49 +4635,500 @@ ion-toolbar {
   color: #58091F;
 }
 
-@media (max-width: 768px) {
-  .layers-container {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    padding: 0.5rem;
-  }
+/* Add CSS for price display */
+.price {
+  font-weight: 600;
+  color: #28a745;
+  font-size: 1.1rem;
+  margin-top: 0.25rem;
+}
 
-  .layer-option {
-    padding: 1rem;
-  }
+.total-price {
+  font-size: 1.1rem;
+  margin-top: 10px;
+  color: #28a745;
+}
 
-  .step-title {
-    font-size: 1.5rem;
-  }
+.price-info {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #e0e0e0;
+}
 
-  .step-description {
-    font-size: 0.9rem;
+/* Mobile-First Design */
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 0 0.5rem;
+}
+
+
+
+.option-icon {
+  width: 60px;
+  height: 60px;
+}
+
+.preview-layer {
+  width: 40px;
+  height: 14px;
+}
+
+.option-label {
+  font-size: 0.9rem;
+}
+
+.modal-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  border-top: 1px solid #e0e0e0;
+  position: sticky;
+  bottom: 0;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.nav-button {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  min-width: unset;
+}
+
+.nav-button.next,
+.nav-button.finish {
+  margin-left: 0;
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 0 0.5rem;
+}
+
+.option-button {
+  padding: 0.75rem;
+}
+
+.option-icon {
+  width: 60px;
+  height: 60px;
+}
+
+.nav-button {
+  padding: 0.75rem 1rem;
+}
+
+.size-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsive grid */
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 0 0.5rem;
+}
+
+.size-preview-container {
+  width: 100%;
+  aspect-ratio: 1; /* Keep preview square */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+}
+
+.size-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+}
+
+.option-label {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.size-servings {
+  font-size: 1rem; /* Slightly larger font for key info */
+  font-weight: 600;
+  color: #555; /* Different color for servings */
+}
+
+.size-price {
+  font-weight: 600;
+  color: #28a745; /* Green for price */
+  font-size: 1.1rem;
+  margin-top: 0.25rem;
+}
+
+.size-dimensions {
+  font-size: 0.8rem; /* Smaller font for detailed dimensions */
+  color: #888;
+  margin-top: 0.25rem;
+}
+
+/* Mobile-Optimized Layer Selection Styles */
+.step-header {
+  text-align: center;
+  padding: 1rem 1rem 0.5rem;
+}
+
+.step-title {
+  color: #58091F;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.step-description {
+  color: #666;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+
+
+.layer-option {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #FFFFFF;
+  border: 1px solid #E8E8E8;
+  border-radius: 12px;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.layer-option:active {
+  transform: scale(0.98);
+}
+
+.layer-option.selected {
+  border-color: #58091F;
+  background: rgba(240, 230, 141, 0.05);
+  box-shadow: 0 2px 8px rgba(88, 9, 31, 0.1);
+}
+
+.layer-preview {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.preview-layer {
+  position: absolute;
+  width: 50px;
+  height: 16px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.layer-info {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-width: 0;
+}
+
+.layer-main-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.layer-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.layer-servings {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.layer-price {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #28a745;
+}
+
+.layer-option.selected .layer-name {
+  color: #58091F;
+}
+
+/* Hover states only for non-touch devices */
+@media (hover: hover) {
+  .layer-option:hover {
+    border-color: #F0E68D;
+    transform: translateY(-2px);
   }
 }
 
-@media (max-width: 480px) {
-  .layers-container {
-    grid-template-columns: 1fr;
-    max-width: 280px;
-  }
-
+/* Additional mobile optimizations */
+@media (max-width: 360px) {
   .layer-option {
-    flex-direction: row;
-    padding: 1rem;
-    gap: 1rem;
+    padding: 0.5rem;
+    gap: 0.75rem;
   }
 
-  .layer-preview-container {
-    width: 80px;
-    aspect-ratio: 1;
+
+  .preview-layer {
+    width: 40px;
+    height: 14px;
   }
 
-  .layer-info {
-    align-items: flex-start;
+  .layer-name {
+    font-size: 1rem;
   }
 
-  .step-title {
-    font-size: 1.25rem;
+  .layer-servings {
+    font-size: 0.8rem;
   }
+
+  .layer-price {
+    font-size: 1rem;
+  }
+}
+
+/* Size Preview Styles */
+.size-preview {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #F5F5DC;
+  border: 2px solid #7A5C1E;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+/* Different size classes */
+.size-6 {
+  width: 60px;
+  height: 60px;
+}
+
+.size-7 {
+  width: 70px;
+  height: 70px;
+}
+
+.size-8 {
+  width: 80px;
+  height: 80px;
+}
+
+.size-9 {
+  width: 90px;
+  height: 90px;
+}
+
+.size-10 {
+  width: 100px;
+  height: 100px;
+}
+
+/* Hover and selected states */
+.option-button:hover .size-preview {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.option-button.selected .size-preview {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  border-color: #58091F;
+  background-color: #F0E68D;
+}
+
+
+
+/* Tier representation styles */
+.tier-representation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.tier-indicator {
+  background-color: #F0E68D;
+  border: 2px solid #7A5C1E;
+  border-radius: 4px;
+  margin-bottom: 5px;
+}
+
+.no-options-message {
+  text-align: center;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.no-options-message p {
+  font-size: 1.1rem;
+  color: #666;
+}
+
+/* Make the size preview container taller for multi-tier cakes */
+.option-button:has(.tier-representation) .size-preview-container {
+  min-height: 180px;
+}
+
+/* Make the size preview container taller for multi-tier cakes */
+.multi-tier-preview {
+  min-height: 180px;
+}
+
+
+.size-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.size-option:hover {
+  border-color: #F0E68D;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.size-option.selected {
+  background: #FFFACD;
+  border-color: #F0E68D;
+  box-shadow: 0 2px 8px rgba(240, 230, 141, 0.3);
+}
+
+.size-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.size-price {
+  color: #8B8B00;
+  font-weight: 600;
+  font-size: 1.2rem;
+  margin-top: 0.25rem;
+}
+
+.step-description {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+
+
+.size-option {
+  display: block;
+  width: 100%;
+
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.size-option:hover {
+  border-color: #F0E68D;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.size-option.selected {
+  background: #FFFACD;
+  border-color: #F0E68D;
+  box-shadow: 0 2px 8px rgba(240, 230, 141, 0.3);
+}
+
+.size-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.size-visual {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+.cake-circle {
+  position: relative;
+  background: #FFFACD;
+  border: 2px solid #F0E68D;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.size-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #8B8B00;
+}
+
+.size-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.size-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.size-dimensions {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.size-price {
+  color: #8B8B00;
+  font-weight: 600;
+  font-size: 1.2rem;
+  margin-top: 0.25rem;
+}
+
+.step-description {
+  color: #666;
+  margin-bottom: 1rem;
 }
 </style> 

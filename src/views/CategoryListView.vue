@@ -13,11 +13,11 @@
         <div class="categories-grid">
           <div v-for="category in categories" :key="category.id" 
                class="category-card" 
-               @click="viewCategory(category.id)">
+               @click="viewCategory(category.name)">
             <div class="category-img-wrapper">
               <img :src="category.imageUrl" :alt="category.name" class="category-img" />
             </div>
-            <div class="category-name">{{ category.name }}</div>
+            <div class="category-name capitalize font-bold">{{ category.name }}</div>
           </div>
         </div>
       </div>
@@ -37,6 +37,9 @@ const cakeStore = useCakeStore();
 const { categories } = storeToRefs(cakeStore);
 
 const viewCategory = (categoryId) => {
+  if(categoryId === 'Customize') {
+    return router.push(`/customize`);
+  };
   router.push(`/category/${categoryId}`);
 };
 </script>

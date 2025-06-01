@@ -9,36 +9,28 @@ interface OrderItem {
   imageUrl: string
   name: string
   quantity: number
-  size?: string
   totalPrice: number
   unitPrice: number
 }
 
-interface BaseOrder {
+interface PaymentDetails {
+  amount: number
+  createdAt: string
+  currency: string
+  status: 'pending' | 'completed' | 'failed'
+  paymentMethod: string
+}
+
+interface Order {
+  id: string
   orderId: string
   userId: string
-  customerName: string
-  customerEmail: string
   status: 'pending' | 'accepted' | 'declined'
-  createdAt: number
-}
-
-interface NonCustomOrder extends BaseOrder {
+  createdAt: string
   items: OrderItem[]
-  totalAmount: number
-  type: 'non-custom'
+  paymentDetails: PaymentDetails
+  total: number
 }
-
-interface CustomOrder extends BaseOrder {
-  items: {
-    needsPricing: boolean
-  }
-  orderType: 'custom'
-  pricingStatus: 'pending' | 'priced' | 'accepted'
-  updatedAt: number
-}
-
-type Order = NonCustomOrder | CustomOrder
 
 export const useOrderStore = defineStore('order', () => {
   const orders = ref<Order[]>([])
@@ -74,48 +66,27 @@ export const useOrderStore = defineStore('order', () => {
           
           if (snapshot.exists()) {
             try {
-              const snapshotData = snapshot.val()
-              console.log('Snapshot data:', snapshotData)
-              
-              const orderIds = Object.keys(snapshotData)
+              const orderIds = snapshot.val() as string[]
               console.log('Found order IDs:', orderIds)
+              
+              if (!Array.isArray(orderIds)) {
+                console.error('Orders data is not an array')
+                orders.value = []
+                resolve([])
+                return
+              }
               
               const orderPromises = orderIds.map(async (orderId) => {
                 try {
-                  // Get the order reference info to determine the type
-                  const orderRefInfo = snapshotData[orderId]
-                  console.log(`Order reference info for ${orderId}:`, orderRefInfo)
-                  
-                  // Determine order type - default to non-custom if not specified
-                  const orderType = orderRefInfo.type || orderRefInfo.orderType || 'non-custom'
-                  console.log(`Order ${orderId} type:`, orderType)
-                  
                   const orderRef = dbRef(database, `orders/${orderId}`)
-                  console.log('Fetching order from path:', `orders/${orderId}`)
-                  
                   const orderSnapshot = await get(orderRef)
                   
                   if (orderSnapshot.exists()) {
                     const orderData = orderSnapshot.val()
-                    console.log(`Order ${orderId} data:`, orderData)
+                    console.log(`Found order ${orderId}:`, orderData)
                     return orderData
                   } else {
-                    console.warn(`Order ${orderId} not found in ${orderType} orders`)
-                    
-                    // Try the opposite type as a fallback
-                    const fallbackType = orderType === 'non-custom' ? 'custom' : 'non-custom'
-                    console.log(`Trying fallback type: ${fallbackType}`)
-                    
-                    const fallbackRef = dbRef(database, `orders/${fallbackType}/${orderId}`)
-                    const fallbackSnapshot = await get(fallbackRef)
-                    
-                    if (fallbackSnapshot.exists()) {
-                      const fallbackData = fallbackSnapshot.val()
-                      console.log(`Found order in fallback location: ${fallbackType}`)
-                      return fallbackData
-                    }
-                    
-                    console.error(`Order ${orderId} does not exist in any known location`)
+                    console.warn(`Order ${orderId} not found`)
                     return null
                   }
                 } catch (error) {
@@ -129,7 +100,10 @@ export const useOrderStore = defineStore('order', () => {
                 console.log('All orders data retrieved:', orderData)
                 const validOrders = orderData.filter(order => order !== null)
                 console.log('Valid orders count:', validOrders.length)
-                orders.value = validOrders
+                // Sort orders by createdAt in descending order (newest first)
+                orders.value = validOrders.sort((a, b) => 
+                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                )
                 console.log('Final orders array:', orders.value)
                 resolve(orders.value)
               } catch (error) {

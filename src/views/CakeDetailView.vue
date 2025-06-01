@@ -33,6 +33,15 @@
                   </p>
                 </div>
               </div>
+              <div class="quantity-selector">
+                <button @click="decreaseQuantity" class="quantity-btn">
+                  <ion-icon :icon="removeOutline"></ion-icon>
+                </button>
+                <span class="quantity-value">{{ quantity }}</span>
+                <button @click="increaseQuantity" class="quantity-btn">
+                  <ion-icon :icon="addOutline"></ion-icon>
+                </button>
+              </div>
               <ion-button @click="addToCart" class="add-to-cart-btn" fill="solid">
                 <ion-icon :icon="cartOutline" slot="start"></ion-icon>
                 Add to Cart
@@ -79,7 +88,8 @@
   </ion-page>
 </template>
 
-<script setup>
+<script setup lang="ts">
+// @ts-nocheck
 import { 
   IonPage, 
   IonHeader, 
@@ -89,34 +99,32 @@ import {
   IonButtons,
   IonBackButton,
   IonButton,
-  IonIcon,
-  IonTabs
+  IonIcon
 } from '@ionic/vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCakeStore } from '@/stores/cakeStore';
 import { computed, ref } from 'vue';
-import { cartOutline, checkmarkCircleOutline } from 'ionicons/icons';
+// @ts-ignore
+import { cartOutline, checkmarkCircleOutline, addOutline, removeOutline } from 'ionicons/icons';
 import { useCartStore } from '@/stores/cartStore';
 import { toastController } from '@ionic/vue';
-import { useAuthStore } from '@/stores/authStore';
-import { storeToRefs } from 'pinia';
 
 const route = useRoute();
 const router = useRouter();
 const cakeStore = useCakeStore();
 const cartStore = useCartStore();
-const authStore = useAuthStore();
 
 const category = computed(() => {
-  return cakeStore.getCategoryById(route.params.categoryId);
+  return cakeStore.getCategoryById(route.params.categoryId as string);
 });
 
 const cake = computed(() => {
-  if (!category.value || !route.query.id) return null;
+  if (!category.value || !route.query.id || !category.value.cakes) return null;
   return category.value.cakes.find(cake => cake.id === route.query.id);
 });
 
 const isSuccessModalOpen = ref(false);
+const quantity = ref(1);
 
 const unitPrice = computed(() => {
   if (!cake.value) return 0;
@@ -124,8 +132,18 @@ const unitPrice = computed(() => {
 });
 
 const totalPrice = computed(() => {
-  return unitPrice.value;
+  return unitPrice.value * quantity.value;
 });
+
+const increaseQuantity = () => {
+  quantity.value++;
+};
+
+const decreaseQuantity = () => {
+  if (quantity.value > 1) {
+    quantity.value--;
+  }
+};
 
 const addToCart = async () => {
   console.log('addToCart function called');
@@ -145,13 +163,16 @@ const addToCart = async () => {
   
   try {
     console.log('Attempting to add item to cart');
+    if (!cake.value) return;
+    
     const cartItem = {
       cakeId: cake.value.id,
       name: cake.value.name,
-      quantity: 1,
+      quantity: quantity.value,
       unitPrice: unitPrice.value,
       totalPrice: totalPrice.value,
-      imageUrl: cake.value.imageUrl
+      imageUrl: cake.value.imageUrl,
+      isCustomCake: false
     };
 
     const existingItem = cartStore.items.find(item => 
@@ -160,7 +181,7 @@ const addToCart = async () => {
 
     if (existingItem) {
       console.log('Updating existing item quantity');
-      const newQuantity = existingItem.quantity + 1;
+      const newQuantity = existingItem.quantity + quantity.value;
       await cartStore.updateItemQuantity(existingItem.id, newQuantity);
     } else {
       console.log('Adding new item to cart');
@@ -184,6 +205,7 @@ const addToCart = async () => {
 const closeSuccessModal = () => {
   console.log('Closing modal');
   isSuccessModalOpen.value = false;
+  
 };
 
 const goToCheckout = () => {
@@ -334,6 +356,46 @@ ion-toolbar {
   margin: 0;
 }
 
+.quantity-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8f8f8;
+  border-radius: 12px;
+  padding: 6px 10px;
+  border: 1px solid #eee;
+  margin-right: 10px;
+}
+
+.quantity-btn {
+  background: none;
+  color: #58091F;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  box-shadow: none;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: background-color 0.2s;
+}
+
+.quantity-btn:hover {
+  background-color: rgba(88, 9, 31, 0.1);
+}
+
+.quantity-value {
+  font-size: 1.1rem;
+  color: #333;
+  font-weight: 600;
+  width: 24px;
+  text-align: center;
+}
+
 .add-to-cart-btn {
   --background: #58091F;
   --background-hover: linear-gradient(135deg, #8B6B2F 0%, #9D7B3F 100%);
@@ -372,6 +434,15 @@ ion-toolbar {
     min-width: 180px;
     font-size: 1rem;
   }
+  
+  .quantity-selector {
+    padding: 4px 8px;
+  }
+  
+  .quantity-btn {
+    width: 28px;
+    height: 28px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -397,6 +468,12 @@ ion-toolbar {
 
   .bottom-content {
     gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  .price-section {
+    width: 100%;
+    margin-bottom: 12px;
   }
   
   .price-label {
@@ -407,8 +484,13 @@ ion-toolbar {
     font-size: 1.3rem;
   }
   
+  .quantity-selector {
+    margin-right: 0;
+    margin-bottom: 12px;
+  }
+  
   .add-to-cart-btn {
-    min-width: 250px;
+    min-width: 100%;
     height: 44px;
     font-size: 0.9rem;
   }

@@ -114,7 +114,7 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/customize-cake',
+    path: '/customize',
     name: 'customizeCake',
     component: () => import('../views/CustomizeCakeView.vue'),
     meta: { requiresAuth: true },

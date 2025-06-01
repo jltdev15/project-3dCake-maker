@@ -175,7 +175,7 @@ export const useCartStore = defineStore('cart', () => {
   const addItem = async (item: Omit<CartItem, 'id'>) => {
     if (!authStore.user?.uid) return
 
-    // Check if the same cake (with same size) already exists in cart
+    // For both regular cakes and custom cakes, check if the same cake (with same size) already exists in cart
     const existingItem = items.value.find(existing => 
       existing.cakeId === item.cakeId && 
       existing.size === item.size
@@ -252,7 +252,7 @@ export const useCartStore = defineStore('cart', () => {
   const cartTotal = computed(() => {
     return items.value.reduce((total, item) => {
       // Only add to total if it's not a custom cake
-      if (!item.isCustomCake && item.totalPrice) {
+      if (item.totalPrice) {
         return total + item.totalPrice;
       }
       return total;

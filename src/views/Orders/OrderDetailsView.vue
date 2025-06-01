@@ -37,7 +37,7 @@
             <ion-card-header>
               <div class="order-header-content">
                 <div class="order-id-container">
-                  <h2 class="order-id">Order #{{ order.orderId.slice(-6) }}</h2>
+                  <h2 class="order-id">Order #{{ order.orderId }}</h2>
                   <p class="order-date">Placed on {{ formatDate(order.createdAt) }}</p>
                 </div>
                 <ion-badge :class="['status-badge', order.status.toLowerCase()]">
@@ -49,11 +49,11 @@
             <ion-card-content>
               <div class="order-summary-content">
                 <!-- Order Type -->
-                <div class="order-type-container">
+                <!-- <div class="order-type-container">
                   <ion-chip :class="{'custom-chip': isCustomOrder(order), 'standard-chip': !isCustomOrder(order)}">
                     <ion-label class="px-1">{{ !isCustomOrder(order) ? 'Custom Cake' : 'Standard Cake' }}</ion-label>
                   </ion-chip>
-                </div>
+                </div> -->
                 
                 <!-- Order Details List -->
                 <div class="details-list">
@@ -79,9 +79,9 @@
                     <ion-icon class="text-2xl" :icon="cashOutline"></ion-icon>
                     <div class="detail-content">
                       <span class="detail-label">Total Amount</span>
-                      <template v-if="isCustomOrder(order) && order.totalAmount">
+                      <template v-if="order.total">
                         
-                        <span class="detail-value price">₱{{ order.totalAmount.toFixed(2) }}</span>
+                        <span class="detail-value price">₱{{ order.total.toFixed(2) }}</span>
                       </template>
                       <template v-else>
                         <ion-badge class="pricing-badge">Pending Pricing</ion-badge>
@@ -106,81 +106,15 @@
           </ion-card>
         </section>
 
-        <!-- Custom Order Details Section -->
-        <section v-if="isCustomOrder(order)" class="order-section">
-          <h3 class="section-title">Custom Cake Details</h3>
-          
-          <ion-card class="details-card">
-            <ion-card-content>
-              <div class="custom-cake-content">
-                <p class="custom-description">
-                  Your custom cake order has been received. Our team will review your design request and provide pricing information shortly.
-                </p>
-                
-                <!-- Pricing Status Timeline -->
-                <div class="pricing-status-container">
-                  <h4 class="status-heading">Pricing Status</h4>
-                  
-                  <div class="status-timeline">
-                    <div class="timeline-connector"></div>
-                    
-                    <div class="timeline-item" 
-                         :class="{'active': order.pricingStatus === 'pending' || order.pricingStatus === 'priced' || order.pricingStatus === 'accepted',
-                                  'completed': order.pricingStatus === 'priced' || order.pricingStatus === 'accepted'}">
-                      <div class="timeline-marker"></div>
-                      <div class="timeline-content">
-                        <div class="timeline-title">Request Received</div>
-                        <div class="timeline-date" v-if="order.createdAt">{{ getTimeAgo(order.createdAt) }}</div>
-                      </div>
-                    </div>
-                    
-                    <div class="timeline-item" 
-                         :class="{'active': order.pricingStatus === 'priced' || order.pricingStatus === 'accepted',
-                                  'completed': order.pricingStatus === 'accepted'}">
-                      <div class="timeline-marker"></div>
-                      <div class="timeline-content">
-                        <div class="timeline-title">Price Quoted</div>
-                        <div class="timeline-date" v-if="order.pricingStatus === 'priced' || order.pricingStatus === 'accepted'">
-                          {{ order.updatedAt ? getTimeAgo(order.updatedAt) : '' }}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div class="timeline-item" 
-                         :class="{'active': order.pricingStatus === 'accepted'}">
-                      <div class="timeline-marker"></div>
-                      <div class="timeline-content">
-                        <div class="timeline-title">Price Accepted</div>
-                        <div class="timeline-date" v-if="order.pricingStatus === 'accepted'">
-                          {{ order.updatedAt ? getTimeAgo(order.updatedAt) : '' }}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </ion-card-content>
-          </ion-card>
-          
-          <!-- Customer Notes (if available) -->
-          <ion-card v-if="order.notes" class="details-card">
-            <ion-card-header>
-              <ion-card-subtitle>Customer Notes</ion-card-subtitle>
-            </ion-card-header>
-            <ion-card-content>
-              <p class="customer-notes">{{ order.notes }}</p>
-            </ion-card-content>
-          </ion-card>
-        </section>
 
         <!-- Standard Order Items Section -->
-        <section v-if="isNonCustomOrder(order)" class="order-section">
+        <section v-if="order.items && order.items.length > 0" class="order-section">
           <h3 class="section-title">Order Items</h3>
           
           <ion-card class="details-card">
             <ion-card-content>
               <!-- Empty state for no items -->
-              <div v-if="!order.items?.length" class="empty-items">
+              <div v-if="!order.items.length" class="empty-items">
                 <ion-icon :icon="cartOutline" class="empty-icon"></ion-icon>
                 <p>No items in this order</p>
               </div>
@@ -188,20 +122,87 @@
               <!-- Items list -->
               <ion-list v-else class="item-list">
                 <ion-item v-for="(item, index) in order.items" :key="index" class="order-item" lines="none">
-                  <ion-thumbnail slot="start" class="item-image">
-                    <img :src="item.imageUrl || 'https://via.placeholder.com/80'" :alt="item.name" />
-                  </ion-thumbnail>
-                  
-                  <ion-label>
-                    <h3>{{ item.name || 'Unnamed Item' }}</h3>
-                    <p>
-                      <ion-text color="medium">Quantity: {{ item.quantity || 0 }}</ion-text>
-                      <ion-text v-if="item.size" color="medium"> • Size: {{ item.size }}</ion-text>
-                    </p>
-                  </ion-label>
-                  
-                  <div slot="end" class="item-price">
-                    ₱{{ item.unitPrice?.toFixed(2) || '0.00' }}
+                  <div class="item-container">
+                    <ion-thumbnail slot="start" class="item-image">
+                      <img :src="getItemImage(item)" :alt="item.name" />
+                    </ion-thumbnail>
+                    
+                    <div class="item-details">
+                      <h3 class="item-name">{{ item.name || 'Unnamed Item' }}</h3>
+                      
+                      <div class="item-info">
+                        <!-- Custom cake details -->
+                        <div v-if="item.isCustomCake && item.customDetails" class="custom-cake-details">
+                     
+                          <div class="item-meta">
+                            <ion-badge v-if="item.size" class="size-badge">
+                              Size: {{ item.size }}
+                            </ion-badge>
+                            
+                            <ion-badge v-if="item.customDetails.layers" class="layers-badge">
+                              Layers: {{ item.customDetails.layers }}
+                            </ion-badge>
+                            
+                            <ion-badge v-if="item.customDetails.flavor?.name" class="flavor-badge">
+                              Flavor: {{ item.customDetails.flavor.name }}
+                            </ion-badge>
+                        </div>
+                          
+                          <div v-if="item.customDetails.message" class="cake-message">
+                            <span class="message-label">Message:</span>
+                            <span class="message-text">"{{ item.customDetails.message }}"</span>
+                          </div>
+                          
+                          <div v-if="item.customDetails.designData" class="design-details">
+                            <div v-if="item.customDetails.designData.toppings && item.customDetails.designData.toppings.length" class="toppings-list">
+                              <span class="toppings-label">Toppings:</span>
+                              <div class="topping-items">
+                                <ion-badge 
+                                  v-for="(topping, idx) in item.customDetails.designData.toppings" 
+                                  :key="idx" 
+                                  class="topping-badge"
+                                >
+                                  {{ topping.name }}
+                                </ion-badge>
+                              </div>
+                            </div>
+                            
+                            <div v-if="item.customDetails.designData.decorations && item.customDetails.designData.decorations.length" class="decorations-list">
+                              <span class="decorations-label">Decorations:</span>
+                              <div class="decoration-items">
+                                <ion-badge 
+                                  v-for="(decoration, idx) in item.customDetails.designData.decorations" 
+                                  :key="idx" 
+                                  class="decoration-badge"
+                                >
+                                  {{ decoration.name }}
+                                </ion-badge>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <!-- Standard cake details -->
+                        <div v-else class="item-meta">
+                          <ion-badge v-if="item.size" class="size-badge">
+                            Size: {{ item.size }}
+                          </ion-badge>
+                          
+                          <ion-badge v-if="item.flavor" class="flavor-badge">
+                            Flavor: {{ item.flavor }}
+                          </ion-badge>
+                          
+                          <ion-badge v-if="item.occasion" class="occasion-badge">
+                            {{ item.occasion }}
+                          </ion-badge>
+                        </div>
+                        
+                        <div class="item-quantity">
+                          <span class="quantity-label">Quantity:</span>
+                          <span class="quantity-value">{{ item.quantity || 0 }}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </ion-item>
                 
@@ -211,13 +212,9 @@
                     <span>Subtotal</span>
                     <span>₱{{ calculateSubtotal(order).toFixed(2) }}</span>
                   </div>
-                  <div class="summary-row">
-                    <span>Shipping</span>
-                    <span>₱{{ (order.shippingCost || 0).toFixed(2) }}</span>
-                  </div>
                   <div class="summary-row total">
                     <span>Total</span>
-                    <span>₱{{ order.totalAmount?.toFixed(2) || '0.00' }}</span>
+                    <span>₱{{ order.total?.toFixed(2) || '0.00' }}</span>
                   </div>
                 </div>
               </ion-list>
@@ -307,7 +304,7 @@ const hasLoadedOrders = ref(false);
 
 // Type guard for custom order
 const isCustomOrder = (order: any): order is CustomOrder => {
-  return order?.hasCustomItems === true;
+  return order?.isCustomCake === true;
 };
 
 // Type guard for non-custom order
@@ -317,8 +314,7 @@ const isNonCustomOrder = (order: any): order is NonCustomOrder => {
 
 const order = computed(() => {
   const orderId = route.params.id as string;
-  const orderType = route.query.type || 'non-custom';
-  console.log(`Looking for order ${orderId} with type ${orderType}`);
+  console.log(`Looking for order ${orderId}`);
   
   const foundOrder = orderStore.orders.find(o => o.orderId === orderId);
   console.log('Found order:', foundOrder);
@@ -364,18 +360,18 @@ onMounted(() => {
 });
 
 // Helper functions for date formatting
-const formatDate = (timestamp: number): string => {
+const formatDate = (timestamp: number | string): string => {
   const date = new Date(timestamp);
   const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
   return date.toLocaleDateString('en-US', options);
 };
 
-const formatTime = (timestamp: number): string => {
+const formatTime = (timestamp: number | string): string => {
   const date = new Date(timestamp);
   return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 };
 
-const getTimeAgo = (timestamp: number): string => {
+const getTimeAgo = (timestamp: number | string): string => {
   const now = new Date();
   const date = new Date(timestamp);
   const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
@@ -406,6 +402,28 @@ const getTimeAgo = (timestamp: number): string => {
   }
   
   return 'Just now';
+};
+
+// Get appropriate image URL for an item
+const getItemImage = (item: any): string => {
+  // For custom cakes with embedded image data
+  if (item.isCustomCake && item.customDetails && item.customDetails.imageUrl) {
+    return item.customDetails.imageUrl;
+  }
+  
+  // For items with regular image URL
+  if (item.imageUrl) {
+    // Check if it's a relative path or full URL
+    if (item.imageUrl.startsWith('http')) {
+      return item.imageUrl;
+    } else {
+      // Assuming relative paths are from your server
+      return item.imageUrl;
+    }
+  }
+  
+  // Default image
+  return 'https://via.placeholder.com/100?text=No+Image';
 };
 
 // Calculate subtotal from items - with type assertion
@@ -759,6 +777,7 @@ ion-card-subtitle {
   color: var(--ion-color-dark);
   font-size: 0.95rem;
   margin-bottom: 4px;
+  text-align: left;
 }
 
 .item-price {
@@ -917,5 +936,202 @@ ion-card-subtitle {
   --padding-end: 10px;
   height: auto;
   padding: 8px 4px;
+}
+
+/* Enhanced Item Styling */
+.item-container {
+  display: flex;
+  width: 100%;
+  padding: 12px;
+  gap: 16px;
+  background: rgba(var(--ion-color-light-rgb), 0.5);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.item-image {
+  --size: 100px;
+  --border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+}
+
+.item-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #58091F;
+  margin: 0;
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item-description {
+  color: var(--ion-color-medium);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.size-badge,
+.flavor-badge,
+.occasion-badge {
+  --background: rgba(240, 230, 141, 0.2);
+  --color: #58091F;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.item-quantity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.quantity-label {
+  color: var(--ion-color-medium);
+  font-size: 0.9rem;
+}
+
+.quantity-value {
+  font-weight: 600;
+  color: #58091F;
+  font-size: 1rem;
+}
+
+.item-price-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.unit-price {
+  color: var(--ion-color-medium);
+  font-size: 0.9rem;
+}
+
+.total-price {
+  font-weight: 600;
+  color: #58091F;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 480px) {
+  .item-container {
+    flex-direction: row;
+    align-items: center;
+    text-align: center;
+  }
+
+  .item-image {
+    --size: 150px;
+    margin-bottom: 12px;
+  }
+
+  .item-meta {
+    justify-content: center;
+  }
+
+  .item-quantity,
+  .item-price-details {
+    align-items: center;
+  }
+}
+
+/* Custom cake details */
+.custom-cake-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  background-color: rgba(240, 230, 141, 0.1);
+
+  border-radius: 8px;
+}
+
+.cake-message {
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.message-label {
+  font-weight: 600;
+  color: var(--ion-color-medium);
+  margin-right: 6px;
+}
+
+.message-text {
+  color: #58091F;
+}
+
+.design-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toppings-list,
+.decorations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toppings-label,
+.decorations-label {
+  font-weight: 600;
+  color: var(--ion-color-medium);
+}
+
+.topping-items,
+.decoration-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.topping-badge,
+.decoration-badge {
+  --background: rgba(240, 230, 141, 0.3);
+  --color: #58091F;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.layers-badge {
+  --background: rgba(240, 230, 141, 0.2);
+  --color: #58091F;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
 }
 </style> 

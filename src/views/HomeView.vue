@@ -48,18 +48,18 @@
 
           </div>
           <div class="featured-products-grid">
-            <div v-for="product in featuredProducts" :key="product.id" class="product-card"
+            <div v-for="product in featuredProducts" :key="product?.id" class="product-card"
               @click="viewProduct(product)">
               <div class="product-img-wrapper">
-                <img :src="product.imageUrl" :alt="product.name" class="product-img" />
+                <img :src="product?.imageUrl" :alt="product?.name" class="product-img" />
                 <!-- <ion-button fill="clear" class="favorite-btn" @click.stop>
                   <ion-icon :icon="heartOutline" />
                 </ion-button> -->
               </div>
               <div class="product-info">
 
-                <div class="product-name">{{ product.name }}</div>
-                <div class="product-price">₱{{ product.price }}</div>
+                <div class="product-name">{{ product?.name }}</div>
+                <div class="product-price">₱{{ product?.price }}</div>
               </div>
             </div>
           </div>
@@ -122,18 +122,19 @@ onUnmounted(() => {
 });
 
 const featuredProducts = computed(() => {
-  // Get one cake from each category
-  return categories.value.map(category => {
-    // Get the first cake from each category
-    const cake = category.cakes[0];
-    return {
-      id: cake.id,
-      name: cake.name,
-      imageUrl: cake.imageUrl,
-      price: typeof cake.price === 'number' ? cake.price : cake.price.min,
-      category: category.name
-    };
-  });
+  // Get one cake from each category, but only if the category has cakes
+  return categories.value
+    .filter(category => category?.cakes?.length > 0 && category.cakes[0]) // Filter out categories with no cakes
+    .map(category => {
+      const cake = category.cakes[0];
+      return {
+        id: cake.id,
+        name: cake.name,
+        imageUrl: cake.imageUrl,
+        price: typeof cake.price === 'number' ? cake.price : cake.price.min,
+        category: category.name
+      };
+    });
 });
 
 const goToNotifications = () => {
@@ -149,8 +150,12 @@ const goToFeatured = () => {
   router.push('/featured');
 };
 const viewCategory = (categoryId) => {
+
+  if (categoryId === 'Customize') {
+    return router.push(`/customize`);
+  };
   router.push(`/category/${categoryId}`);
-};
+}
 const viewProduct = (productId) => {
   router.push(`/category/${productId.category}/cake?id=${productId.id}`);
 };

@@ -18,8 +18,10 @@
                 <ion-text color="danger">{{ error }}</ion-text>
             </div>
 
-            <div v-else-if="messages.length === 0" class="empty-container">
-                <ion-text>No messages yet. Start the conversation!</ion-text>
+            <div v-else-if="messages.length === 0" class="empty-state">
+                <ion-icon :icon="chatbubbleOutline" class="empty-state-icon"></ion-icon>
+                <h2>No Messages Yet</h2>
+                <p>Start the conversation with PSALM Cakes!</p>
             </div>
 
             <div v-else class="messages-container">
@@ -71,10 +73,10 @@ import {
     IonInput,
     IonButton,
     IonIcon,
-    IonSpinner,
-    IonText
+    IonSpinner
 } from '@ionic/vue';
-import { send } from 'ionicons/icons';
+// @ts-ignore - These icons are used in the template
+import { send, chatbubbleOutline } from 'ionicons/icons';
 
 const route = useRoute();
 const messageStore = useMessageStore();
@@ -207,5 +209,44 @@ ion-footer {
 ion-item {
     --background: transparent;
     --border-color: var(--ion-color-light);
+}
+
+/* Empty state styles */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px 16px;
+    min-height: 60vh;
+}
+
+.empty-state-icon {
+    font-size: 64px;
+    color: #58091F;
+    margin-bottom: 24px;
+    background: rgba(240, 230, 141, 0.2);
+    padding: 24px;
+    border-radius: 50%;
+}
+
+.empty-state h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 8px;
+    color: #58091F;
+}
+
+.empty-state p {
+    font-size: 1rem;
+    color: #666;
+    margin: 0 0 24px;
+    max-width: 300px;
+}
+
+/* Remove old empty container styles */
+.empty-container {
+    display: none;
 }
 </style> 

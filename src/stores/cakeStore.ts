@@ -15,13 +15,19 @@ interface Category {
   name: string
   description: string
   imageUrl: string
-  cakes: Cake[]
+  cakes?: Cake[] 
 }
 
 // Sample data
 const sampleCategories: Category[] = [
   {
     id: '1',
+    name: 'Customize',
+    description: 'Customize your cake with your own design',
+    imageUrl: '/categories/custom.png',
+  },
+  {
+    id: '2',
     name: 'birthday',
     description: 'Celebrate birthdays with our custom-designed birthday cakes',
     imageUrl: '/categories/birthday.png',
@@ -98,7 +104,7 @@ const sampleCategories: Category[] = [
     ]
   },
   {
-    id: '2',
+    id: '3',
     name: 'Wedding',
     description: 'Elegant and sophisticated wedding cake designs for your special day',
     imageUrl: '/categories/wedding.png',
@@ -134,7 +140,7 @@ const sampleCategories: Category[] = [
     ]
   },
   {
-    id: '3',
+    id: '4',
     name: 'Anniversary ',
     description: 'Commemorate your love story with our beautiful anniversary cakes',
     imageUrl: '/categories/anniversary.png',
@@ -163,7 +169,7 @@ const sampleCategories: Category[] = [
     ]
   },
   {
-    id: '4',
+    id: '5',
     name: 'Christening',
     description: 'Celebrate your child\'s christening with our special christening cakes',
     imageUrl: '/categories/christening.png',
@@ -197,7 +203,8 @@ const sampleCategories: Category[] = [
         imageUrl: '/christening/4.jpeg'
       }
     ]
-  }
+  },
+
 ]
 
 export const useCakeStore = defineStore('cake', () => {

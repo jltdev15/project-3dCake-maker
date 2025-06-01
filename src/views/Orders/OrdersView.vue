@@ -16,20 +16,18 @@
       
       <!-- Filter controls -->
       <div class="filter-container" v-if="!isLoading && orderStore.orders.length > 0">
-        <ion-segment v-model="activeFilter" mode="ios">
-          <ion-segment-button value="all">
-            <ion-label>All</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="pending">
-            <ion-label>Pending</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="accepted">
-            <ion-label>Accepted</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="declined">
-            <ion-label>Declined</ion-label>
-          </ion-segment-button>
-        </ion-segment>
+        <div class="filter-wrapper">
+          <button 
+            v-for="filter in filters" 
+            :key="filter.value"
+            :class="['filter-button', { active: activeFilter === filter.value }]"
+            @click="activeFilter = filter.value"
+          >
+            <ion-icon :icon="filter.icon" class="filter-icon"></ion-icon>
+            <span>{{ filter.label }}</span>
+            <span v-if="filter.count" class="filter-count">{{ filter.count }}</span>
+          </button>
+        </div>
       </div>
       
       <div class="orders-container">
@@ -97,11 +95,11 @@
               v-for="order in filteredOrders" 
               :key="order.orderId" 
               class="order-card"
-              @click="navigateToOrderDetails(order.orderId, getOrderType(order))"
+              @click="navigateToOrderDetails(order.orderId)"
             >
               <div class="order-card-header">
                 <div class="order-info">
-                  <h3>Order #{{ order.orderId.slice(-6) }}</h3>
+                  <h3>#{{ order.orderId }}</h3>
                   <span class="order-date">{{ formatDate(order.createdAt) }}</span>
                 </div>
                 <ion-badge :class="['status-badge', order.status.toLowerCase()]">
@@ -123,14 +121,14 @@
                   
                   <div class="detail-row">
                     <ion-icon :icon="pricetagOutline"></ion-icon>
-                    <span class="order-type">{{ getOrderType(order) === 'custom' ? 'Custom Order' : 'Standard Order' }}</span>
+                    <span class="order-type">{{ isCustomOrder(order) ? 'Custom Order' : 'Standard Order' }}</span>
                   </div>
                   
                   <div class="detail-row">
                     <ion-icon :icon="cashOutline"></ion-icon>
                     <span class="order-total">
-                      <template v-if="isCustomOrder(order) && order.totalAmount">
-                        ₱{{ order.totalAmount.toFixed(2) }}
+                      <template v-if="order.total">
+                        ₱{{ order.total.toFixed(2) }}
                       </template>
                       <template v-else>
                         <ion-badge class="pricing-badge">Waiting Pricing</ion-badge>
@@ -160,7 +158,8 @@ import
          IonSegmentButton, IonLabel, IonSearchbar, IonBackButton, IonButtons } from '@ionic/vue';
 import { 
   cartOutline, calendarOutline, cashOutline, arrowForward, pricetagOutline,
-  timeOutline, chevronForward, searchOutline
+  timeOutline, chevronForward, searchOutline, listOutline, checkmarkCircleOutline,
+  closeCircleOutline, timeOutline as pendingIcon
 } from 'ionicons/icons';
 import { useOrderStore } from '../../stores/orderStore';
 import { useRouter } from 'vue-router';
@@ -262,10 +261,6 @@ const isNonCustomOrder = (order: any): order is NonCustomOrder => {
   return order.type === 'non-custom';
 };
 
-const getOrderType = (order: any): 'custom' | 'non-custom' => {
-  return isCustomOrder(order) ? 'custom' : 'non-custom';
-};
-
 const formatDate = (timestamp: number): string => {
   const date = new Date(timestamp);
   const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
@@ -305,8 +300,8 @@ const getTimeAgo = (timestamp: number): string => {
   return 'Just now';
 };
 
-const navigateToOrderDetails = (orderId: string, orderType: string) => {
-  router.push(`/orders/${orderId}?type=${orderType}`);
+const navigateToOrderDetails = (orderId: string) => {
+  router.push(`/orders/${orderId}`);
 };
 
 // Function to get image URL from order
@@ -324,6 +319,34 @@ const getOrderImageUrl = (order: any): string | undefined => {
   
   return undefined;
 };
+
+// Add filters configuration
+const filters = computed(() => [
+  {
+    label: 'All',
+    value: 'all',
+    icon: listOutline,
+    count: orderStore.orders.length
+  },
+  {
+    label: 'Pending',
+    value: 'pending',
+    icon: pendingIcon,
+    count: orderStore.orders.filter(order => order.status.toLowerCase() === 'pending').length
+  },
+  {
+    label: 'Accepted',
+    value: 'accepted',
+    icon: checkmarkCircleOutline,
+    count: orderStore.orders.filter(order => order.status.toLowerCase() === 'accepted').length
+  },
+  {
+    label: 'Declined',
+    value: 'declined',
+    icon: closeCircleOutline,
+    count: orderStore.orders.filter(order => order.status.toLowerCase() === 'declined').length
+  }
+]);
 </script>
 
 <style scoped>
@@ -348,32 +371,128 @@ ion-toolbar {
 
 .filter-container {
   background: var(--ion-color-light);
-  padding: 12px 16px 0;
+  padding: 24px 20px;
   position: sticky;
   top: 0;
   z-index: 10;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-ion-segment {
-  --background: var(--ion-color-light-shade);
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+.filter-wrapper {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 8px 4px;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  -webkit-overflow-scrolling: touch;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-ion-segment-button {
-  --color: var(--ion-color-medium);
-  --color-checked: #58091F;
-  --indicator-color: #F0E68D;
-  --indicator-height: 4px;
-  min-height: 40px;
-  text-transform: none;
-  font-size: 13px;
-  letter-spacing: 0;
+.filter-wrapper::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.filter-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 24px;
+  background: var(--ion-color-light-shade);
+  color: var(--ion-color-medium);
+  font-size: 1rem;
   font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: fit-content;
+  position: relative;
+  height: 48px;
 }
 
-ion-segment-button::part(indicator) {
-  transition: transform 250ms ease-in-out;
+.filter-button:hover {
+  background: var(--ion-color-light-shade);
+  color: var(--ion-color-dark);
+  transform: translateY(-1px);
+}
+
+.filter-button.active {
+  background: #F0E68D;
+  color: #58091F;
+  box-shadow: 0 4px 12px rgba(240, 230, 141, 0.3);
+  transform: translateY(-1px);
+}
+
+.filter-icon {
+  font-size: 1.25rem;
+}
+
+.filter-count {
+  background: rgba(88, 9, 31, 0.1);
+  color: #58091F;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 28px;
+  text-align: center;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filter-button.active .filter-count {
+  background: rgba(88, 9, 31, 0.2);
+}
+
+@media (max-width: 768px) {
+  .filter-container {
+    padding: 20px 16px;
+  }
+
+  .filter-button {
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    height: 44px;
+  }
+
+  .filter-icon {
+    font-size: 1.2rem;
+  }
+
+  .filter-count {
+    padding: 3px 8px;
+    font-size: 0.85rem;
+    min-width: 26px;
+    height: 26px;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-container {
+    padding: 16px 12px;
+  }
+
+  .filter-button {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    height: 40px;
+  }
+
+  .filter-icon {
+    font-size: 1.1rem;
+  }
+
+  .filter-count {
+    padding: 2px 6px;
+    font-size: 0.8rem;
+    min-width: 24px;
+    height: 24px;
+  }
 }
 
 .orders-container {
@@ -463,6 +582,8 @@ ion-segment-button::part(indicator) {
 
 .order-card-content {
   padding: 16px;
+  display: flex;
+  flex-direction: column;
 }
 
 .order-details {
@@ -508,6 +629,8 @@ ion-segment-button::part(indicator) {
   font-size: 0.9rem;
   text-transform: none;
   height: 36px;
+  align-self: flex-end;
+  margin-left: auto;
 }
 
 /* Empty state styles */
