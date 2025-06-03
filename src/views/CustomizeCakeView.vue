@@ -5,7 +5,14 @@
         <ion-buttons slot="start">
           <ion-back-button class="back-button" @click="handleBackButton($event)"></ion-back-button>
         </ion-buttons>
-        <ion-title class="customize-title">Customize Cake</ion-title>
+        <div class="flex justify-between items-center">
+          <ion-title class="customize-title">Customize Cake</ion-title>
+          <button v-if="selectedFlavor" id="addToCartBtn" class=" text-gray-50" @click="showAddToCartModal">
+            <ion-icon :icon="icons.cartOutline" class="text-3xl text-[#58091F]"></ion-icon>
+       
+          </button>
+        </div>
+
       </ion-toolbar>
     </ion-header>
 
@@ -199,68 +206,146 @@
       <div class="cake-customizer">
         <canvas id="cakeCanvas"></canvas>
         <div class="controls-panel">
-          <div class="tabs">
-            <button class="tab-button active" data-tab="tab-design">Action</button>
-            <button v-if="false" class="tab-button" data-tab="tab-layer-editor">Layer Editor</button>
-            <button class="tab-button" data-tab="tab-topper">Printed Topper</button>
-            <button class="tab-button" data-tab="tab-icing">Icing</button>
-            <button class="tab-button" data-tab="tab-toppings">Toppings</button>
-            <button class="tab-button" data-tab="tab-greeting">Greeting</button>
-          </div>
-          <div class="tab-content active" id="tab-design">
-            <div class="control-group">
-              <button v-if="false" id="addLayerBtn" class="action-button">Add New Layer</button>
-              <button v-if="false" id="saveCakeBtn" class="action-button">Save Design</button>
-              <input type="file" id="loadCakeInput" accept=".json" style="display: none;">
-              <button v-if="false" id="loadCakeBtn" class="action-button"
-                onclick="document.getElementById('loadCakeInput').click()">Load Design</button>
-              <button v-if="false" id="resetCakeBtn" class="action-button" @click="resetCakeDesign">Reset
-                Design</button>
-              <button v-if="false" id="undoBtn" class="action-button" disabled>Undo Last Action</button>
-              <button id="addToCartBtn" class="action-button add-to-cart-btn" @click="showAddToCartModal">
-                <span class="cart-icon">🛒</span>
-                <span class="btn-text">Add to Cart</span>
+          <div class="sticky top-0  z-10 bg-[#F0E68D]">
+            <p class=" font-bold text-xl text-center p-2 pt-3 text-[#58091F]">
+              <ion-icon :icon="icons.cubeOutline" class="mr-2 align-middle text-2xl"></ion-icon>
+              3D Cake Controls
+              <ion-icon :icon="icons.settingsOutline" class="ml-2 align-middle text-2xl"></ion-icon>
+            </p>
+            <div class="flex gap-2 p-4 overflow-x-auto" ref="tabsContainer">
+              <button v-if="true" 
+                class="tab-button" 
+                :class="{ 'active': activeTab === 'tab-design' }"
+                data-tab="tab-design"
+                @click="scrollToTab('tab-design')">
+                <ion-icon :icon="icons.constructOutline" class="align-middle mr-1"></ion-icon>
+                Actions
+              </button>
+              <button v-if="false" 
+                class="tab-button" 
+                :class="{ 'active': activeTab === 'tab-layer-editor' }"
+                data-tab="tab-layer-editor"
+                @click="scrollToTab('tab-layer-editor')">
+                <ion-icon :icon="icons.layersOutline" class="align-middle mr-1"></ion-icon>
+                Layer Editor
+              </button>
+              <button 
+                class="tab-button" 
+                :class="{ 'active': activeTab === 'tab-topper' }"
+                data-tab="tab-topper"
+                @click="scrollToTab('tab-topper')">
+                <ion-icon :icon="icons.flameOutline" class="align-middle mr-1"></ion-icon>
+                Printed Topper
+              </button>
+              <button 
+                class="tab-button" 
+                :class="{ 'active': activeTab === 'tab-icing' }"
+                data-tab="tab-icing"
+                @click="scrollToTab('tab-icing')">
+                <ion-icon :icon="icons.iceCreamOutline" class="align-middle mr-1"></ion-icon>
+                Icing
+              </button>
+              <button 
+                class="tab-button" 
+                :class="{ 'active': activeTab === 'tab-toppings' }"
+                data-tab="tab-toppings"
+                @click="scrollToTab('tab-toppings')">
+                <ion-icon :icon="icons.sparklesOutline" class="align-middle mr-1"></ion-icon>
+                Toppings
+              </button>
+              <button 
+                class="tab-button" 
+                :class="{ 'active': activeTab === 'tab-greeting' }"
+                data-tab="tab-greeting"
+                @click="scrollToTab('tab-greeting')">
+                <ion-icon :icon="icons.chatbubbleOutline" class="align-middle mr-1"></ion-icon>
+                Greeting
               </button>
             </div>
           </div>
-          <div class="tab-content" id="tab-layer-editor">
-            <div id="layerEditPrompt" class="prompt">Click a cake layer in the 3D view to edit it.</div>
+
+          <div class="tab-content" v-show="activeTab === 'tab-design'" id="tab-design">
+            <div class="control-group">
+              <button v-if="true" id="addLayerBtn" class="action-button">Add New Layer</button>
+              <button  id="saveCakeBtn" class="action-button">Save Design</button>
+              <input type="file" id="loadCakeInput" accept=".json" style="display: none;">
+              <button v-if="true" id="loadCakeBtn" class="action-button"
+                onclick="document.getElementById('loadCakeInput').click()">Load Design</button>
+              <button v-if="false" id="resetCakeBtn" class="action-button" @click="resetCakeDesign">Reset
+                Design</button>
+
+              <div class="p-3 flex gap-2 justify-between">
+
+
+              </div>
+
+            </div>
+          </div>
+          <div class="tab-content" v-show="activeTab === 'tab-layer-editor'" id="tab-layer-editor">
+            <div id="layerEditPrompt" class="prompt px-3">Click a cake layer in the 3D view to edit it.</div>
             <div id="selectedLayerControlsContainer"></div>
           </div>
-          <div class="tab-content" id="tab-topper">
+          <div class="tab-content" v-show="activeTab === 'tab-topper'" id="tab-topper">
             <div id="topperEditPrompt" class="prompt">Click a cake layer in the 3D view to edit its topper.</div>
             <div id="selectedTopperControlsContainer"></div>
           </div>
-          <div class="tab-content" id="tab-icing">
+          <div class="tab-content" v-show="activeTab === 'tab-icing'" id="tab-icing">
             <div id="icingEditPrompt" class="prompt">Click a cake layer in the 3D view to edit its icing.</div>
             <div id="selectedIcingControlsContainer"></div>
           </div>
-          <div class="tab-content" id="tab-toppings">
+          <div class="tab-content" v-show="activeTab === 'tab-toppings'" id="tab-toppings">
             <div id="toppingEditPrompt" class="prompt">Click a cake layer in the 3D view to edit its toppings.</div>
             <div id="selectedToppingsControlsContainer"></div>
           </div>
-          <div class="tab-content" id="tab-greeting">
-            <div class="greeting-control-group">
-              <label class="checkbox-label">
-                <input type="checkbox" v-model="greetingConfig.enabled" @change="onGreetingChange"> Enable Greeting Text
-              </label>
-              <div v-if="greetingConfig.enabled" class="sub-controls mt-2">
-                <div class="mt-2">
-                  <label for="greeting_text">Message:</label>
-                  <input type="text" id="greeting_text" v-model="greetingConfig.text" @input="onGreetingChange">
+          <div class="tab-content" v-show="activeTab === 'tab-greeting'" id="tab-greeting">
+            <div class="p-4 space-y-4">
+              <div class="flex items-center space-x-2 bg-white rounded-lg p-3 shadow-sm">
+                <input type="checkbox" 
+                  class="w-4 h-4 text-[#58091F] border-gray-300 rounded focus:ring-[#58091F]" 
+                  v-model="greetingConfig.enabled" 
+                  @change="onGreetingChange">
+                <label class="text-gray-700 font-medium">Enable Greeting Text</label>
+              </div>
+              
+              <div v-if="greetingConfig.enabled" class="space-y-4 bg-white rounded-lg p-4 shadow-sm">
+                <div class="space-y-2">
+                  <label for="greeting_text" class="block text-sm font-medium text-gray-700">Message:</label>
+                  <input type="text" 
+                    id="greeting_text" 
+                    v-model="greetingConfig.text" 
+                    @input="onGreetingChange"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#58091F] focus:border-[#58091F]">
                 </div>
-                <div class="mt-2">
-                  <label for="greeting_color">Text Color:</label>
-                  <input type="color" id="greeting_color" v-model="greetingConfig.color" @input="onGreetingChange">
+                
+                <div class="space-y-2">
+                  <label for="greeting_color" class="block text-sm font-medium text-gray-700">Text Color:</label>
+                  <input type="color" 
+                    id="greeting_color" 
+                    v-model="greetingConfig.color" 
+                    @input="onGreetingChange"
+                    class="w-full h-10 p-1 border border-gray-300 rounded-md shadow-sm cursor-pointer">
                 </div>
-                <div class="mt-2">
-                  <label for="greeting_size">Text Size ({{ greetingConfig.size.toFixed(2) }}):</label>
-                  <input type="range" id="greeting_size" min="0.1" max="0.8" step="0.01"
-                    v-model.number="greetingConfig.size" @input="onGreetingChange">
+                
+                <div class="space-y-2">
+                  <label for="greeting_size" class="block text-sm font-medium text-gray-700">
+                    Text Size ({{ greetingConfig.size.toFixed(2) }}):
+                  </label>
+                  <input type="range" 
+                    id="greeting_size" 
+                    min="0.1" 
+                    max="0.8" 
+                    step="0.01"
+                    v-model.number="greetingConfig.size" 
+                    @input="onGreetingChange"
+                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                 </div>
-                <div class="mt-2">
-                  <label for="greeting_layout">Layout:</label>
-                  <select id="greeting_layout" v-model="greetingConfig.layout" @change="onGreetingChange">
+                
+                <div class="space-y-2">
+                  <label for="greeting_layout" class="block text-sm font-medium text-gray-700">Layout:</label>
+                  <select id="greeting_layout" 
+                    v-model="greetingConfig.layout" 
+                    @change="onGreetingChange"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#58091F] focus:border-[#58091F]">
                     <option value="horizontal-top">Horizontal (On Top, Flat)</option>
                     <option value="circular-top">Circular (On Top, Flat)</option>
                     <option value="vertical-side">Vertical (On Side, Upright)</option>
@@ -283,9 +368,21 @@ import {
   IonTitle, 
   IonContent,
   IonButtons,
-  IonBackButton
+  IonBackButton,
+  IonIcon
 } from '@ionic/vue';
-import { onMounted, onUnmounted, ref, computed, reactive, watch } from 'vue';
+import { 
+  cubeOutline, 
+  settingsOutline, 
+  constructOutline, 
+  layersOutline, 
+  flameOutline, 
+  iceCreamOutline, 
+  sparklesOutline,
+  chatbubbleOutline,
+  cartOutline
+} from 'ionicons/icons';
+import { onMounted, onUnmounted, ref, computed, reactive, watch, nextTick } from 'vue';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
@@ -294,6 +391,27 @@ import { getDatabase, ref as dbRef, push, set } from '../config/firebase';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
+
+// Add ref for tabs container
+const tabsContainer = ref(null);
+const activeTab = ref('tab-design');
+
+// Function to scroll to active tab
+const scrollToTab = (tabId) => {
+  activeTab.value = tabId;
+  nextTick(() => {
+    const container = tabsContainer.value;
+    const activeButton = container?.querySelector(`[data-tab="${tabId}"]`);
+    
+    if (container && activeButton) {
+      const scrollLeft = activeButton.offsetLeft - (container.clientWidth / 2) + (activeButton.clientWidth / 2);
+      container.scrollTo({
+        left: scrollLeft,
+        behavior: 'smooth'
+      });
+    }
+  });
+};
 
 let scene, camera, renderer, cakeGroup, controls, cakeStand;
 let cakeLayers = [];
@@ -354,6 +472,9 @@ const defaultLayerSettings = {
   height: 0.5,
   color: '',
   toppings: [],
+  flowerPosition: 'inner', // Default flower position
+  roseColor: 'red', // Default rose color
+  strawberryPosition: 'inner', // Default strawberry position
   topper: {
     enabled: false,
     type: 'none',
@@ -368,14 +489,6 @@ const defaultLayerSettings = {
   edgeIcing: {
     enabled: false,
     style: 'smooth',
-    color: '#FFFFFF',
-    thickness: 0.05,
-    isAnimating: false,
-    animationProgress: 0,
-    animationSpeed: 0.5
-  },
-  middleBandIcing: {
-    enabled: false,
     color: '#FFFFFF',
     thickness: 0.05,
     isAnimating: false,
@@ -403,17 +516,172 @@ const oneTierSizeOptions = [
 ];
 
 const twoTierSizeOptions = [
-  { name: "4 x 5 & 6 x 5", diameter: 6, height: 10, price: 2199 },
-  { name: "5 x 5 & 7 x 5", diameter: 7, height: 10, price: 2399 },
-  { name: "6 x 5 & 8 x 5", diameter: 8, height: 10, price: 2599 },
-  { name: "7 x 5 & 9 x 5", diameter: 9, height: 10, price: 2799 },
-  { name: "8 x 5 & 10 x 5", diameter: 10, height: 10, price: 3399 }
+  {
+    name: "4 x 5 & 6 x 5", diameter: [
+      {
+        diameter: 4,
+        height: 5,
+      },
+      {
+      
+        diameter: 6,
+        height: 5,
+      },
+    ],
+    price: 2199
+  },
+  {
+    name: "5 x 5 & 7 x 5", diameter: [
+      {
+        diameter: 5,
+        height: 5,
+       
+      },
+      {
+        diameter: 7,
+        height: 5,
+     
+      }
+    ],
+    price: 2399
+  },
+  {
+    name: "6 x 5 & 8 x 5", diameter: [
+      {
+        diameter: 6,
+        height: 5,
+       
+      },
+      {
+        diameter: 8,
+        height: 5,
+     
+      }
+    ],
+    price: 2599
+  },
+      {
+        name: "7 x 5 & 9 x 5", diameter: [
+          {
+            diameter: 7,
+            height: 5,
+          
+          },
+          {
+            diameter: 9,
+            height: 5,
+        
+          }
+        ],
+        price: 2799
+      },
+      {
+        name: "8 x 5 & 10 x 5", diameter: [
+          {
+            diameter: 8,
+            height: 5,
+          
+          },
+          {
+            diameter: 10,
+            height: 5,
+        
+          }
+        ],
+        price: 3399
+      },
+      {
+        name: "9 x 5 & 11 x 5", diameter: [
+          {
+            diameter: 9,
+            height: 5,
+          
+          },
+          {
+            diameter: 11,
+            height: 5,
+        
+          }
+        ],
+        price: 3999
+      },
+  
 ];
 
 const threeTierSizeOptions = [
-  { name: "4 x 5 & 6 x 5 & 8 x 5", diameter: 8, height: 15, price: 3299 },
-  { name: "5 x 5 & 7 x 5 & 9 x 5", diameter: 9, height: 15, price: 3599 },
-  { name: "6 x 5 & 8 x 5 & 10 x 5", diameter: 10, height: 15, price: 4399 }
+  {
+    name: "4 x 5 & 6 x 5 & 8 x 5", diameter: [
+      {
+        diameter: 4,
+        height: 5,
+      },
+      {
+
+        diameter: 6,
+        height: 5,
+      },
+      {
+        diameter: 8,
+        height: 5,
+      },
+    ],
+    price: 3299
+  },
+  {
+    name: "5 x 5 & 7 x 5 & 9 x 5", diameter: [
+      {
+        diameter: 5,
+        height: 5,
+      },
+      {
+
+        diameter: 7,
+        height: 5,
+      },
+      {
+        diameter: 9,
+        height: 5,
+      },
+    ],
+    price: 3599
+  },
+  {
+    name: "6 x 5 & 8 x 5 & 10 x 5", diameter: [
+      {
+        diameter: 6,
+        height: 5,
+      },
+      {
+
+        diameter: 8,
+        height: 5,
+      },
+      {
+        diameter: 10,
+        height: 5,
+      },
+    ],
+    price: 4399
+  },
+  {
+    name: "7 x 5 & 9 x 5 & 11 x 5", diameter: [
+      {
+        diameter: 7,
+        height: 5,
+      },
+      {
+
+        diameter: 9,
+        height: 5,
+      },
+      {
+        diameter: 11,
+        height: 5,
+      },
+    ],
+    price: 5799
+  },
+
 ];
 
 // Define computed sizeOptions based on the selected number of layers
@@ -585,8 +853,8 @@ const initScene = () => {
 
   initTabs();
   // document.getElementById('addLayerBtn').addEventListener('click', addNewLayerAndSelect);
-  // document.getElementById('saveCakeBtn').addEventListener('click', saveCakeConfiguration);
-  // document.getElementById('loadCakeInput').addEventListener('change', loadCakeConfiguration);
+  document.getElementById('saveCakeBtn').addEventListener('click', saveCakeConfiguration);
+  document.getElementById('loadCakeInput').addEventListener('change', loadCakeConfiguration);
   // document.getElementById('resetCakeBtn').addEventListener('click', resetCakeDesign);
   // document.getElementById('undoBtn').addEventListener('click', undoLastAction);
 
@@ -688,8 +956,9 @@ const selectLayer = (layerId) => {
       if (!originalLayerMaterials.has(selectedLayerId)) {
         originalLayerMaterials.set(selectedLayerId, currentLayerMesh.material);
       }
-      currentLayerMesh.material = currentLayerMesh.material.clone();
-      currentLayerMesh.material.emissive.setHex(0x555555);
+      // The following lines that change the emissive color have been removed:
+      // currentLayerMesh.material = currentLayerMesh.material.clone();
+      // currentLayerMesh.material.emissive.setHex(0x555555);
     }
   }
   updateControlsForSelectedLayer();
@@ -751,11 +1020,9 @@ const addDecorations = (layerMesh, layerConfig) => {
     toppings,
     topper,
     edgeIcing,
-    middleBandIcing,
     bottomIcing
   } = layerConfig;
   const topY = layerHeight / 2;
-  const middleY = 0;
   const bottomY = -layerHeight / 2;
 
   // Remove existing decorations
@@ -768,16 +1035,6 @@ const addDecorations = (layerMesh, layerConfig) => {
       }
     });
     layerMesh.remove(existingEdgeIcing);
-  }
-  const existingMiddleIcing = layerMesh.getObjectByName("middleBandIcingGroup");
-  if (existingMiddleIcing) {
-    existingMiddleIcing.traverse(c => {
-      if (c.isMesh) {
-        if (c.geometry) c.geometry.dispose();
-        if (c.material) c.material.dispose();
-      }
-    });
-    layerMesh.remove(existingMiddleIcing);
   }
   const existingToppings = layerMesh.getObjectByName("toppingGroup");
   if (existingToppings) {
@@ -1185,31 +1442,6 @@ const addDecorations = (layerMesh, layerConfig) => {
     if (icingGroup.children.length > 0) layerMesh.add(icingGroup);
   }
 
-  if (middleBandIcing.enabled) {
-    const middleIcingGroup = new THREE.Group();
-    middleIcingGroup.name = "middleBandIcingGroup";
-    const middleIcingMaterial = new THREE.MeshStandardMaterial({
-      color: middleBandIcing.color,
-      roughness: 0.6,
-      metalness: 0.1
-    });
-    let currentMiddleAngle = Math.PI * 2;
-    if (middleBandIcing.isAnimating) {
-      currentMiddleAngle = middleBandIcing.animationProgress * Math.PI * 2;
-    }
-    currentMiddleAngle = Math.max(0.001, currentMiddleAngle);
-    const tube = middleBandIcing.thickness;
-    const radius = layerRadius;
-    if (radius > 0) {
-      const middleGeo = new THREE.TorusGeometry(layerRadius - tube, tube, 24, 64, currentMiddleAngle);
-      const middleMesh = new THREE.Mesh(middleGeo, middleIcingMaterial);
-      middleMesh.position.y = middleY;
-      middleMesh.rotation.x = Math.PI / 2;
-      middleIcingGroup.add(middleMesh);
-    }
-    if (middleIcingGroup.children.length > 0) layerMesh.add(middleIcingGroup);
-  }
-
   if (bottomIcing.enabled) {
     const bottomIcingGroup = new THREE.Group();
     bottomIcingGroup.name = "bottomIcingGroup";
@@ -1432,7 +1664,10 @@ const addDecorations = (layerMesh, layerConfig) => {
         overallToppingGroup.add(cherry);
       }
     } else if (topping.type === 'strawberries') {
-      const strawberryCount = Math.max(1, Math.floor(layerRadius * 2.5));
+      // Get the selected strawberry position from layer config
+      const strawberryPosition = layerConfig.strawberryPosition || 'inner';
+      const availableRadius = layerRadius - (edgeIcing.enabled ? edgeIcing.thickness : 0) - 0.15;
+      
       const strawberryMaterial = new THREE.MeshStandardMaterial({
         color: 0xFF3B3B,
         roughness: 0.7,
@@ -1447,63 +1682,205 @@ const addDecorations = (layerMesh, layerConfig) => {
         roughness: 0.6
       });
 
-      for (let i = 0; i < strawberryCount; i++) {
-        const strawberry = new THREE.Group();
+      // Define positioning based on user selection
+      let rings = [];
+      const minRadius = 0.2;
+      const strawberrySpacing = 0.4; // Spacing between strawberries in rings
+      
+      if (strawberryPosition === 'inner') {
+        // Single inner ring close to center
+        const innerRadius = minRadius + (availableRadius - minRadius) * 0.3;
+        const circumference = 2 * Math.PI * innerRadius;
+        const strawberryCount = Math.max(3, Math.floor(circumference / strawberrySpacing));
+        rings = [{ radius: innerRadius, count: strawberryCount }];
+      } else if (strawberryPosition === 'mid') {
+        // Single middle ring
+        const midRadius = minRadius + (availableRadius - minRadius) * 0.6;
+        const circumference = 2 * Math.PI * midRadius;
+        const strawberryCount = Math.max(4, Math.floor(circumference / strawberrySpacing));
+        rings = [{ radius: midRadius, count: strawberryCount }];
+      } else if (strawberryPosition === 'outer') {
+        // Single outer ring near edge
+        const outerRadius = availableRadius * 0.9;
+        const circumference = 2 * Math.PI * outerRadius;
+        const strawberryCount = Math.max(5, Math.floor(circumference / strawberrySpacing));
+        rings = [{ radius: outerRadius, count: strawberryCount }];
+      } else if (strawberryPosition === 'all') {
+        // Multiple rings for full coverage
+        const numberOfRings = 3;
+        for (let ring = 0; ring < numberOfRings; ring++) {
+          const ringRadius = minRadius + (ring / (numberOfRings - 1)) * (availableRadius - minRadius);
+          const circumference = 2 * Math.PI * ringRadius;
+          const strawberriesInRing = Math.max(3, Math.floor(circumference / strawberrySpacing));
+          rings.push({ radius: ringRadius, count: strawberriesInRing });
+        }
+      }
+
+      // Create strawberry piles for each ring
+      rings.forEach((ring, ringIndex) => {
+        for (let i = 0; i < ring.count; i++) {
+          // Create a horizontal cluster of 2-4 strawberries at each position
+          const clusterSize = 2 + Math.floor(Math.random() * 3); // 2-4 strawberries per cluster
+          
+          for (let j = 0; j < clusterSize; j++) {
+            const strawberry = new THREE.Group();
+            
+            // Create strawberry body (cone-like shape) with size variation
+            const sizeVariation = 0.8 + Math.random() * 0.4; // 0.8 to 1.2 size multiplier
+            const bodyGeo = new THREE.ConeGeometry(0.12 * sizeVariation, 0.25 * sizeVariation, 16);
+            const body = new THREE.Mesh(bodyGeo, strawberryMaterial);
+            body.rotation.x = Math.PI; // Flip upside down
+            strawberry.add(body);
+            
+            // Add green top/leaves
+            const leafGeo = new THREE.CylinderGeometry(0.1 * sizeVariation, 0.05 * sizeVariation, 0.05, 12);
+            const leaves = new THREE.Mesh(leafGeo, stemMaterial);
+            leaves.position.y = 0.125 * sizeVariation;
+            strawberry.add(leaves);
+            
+            // Add seeds (small yellow dots)
+            const seedCount = Math.floor(8 + Math.random() * 4); // 8-12 seeds
+            for (let s = 0; s < seedCount; s++) {
+              const seedGeo = new THREE.SphereGeometry(0.01 * sizeVariation, 4, 4);
+              const seed = new THREE.Mesh(seedGeo, seedMaterial);
+              
+              // Calculate proper position on cone surface
+              const seedAngle = Math.random() * Math.PI * 2;
+              
+              // For a cone flipped upside down, we need to calculate the radius at each height
+              // Cone base radius: 0.12 * sizeVariation, height: 0.25 * sizeVariation
+              // Since it's flipped, top of cone (y = 0.125) has radius 0, bottom (y = -0.125) has full radius
+              const coneBaseRadius = 0.12 * sizeVariation;
+              const coneHeight = 0.25 * sizeVariation;
+              const coneHalfHeight = coneHeight / 2;
+              
+              // Random height on the cone (from top to about 80% down to avoid the very bottom)
+              const seedHeightRatio = 0.2 + Math.random() * 0.6; // 0.2 to 0.8 from top
+              const seedHeight = coneHalfHeight - (seedHeightRatio * coneHeight);
+              
+              // Calculate radius at this height (linear interpolation for cone)
+              // At top (seedHeight = coneHalfHeight), radius = 0
+              // At bottom (seedHeight = -coneHalfHeight), radius = coneBaseRadius
+              const heightFromTop = coneHalfHeight - seedHeight;
+              const radiusAtHeight = (heightFromTop / coneHeight) * coneBaseRadius;
+              
+              // Add small variation to make seeds slightly embedded or protruding
+              const surfaceOffset = (Math.random() - 0.5) * 0.01 * sizeVariation;
+              const seedRadius = radiusAtHeight + surfaceOffset;
+              
+              seed.position.set(
+                Math.cos(seedAngle) * seedRadius,
+                seedHeight,
+                Math.sin(seedAngle) * seedRadius
+              );
+              
+              strawberry.add(seed);
+            }
+            
+            // Position strawberry in horizontal cluster
+            const baseAngle = (i / ring.count) * Math.PI * 2;
+            
+            // Create horizontal clustering effect by spreading around the base position
+            const clusterRadius = 0.08 + Math.random() * 0.06; // Random distance from cluster center
+            const clusterAngle = baseAngle + (Math.random() - 0.5) * 0.8; // Spread within 0.8 radians
+            
+            // Calculate cluster position with horizontal spread
+            const clusterCenterX = Math.cos(baseAngle) * ring.radius;
+            const clusterCenterZ = Math.sin(baseAngle) * ring.radius;
+            
+            const horizontalOffsetX = Math.cos(clusterAngle) * clusterRadius;
+            const horizontalOffsetZ = Math.sin(clusterAngle) * clusterRadius;
+            
+            strawberry.position.set(
+              clusterCenterX + horizontalOffsetX, 
+              topY + 0.125 * sizeVariation, // Keep all strawberries at cake surface level
+              clusterCenterZ + horizontalOffsetZ
+            );
+            
+            // Add natural rotation for horizontal clustering
+            strawberry.rotation.y = Math.random() * Math.PI * 2;
+            strawberry.rotation.z = (Math.random() - 0.5) * 0.3; // Slight tilt for natural look
+            strawberry.rotation.x = (Math.random() - 0.5) * 0.2; // Small forward/backward tilt
+            
+            overallToppingGroup.add(strawberry);
+          }
+        }
+      });
+      
+      // Add a center cluster for inner and all positions if there's space
+      if ((strawberryPosition === 'inner' || strawberryPosition === 'all') && minRadius > 0.15) {
+        const centerClusterSize = 3 + Math.floor(Math.random() * 3); // 3-5 strawberries in center cluster
         
-        // Create strawberry body (cone-like shape)
-        const bodyGeo = new THREE.ConeGeometry(0.12, 0.25, 16);
-        const body = new THREE.Mesh(bodyGeo, strawberryMaterial);
-        body.rotation.x = Math.PI; // Flip upside down
-        strawberry.add(body);
-        
-        // Add green top/leaves
-        const leafGeo = new THREE.CylinderGeometry(0.1, 0.05, 0.05, 12);
-        const leaves = new THREE.Mesh(leafGeo, stemMaterial);
-        leaves.position.y = 0.125;
-        strawberry.add(leaves);
-        
-        // Add seeds (small yellow dots)
-        for (let s = 0; s < 10; s++) {
-          const seedGeo = new THREE.SphereGeometry(0.01, 4, 4);
-          const seed = new THREE.Mesh(seedGeo, seedMaterial);
-          const seedAngle = Math.random() * Math.PI * 2;
-          const seedHeight = Math.random() * 0.2 - 0.1;
-          const seedRadius = 0.1 * Math.random() + 0.05;
-          seed.position.set(
-            Math.cos(seedAngle) * seedRadius,
-            seedHeight,
-            Math.sin(seedAngle) * seedRadius
+        for (let j = 0; j < centerClusterSize; j++) {
+          const strawberry = new THREE.Group();
+          
+          // Create strawberry body with size variation
+          const sizeVariation = 0.9 + Math.random() * 0.2; // Slightly smaller for center
+          const bodyGeo = new THREE.ConeGeometry(0.12 * sizeVariation, 0.25 * sizeVariation, 16);
+          const body = new THREE.Mesh(bodyGeo, strawberryMaterial);
+          body.rotation.x = Math.PI;
+          strawberry.add(body);
+          
+          // Add green top/leaves
+          const leafGeo = new THREE.CylinderGeometry(0.1 * sizeVariation, 0.05 * sizeVariation, 0.05, 12);
+          const leaves = new THREE.Mesh(leafGeo, stemMaterial);
+          leaves.position.y = 0.125 * sizeVariation;
+          strawberry.add(leaves);
+          
+          // Add seeds
+          const seedCount = Math.floor(8 + Math.random() * 4);
+          for (let s = 0; s < seedCount; s++) {
+            const seedGeo = new THREE.SphereGeometry(0.01 * sizeVariation, 4, 4);
+            const seed = new THREE.Mesh(seedGeo, seedMaterial);
+            const seedAngle = Math.random() * Math.PI * 2;
+            // For a cone flipped upside down, we need to calculate the radius at each height
+            // Cone base radius: 0.12 * sizeVariation, height: 0.25 * sizeVariation
+            // Since it is flipped, top of cone (y = 0.125) has radius 0, bottom (y = -0.125) has full radius
+            const coneBaseRadius = 0.12 * sizeVariation;
+            const coneHeight = 0.25 * sizeVariation;
+            const coneHalfHeight = coneHeight / 2;
+            
+            // Random height on the cone (from top to about 80% down to avoid the very bottom)
+            const seedHeightRatio = 0.2 + Math.random() * 0.6; // 0.2 to 0.8 from top
+            const seedHeight = coneHalfHeight - (seedHeightRatio * coneHeight);
+            
+            // Calculate radius at this height (linear interpolation for cone)
+            // At top (seedHeight = coneHalfHeight), radius = 0
+            // At bottom (seedHeight = -coneHalfHeight), radius = coneBaseRadius
+            const heightFromTop = coneHalfHeight - seedHeight;
+            const radiusAtHeight = (heightFromTop / coneHeight) * coneBaseRadius;
+            
+            // Add small variation to make seeds slightly embedded or protruding
+            const surfaceOffset = (Math.random() - 0.5) * 0.01 * sizeVariation;
+            const seedRadius = radiusAtHeight + surfaceOffset;
+            seed.position.set(
+              Math.cos(seedAngle) * seedRadius,
+              seedHeight,
+              Math.sin(seedAngle) * seedRadius
+            );
+            strawberry.add(seed);
+          }
+          
+          // Position in center cluster with horizontal spread
+          const centerClusterRadius = 0.1 + Math.random() * 0.08; // Horizontal spread around center
+          const centerClusterAngle = Math.random() * Math.PI * 2;
+          
+          const centerOffsetX = Math.cos(centerClusterAngle) * centerClusterRadius;
+          const centerOffsetZ = Math.sin(centerClusterAngle) * centerClusterRadius;
+          
+          strawberry.position.set(
+            centerOffsetX, 
+            topY + 0.125 * sizeVariation, // Same surface level as others
+            centerOffsetZ
           );
-          strawberry.add(seed);
+          
+          // Natural rotation for center cluster
+          strawberry.rotation.y = Math.random() * Math.PI * 2;
+          strawberry.rotation.z = (Math.random() - 0.5) * 0.4;
+          strawberry.rotation.x = (Math.random() - 0.5) * 0.2;
+          
+          overallToppingGroup.add(strawberry);
         }
-        
-        // Position the strawberry on the cake
-        const strawberryRadius = 0.15;
-        const availableRadius = layerRadius - (edgeIcing.enabled ? edgeIcing.thickness : 0) - strawberryRadius;
-        
-        // Use golden ratio for better distribution
-        const goldenRatio = 0.618033988749895;
-        const angle = (i * goldenRatio * Math.PI * 2) % (Math.PI * 2);
-        
-        // Place strawberries mostly around the edge
-        let dist = availableRadius * (0.7 + Math.random() * 0.3);
-        
-        // If it's the first strawberry and there are only a few, place one in the center
-        if (i === 0 && strawberryCount <= 5) {
-          dist = availableRadius * 0.3 * Math.random();
-        }
-        
-        strawberry.position.set(
-          Math.cos(angle) * dist, 
-          topY + 0.1, 
-          Math.sin(angle) * dist
-        );
-        
-        // Random rotation for variety
-        strawberry.rotation.y = Math.random() * Math.PI * 2;
-        strawberry.rotation.z = (Math.random() - 0.5) * 0.3;
-        
-        overallToppingGroup.add(strawberry);
       }
     } else if (topping.type === 'blueberries') {
       const blueberryCount = Math.max(2, Math.floor(layerRadius * 5)); // More blueberries as they're smaller
@@ -1563,6 +1940,438 @@ const addDecorations = (layerMesh, layerConfig) => {
         blueberry.rotation.z = Math.random() * Math.PI;
         
         overallToppingGroup.add(blueberry);
+      }
+    } else if (topping.type === 'candle') {
+      const candleCount = 1; // Changed to always show only 1 candle
+      const candleMaterial = new THREE.MeshStandardMaterial({
+        color: 0xFFFFFF,
+        roughness: 0.3,
+        metalness: 0.1
+      });
+      const flameMaterial = new THREE.MeshStandardMaterial({
+        color: 0xFF6600,
+        roughness: 0.1,
+        metalness: 0.0,
+        emissive: 0xFF3300,
+        emissiveIntensity: 0.2
+      });
+      const wickMaterial = new THREE.MeshStandardMaterial({
+        color: 0x333333,
+        roughness: 0.8
+      });
+
+      for (let i = 0; i < candleCount; i++) {
+        const candle = new THREE.Group();
+        
+        // Create candle body (cylinder)
+        const bodyRadius = 0.04;
+        const bodyHeight = 0.8;
+        const bodyGeo = new THREE.CylinderGeometry(bodyRadius, bodyRadius, bodyHeight, 16);
+        const body = new THREE.Mesh(bodyGeo, candleMaterial);
+        candle.add(body);
+        
+        // Add wick (small cylinder)
+        const wickGeo = new THREE.CylinderGeometry(0.01, 0.01, 0.1, 8);
+        const wick = new THREE.Mesh(wickGeo, wickMaterial);
+        wick.position.y = bodyHeight / 2 + 0.05;
+        candle.add(wick);
+        
+        // Add flame (small sphere)
+        const flameGeo = new THREE.SphereGeometry(0.03, 8, 8);
+        const flame = new THREE.Mesh(flameGeo, flameMaterial);
+        flame.position.y = bodyHeight / 2 + 0.12;
+        candle.add(flame);
+        
+        // Position the single candle at the center of the cake
+        candle.position.set(
+          0, // Center horizontally
+          topY + bodyHeight / 2, 
+          0 // Center depth-wise
+        );
+        
+        overallToppingGroup.add(candle);
+      }
+    } else if (topping.type === 'crush_oreo') {
+      const oreoCount = Math.max(20, Math.floor(layerRadius * 15)); // Many small oreo pieces
+      const oreoMaterial = new THREE.MeshStandardMaterial({
+        color: 0x2F1B1B,
+        roughness: 0.8,
+        metalness: 0.1
+      });
+      const creamMaterial = new THREE.MeshStandardMaterial({
+        color: 0xFFFFF0,
+        roughness: 0.5,
+        metalness: 0.1
+      });
+
+      for (let i = 0; i < oreoCount; i++) {
+        const oreoGroup = new THREE.Group();
+        
+        // Create irregular oreo crumb shapes - increased size
+        const crumbSize = 0.04 + Math.random() * 0.06; // Increased from 0.02-0.05 to 0.04-0.10
+        const crumbGeo = new THREE.BoxGeometry(
+          crumbSize, 
+          crumbSize * 0.3, 
+          crumbSize * 0.8
+        );
+        const crumb = new THREE.Mesh(crumbGeo, oreoMaterial);
+        oreoGroup.add(crumb);
+        
+        // Sometimes add cream pieces
+        if (Math.random() < 0.3) {
+          const creamGeo = new THREE.SphereGeometry(crumbSize * 0.5, 6, 6);
+          const cream = new THREE.Mesh(creamGeo, creamMaterial);
+          cream.position.y = crumbSize * 0.2;
+          oreoGroup.add(cream);
+        }
+        
+        // Position the oreo crumb on the cake
+        const availableRadius = layerRadius - (edgeIcing.enabled ? edgeIcing.thickness : 0);
+        
+        // Random distribution across cake top
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * availableRadius;
+        
+        oreoGroup.position.set(
+          Math.cos(angle) * dist, 
+          topY + crumbSize, 
+          Math.sin(angle) * dist
+        );
+        
+        // Random rotation for natural look
+        oreoGroup.rotation.x = Math.random() * Math.PI;
+        oreoGroup.rotation.y = Math.random() * Math.PI;
+        oreoGroup.rotation.z = Math.random() * Math.PI;
+        
+        overallToppingGroup.add(oreoGroup);
+      }
+    } else if (topping.type === 'christmas_balls') {
+      const ballCount = Math.max(3, Math.floor(layerRadius * 2)); // Fewer balls as they're decorative
+      const ballColors = [0xFF0000, 0x00FF00, 0xFFD700, 0x0000FF, 0xFF69B4]; // Red, Green, Gold, Blue, Pink
+
+      for (let i = 0; i < ballCount; i++) {
+        const ball = new THREE.Group();
+        
+        // Create main ball - increased size
+        const ballRadius = 0.15 + Math.random() * 0.08; // Increased from 0.08-0.12 to 0.15-0.23
+        const ballGeo = new THREE.SphereGeometry(ballRadius, 16, 16);
+        const ballColor = ballColors[Math.floor(Math.random() * ballColors.length)];
+        const ballMaterial = new THREE.MeshStandardMaterial({
+          color: ballColor,
+          roughness: 0.1,
+          metalness: 0.8
+        });
+        const ballMesh = new THREE.Mesh(ballGeo, ballMaterial);
+        ball.add(ballMesh);
+        
+        // Add cap (small cylinder at top)
+        const capGeo = new THREE.CylinderGeometry(ballRadius * 0.3, ballRadius * 0.3, ballRadius * 0.3, 12);
+        const capMaterial = new THREE.MeshStandardMaterial({
+          color: 0xFFD700,
+          roughness: 0.2,
+          metalness: 0.9
+        });
+        const cap = new THREE.Mesh(capGeo, capMaterial);
+        cap.position.y = ballRadius + ballRadius * 0.15;
+        ball.add(cap);
+        
+        // Position the ball on the cake
+        const availableRadius = layerRadius - (edgeIcing.enabled ? edgeIcing.thickness : 0) - ballRadius;
+        
+        // Distribute balls around the cake
+        const angle = (i / ballCount) * Math.PI * 2 + Math.random() * 0.5;
+        const dist = availableRadius * (0.3 + Math.random() * 0.5);
+        
+        ball.position.set(
+          Math.cos(angle) * dist, 
+          topY + ballRadius, 
+          Math.sin(angle) * dist
+        );
+        
+        overallToppingGroup.add(ball);
+      }
+    } else if (topping.type === 'flowers') {
+      // Get the selected flower position and rose color from layer config
+      const flowerPosition = layerConfig.flowerPosition || 'inner';
+      const selectedRoseColor = layerConfig.roseColor || 'red';
+      const availableRadius = layerRadius - (edgeIcing.enabled ? edgeIcing.thickness : 0) - 0.25; // Increased from 0.15 to 0.25
+      
+      // Define rose colors
+      const roseColors = {
+        red: 0xDC143C,
+        pink: 0xFF69B4,
+        white: 0xFFFFF0,
+        yellow: 0xFFD700,
+        purple: 0x9370DB,
+        orange: 0xFF8C00
+      };
+      
+      const roseColor = roseColors[selectedRoseColor] || roseColors.red;
+      
+      // Define positioning based on user selection
+      let rings = [];
+      const minRadius = 0.25; // Increased from 0.2 to 0.25
+      const flowerSpacing = 0.75; // Increased from 0.5 to 0.75 for larger roses
+      
+      if (flowerPosition === 'inner') {
+        // Single inner ring close to center with circumference-based count
+        const innerRadius = minRadius + (availableRadius - minRadius) * 0.3;
+        const circumference = 2 * Math.PI * innerRadius;
+        const flowerCount = Math.max(4, Math.floor(circumference / flowerSpacing));
+        rings = [{ radius: innerRadius, count: flowerCount }];
+      } else if (flowerPosition === 'mid') {
+        // Single middle ring with circumference-based count
+        const midRadius = minRadius + (availableRadius - minRadius) * 0.6;
+        const circumference = 2 * Math.PI * midRadius;
+        const flowerCount = Math.max(5, Math.floor(circumference / flowerSpacing));
+        rings = [{ radius: midRadius, count: flowerCount }];
+      } else if (flowerPosition === 'outer') {
+        // Single outer ring near edge with circumference-based count
+        const outerRadius = availableRadius * 0.9;
+        const circumference = 2 * Math.PI * outerRadius;
+        const flowerCount = Math.max(6, Math.floor(circumference / flowerSpacing));
+        rings = [{ radius: outerRadius, count: flowerCount }];
+      } else if (flowerPosition === 'all') {
+        // Multiple concentric circles for full coverage
+        const numberOfRings = 3;
+        for (let ring = 0; ring < numberOfRings; ring++) {
+          const ringRadius = minRadius + (ring / (numberOfRings - 1)) * (availableRadius - minRadius);
+          const circumference = 2 * Math.PI * ringRadius;
+          const flowersInRing = Math.max(3, Math.floor(circumference / flowerSpacing));
+          rings.push({ radius: ringRadius, count: flowersInRing });
+        }
+      }
+      
+      // Generate flowers for each ring
+      rings.forEach(ring => {
+        for (let i = 0; i < ring.count; i++) {
+          const rose = new THREE.Group();
+          
+          // Create 3D Rose with layered petals
+          const roseMaterial = new THREE.MeshStandardMaterial({
+            color: roseColor,
+            roughness: 0.3,
+            metalness: 0.1
+          });
+          
+          // Create rose center (small sphere)
+          const centerGeo = new THREE.SphereGeometry(0.05, 8, 8); // Increased from 0.03 to 0.05
+          const center = new THREE.Mesh(centerGeo, roseMaterial);
+          rose.add(center);
+          
+          // Create multiple layers of petals for 3D rose effect
+          const petalLayers = 4; // Number of petal layers
+          
+          for (let layer = 0; layer < petalLayers; layer++) {
+            const layerRadius = 0.06 + (layer * 0.035); // Increased from 0.04+0.025 to 0.06+0.035
+            const petalsInLayer = 5 + layer; // More petals in outer layers
+            const layerHeight = layer * 0.03; // Increased from 0.02 to 0.03
+            
+            for (let p = 0; p < petalsInLayer; p++) {
+              const petalAngle = (p / petalsInLayer) * Math.PI * 2 + (layer * 0.3); // Offset each layer
+              
+              // Create petal using ellipsoid geometry for more realistic shape
+              const petalGeo = new THREE.SphereGeometry(0.035 + layer * 0.015, 6, 4); // Increased from 0.025+0.01 to 0.035+0.015
+              const petal = new THREE.Mesh(petalGeo, roseMaterial);
+              
+              // Position petal around the center
+              const petalX = Math.cos(petalAngle) * layerRadius;
+              const petalZ = Math.sin(petalAngle) * layerRadius;
+              const petalY = layerHeight;
+              
+              petal.position.set(petalX, petalY, petalZ);
+              
+              // Scale and rotate petal for rose-like appearance
+              petal.scale.set(1.5 + layer * 0.4, 0.4, 1.0 + layer * 0.3); // Increased from 1.2+0.3, 0.4, 0.8+0.2
+              
+              // Tilt petals outward and upward for realistic rose shape
+              petal.rotation.x = -Math.PI / 6 + (layer * Math.PI / 12);
+              petal.rotation.y = petalAngle;
+              petal.rotation.z = (Math.random() - 0.5) * 0.3; // Small random rotation
+              
+              rose.add(petal);
+            }
+          }
+          
+          // Add some outer guard petals for more realistic rose
+          const guardPetals = 6;
+          for (let g = 0; g < guardPetals; g++) {
+            const guardAngle = (g / guardPetals) * Math.PI * 2;
+            const guardGeo = new THREE.SphereGeometry(0.06, 6, 4);
+            const guardPetal = new THREE.Mesh(guardGeo, roseMaterial);
+            
+            const guardRadius = 0.18;
+            guardPetal.position.set(
+              Math.cos(guardAngle) * guardRadius,
+              -0.02,
+              Math.sin(guardAngle) * guardRadius
+            );
+            
+            guardPetal.scale.set(1.8, 0.3, 1.2);
+            guardPetal.rotation.x = -Math.PI / 4;
+            guardPetal.rotation.y = guardAngle;
+            guardPetal.rotation.z = (Math.random() - 0.5) * 0.4;
+            
+            rose.add(guardPetal);
+          }
+          
+          // Add green leaves to the rose
+          const leafMaterial = new THREE.MeshStandardMaterial({
+            color: 0x2E8B57, // Sea green color for leaves
+            roughness: 0.7,
+            metalness: 0.1
+          });
+          
+          // Add 2-3 leaves around the base of the rose
+          const leafCount = 2 + Math.floor(Math.random() * 2); // 2-3 leaves
+          for (let l = 0; l < leafCount; l++) {
+            const leafAngle = (l / leafCount) * Math.PI * 2;
+            
+            // Create leaf using modified sphere geometry
+            const leafGeo = new THREE.SphereGeometry(0.08, 6, 4);
+            const leaf = new THREE.Mesh(leafGeo, leafMaterial);
+            
+            // Position leaf at the base of the rose, slightly offset
+            const leafRadius = 0.2;
+            leaf.position.set(
+              Math.cos(leafAngle) * leafRadius,
+              -0.1 - Math.random() * 0.05, // Below the rose
+              Math.sin(leafAngle) * leafRadius
+            );
+            
+            // Scale to create an elongated leaf shape
+            leaf.scale.set(1.5, 0.2, 0.8);
+            
+            // Rotate to position naturally
+            leaf.rotation.x = Math.PI / 3 + (Math.random() - 0.5) * 0.2; // Angle upward
+            leaf.rotation.y = leafAngle + (Math.random() - 0.5) * 0.3; // Face outward
+            leaf.rotation.z = (Math.random() - 0.5) * 0.4; // Random tilt
+            
+            rose.add(leaf);
+          }
+          
+          // Position the rose in the current ring
+          const angle = (i / ring.count) * Math.PI * 2;
+          
+          rose.position.set(
+            Math.cos(angle) * ring.radius, 
+            topY + 0.12, // Increased from 0.08 to 0.12
+            Math.sin(angle) * ring.radius
+          );
+          
+          // Random rotation for natural look
+          rose.rotation.y = Math.random() * Math.PI * 2;
+          
+          overallToppingGroup.add(rose);
+        }
+      });
+      
+      // Add a center rose for inner and all positions if there's space
+      if ((flowerPosition === 'inner' || flowerPosition === 'all') && minRadius > 0.15) {
+        const centerRose = new THREE.Group();
+        
+        // Create center 3D Rose
+        const roseMaterial = new THREE.MeshStandardMaterial({
+            color: roseColor,
+          roughness: 0.3,
+          metalness: 0.1
+        });
+        
+        // Create rose center
+        const centerGeo = new THREE.SphereGeometry(0.05, 8, 8); // Increased from 0.03 to 0.05
+        const center = new THREE.Mesh(centerGeo, roseMaterial);
+        centerRose.add(center);
+        
+        // Create multiple layers of petals
+        const petalLayers = 4;
+        
+        for (let layer = 0; layer < petalLayers; layer++) {
+          const layerRadius = 0.06 + (layer * 0.035);
+          const petalsInLayer = 5 + layer;
+          const layerHeight = layer * 0.03;
+          
+          for (let p = 0; p < petalsInLayer; p++) {
+            const petalAngle = (p / petalsInLayer) * Math.PI * 2 + (layer * 0.3);
+            
+            const petalGeo = new THREE.SphereGeometry(0.035 + layer * 0.015, 6, 4);
+            const petal = new THREE.Mesh(petalGeo, roseMaterial);
+            
+            const petalX = Math.cos(petalAngle) * layerRadius;
+            const petalZ = Math.sin(petalAngle) * layerRadius;
+            const petalY = layerHeight;
+            
+            petal.position.set(petalX, petalY, petalZ);
+            petal.scale.set(1.5 + layer * 0.4, 0.4, 1.0 + layer * 0.3);
+            petal.rotation.x = -Math.PI / 6 + (layer * Math.PI / 12);
+            petal.rotation.y = petalAngle;
+            petal.rotation.z = (Math.random() - 0.5) * 0.3;
+            
+            centerRose.add(petal);
+          }
+        }
+        
+        // Add guard petals
+        const guardPetals = 6;
+        for (let g = 0; g < guardPetals; g++) {
+          const guardAngle = (g / guardPetals) * Math.PI * 2;
+          const guardGeo = new THREE.SphereGeometry(0.06, 6, 4);
+          const guardPetal = new THREE.Mesh(guardGeo, roseMaterial);
+          
+          const guardRadius = 0.18;
+          guardPetal.position.set(
+            Math.cos(guardAngle) * guardRadius,
+            -0.02,
+            Math.sin(guardAngle) * guardRadius
+          );
+          
+          guardPetal.scale.set(1.8, 0.3, 1.2);
+          guardPetal.rotation.x = -Math.PI / 4;
+          guardPetal.rotation.y = guardAngle;
+          guardPetal.rotation.z = (Math.random() - 0.5) * 0.4;
+          
+          centerRose.add(guardPetal);
+        }
+        
+        // Add green leaves to the center rose
+        const leafMaterial = new THREE.MeshStandardMaterial({
+          color: 0x2E8B57, // Sea green color for leaves
+          roughness: 0.7,
+          metalness: 0.1
+        });
+        
+        // Add 2-3 leaves around the base of the rose
+        const leafCount = 2 + Math.floor(Math.random() * 2); // 2-3 leaves
+        for (let l = 0; l < leafCount; l++) {
+          const leafAngle = (l / leafCount) * Math.PI * 2;
+          
+          // Create leaf using modified sphere geometry
+          const leafGeo = new THREE.SphereGeometry(0.08, 6, 4);
+          const leaf = new THREE.Mesh(leafGeo, leafMaterial);
+          
+          // Position leaf at the base of the rose, slightly offset
+          const leafRadius = 0.2;
+          leaf.position.set(
+            Math.cos(leafAngle) * leafRadius,
+            -0.1 - Math.random() * 0.05, // Below the rose
+            Math.sin(leafAngle) * leafRadius
+          );
+          
+          // Scale to create an elongated leaf shape
+          leaf.scale.set(1.5, 0.2, 0.8);
+          
+          // Rotate to position naturally
+          leaf.rotation.x = Math.PI / 3 + (Math.random() - 0.5) * 0.2; // Angle upward
+          leaf.rotation.y = leafAngle + (Math.random() - 0.5) * 0.3; // Face outward
+          leaf.rotation.z = (Math.random() - 0.5) * 0.4; // Random tilt
+          
+          centerRose.add(leaf);
+        }
+        
+        // Position at center
+        centerRose.position.set(0, topY + 0.12, 0); // Increased from 0.08 to 0.12
+        centerRose.rotation.y = Math.random() * Math.PI * 2;
+        
+        overallToppingGroup.add(centerRose);
       }
     }
   });
@@ -1700,13 +2509,6 @@ const renderCake = () => {
         topLayerRadius = layerConfig.radius;
         topLayerHeight = layerConfig.height;
       }
-      if (layerConfig.id === selectedLayerId) {
-        if (!originalLayerMaterials.has(selectedLayerId)) {
-          originalLayerMaterials.set(selectedLayerId, layerMesh.material);
-        }
-        layerMesh.material = layerMesh.material.clone();
-        layerMesh.material.emissive.setHex(0x555555);
-      }
     });
   }
   // Add greeting text after layers
@@ -1778,9 +2580,9 @@ const updateLayerProperty = (layerId, propertyPath, value) => {
       let parsedValue = value;
       if (propertyKey === 'radius' || propertyKey === 'height' || propertyKey === 'thickness') {
         parsedValue = parseFloat(value);
-      } else if (propertyKey === 'enabled' && (propertyPath.startsWith('edgeIcing') || propertyPath.startsWith('middleBandIcing'))) {
+      } else if (propertyKey === 'enabled' && (propertyPath.startsWith('edgeIcing') || propertyPath.startsWith('bottomIcing'))) {
         parsedValue = Boolean(value);
-        const icingConfigToAnimate = propertyPath.startsWith('edgeIcing') ? currentObject : layer.middleBandIcing;
+        const icingConfigToAnimate = propertyPath.startsWith('edgeIcing') ? currentObject : layer.bottomIcing;
         icingConfigToAnimate.isAnimating = parsedValue;
         if (!parsedValue) {
           icingConfigToAnimate.animationProgress = 0;
@@ -1794,7 +2596,7 @@ const updateLayerProperty = (layerId, propertyPath, value) => {
     }
 
     let isAnyIcingAnimating = (layer.edgeIcing && layer.edgeIcing.enabled && layer.edgeIcing.isAnimating) ||
-      (layer.middleBandIcing && layer.middleBandIcing.enabled && layer.middleBandIcing.isAnimating);
+      (layer.bottomIcing && layer.bottomIcing.enabled && layer.bottomIcing.isAnimating);
 
     if (isAnyIcingAnimating) {
       needsCakeRender = true;
@@ -1937,10 +2739,6 @@ const loadCakeConfiguration = (event) => {
             ...(defaultStructure.edgeIcing || {}),
             ...(loadedLayer.edgeIcing || {})
           };
-          mergedLayer.middleBandIcing = {
-            ...(defaultStructure.middleBandIcing || {}),
-            ...(loadedLayer.middleBandIcing || {})
-          };
           mergedLayer.bottomIcing = {
             ...(defaultStructure.bottomIcing || {}),
             ...(loadedLayer.bottomIcing || {})
@@ -1951,7 +2749,7 @@ const loadCakeConfiguration = (event) => {
           if (mergedLayer.topper && mergedLayer.topper.type === 'text_image') {
             mergedLayer.topper.type = 'image';
           }
-          ['edgeIcing', 'middleBandIcing', 'bottomIcing'].forEach(icingType => {
+          ['edgeIcing', 'bottomIcing'].forEach(icingType => {
             if (mergedLayer[icingType]) {
               if (!mergedLayer[icingType].hasOwnProperty('isAnimating')) {
                 mergedLayer[icingType].isAnimating = defaultStructure[icingType].isAnimating;
@@ -2032,12 +2830,12 @@ const animate = () => {
       }
       needsCakeRender = true;
     }
-    if (layer.middleBandIcing.enabled && layer.middleBandIcing.isAnimating) {
+    if (layer.bottomIcing.enabled && layer.bottomIcing.isAnimating) {
       anyIcingAnimating = true;
-      layer.middleBandIcing.animationProgress += layer.middleBandIcing.animationSpeed * deltaTime;
-      if (layer.middleBandIcing.animationProgress >= 1) {
-        layer.middleBandIcing.animationProgress = 1;
-        layer.middleBandIcing.isAnimating = false;
+      layer.bottomIcing.animationProgress += layer.bottomIcing.animationSpeed * deltaTime;
+      if (layer.bottomIcing.animationProgress >= 1) {
+        layer.bottomIcing.animationProgress = 1;
+        layer.bottomIcing.isAnimating = false;
       }
       needsCakeRender = true;
     }
@@ -2438,7 +3236,6 @@ const addIcingControlsUI = (layerConfig, container) => {
   
   // Create unique IDs for the icing tab controls to avoid conflicts with Layer Editor
   const edgeIcingSubControlsId = `icing_tab_edge_controls_${layerConfig.id}`;
-  const middleIcingSubControlsId = `icing_tab_middle_controls_${layerConfig.id}`;
   const bottomIcingSubControlsId = `icing_tab_bottom_controls_${layerConfig.id}`;
   
   icingControlsDiv.innerHTML = `
@@ -2503,7 +3300,7 @@ const addIcingControlsUI = (layerConfig, container) => {
       <div id="${bottomIcingSubControlsId}" class="sub-controls mt-2 ${layerConfig.bottomIcing.enabled ? '' : 'hidden'}">
         <div class="mt-1">
           <label for="icing_tab_bottom_style_${layerConfig.id}">Bottom Style:</label>
-          <select id="icing_tab_bottom_style_${layerConfig.id}">
+          <select id="icing_tab_bottom_style_${layerConfig.id}" class="block w-full rounded-md border border-gray-300 shadow py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm appearance-none bg-white">
             <option value="smooth" ${layerConfig.bottomIcing.style === 'smooth' ? 'selected' : ''}>Smooth Ring</option>
             <option value="curl" ${layerConfig.bottomIcing.style === 'curl' ? 'selected' : ''}>Curl Pattern</option>
             <option value="shell" ${layerConfig.bottomIcing.style === 'shell' ? 'selected' : ''}>Shell Pattern</option>
@@ -2514,11 +3311,11 @@ const addIcingControlsUI = (layerConfig, container) => {
         </div>
         <div class="mt-2">
           <label for="icing_tab_bottom_color_${layerConfig.id}">Bottom Color:</label>
-          <input type="color" id="icing_tab_bottom_color_${layerConfig.id}" value="${layerConfig.bottomIcing.color}">
+          <input type="color" id="icing_tab_bottom_color_${layerConfig.id}" value="${layerConfig.bottomIcing.color}" class="h-9 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
         </div>
         <div class="mt-2">
           <label for="icing_tab_bottom_thickness_${layerConfig.id}">Bottom Detail/Thickness (${layerConfig.bottomIcing.thickness.toFixed(2)}):</label>
-          <input type="range" id="icing_tab_bottom_thickness_${layerConfig.id}" min="0.02" max="0.3" step="0.01" value="${layerConfig.bottomIcing.thickness}">
+          <input type="range" id="icing_tab_bottom_thickness_${layerConfig.id}" min="0.02" max="0.3" step="0.01" value="${layerConfig.bottomIcing.thickness}" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
         </div>
       </div>
     </div>
@@ -2545,22 +3342,6 @@ const addIcingControlsUI = (layerConfig, container) => {
   
   document.getElementById(`icing_tab_edge_thickness_${layerConfig.id}`).addEventListener('input', (e) => {
     updateLayerProperty(layerConfig.id, 'edgeIcing.thickness', parseFloat(e.target.value));
-  });
-  
-  const middleIcingEnabledCheckbox = document.getElementById(`icing_tab_middle_enabled_${layerConfig.id}`);
-  const middleIcingSubControlsDiv = document.getElementById(middleIcingSubControlsId);
-  
-  middleIcingEnabledCheckbox.addEventListener('change', (e) => {
-    updateLayerProperty(layerConfig.id, 'middleBandIcing.enabled', e.target.checked);
-    middleIcingSubControlsDiv.classList.toggle('hidden', !e.target.checked);
-  });
-  
-  document.getElementById(`icing_tab_middle_color_${layerConfig.id}`).addEventListener('input', (e) => {
-    updateLayerProperty(layerConfig.id, 'middleBandIcing.color', e.target.value);
-  });
-  
-  document.getElementById(`icing_tab_middle_thickness_${layerConfig.id}`).addEventListener('input', (e) => {
-    updateLayerProperty(layerConfig.id, 'middleBandIcing.thickness', parseFloat(e.target.value));
   });
   
   const bottomIcingEnabledCheckbox = document.getElementById(`icing_tab_bottom_enabled_${layerConfig.id}`);
@@ -2593,6 +3374,10 @@ const addToppingsControlsUI = (layerConfig, container) => {
   const hasCherries = layerConfig.toppings.some(t => t.type === 'cherries');
   const hasStrawberries = layerConfig.toppings.some(t => t.type === 'strawberries');
   const hasBlueberries = layerConfig.toppings.some(t => t.type === 'blueberries');
+  const hasCandle = layerConfig.toppings.some(t => t.type === 'candle');
+  const hasCrushOreo = layerConfig.toppings.some(t => t.type === 'crush_oreo');
+  const hasChristmasBalls = layerConfig.toppings.some(t => t.type === 'christmas_balls');
+  const hasFlowers = layerConfig.toppings.some(t => t.type === 'flowers');
   
   toppingsControlsDiv.innerHTML = `
     <p class="text-xl font-bold text-center p-2 my-2">Layer ${cakeLayers.findIndex(l => l.id === layerConfig.id) + 1} Toppings</p>
@@ -2632,7 +3417,30 @@ const addToppingsControlsUI = (layerConfig, container) => {
           <label for="toppings_tab_strawberries_${layerConfig.id}" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer select-none">Strawberries</label>
         </div>
         <div class="sub-controls pl-8 mt-2 ${hasStrawberries ? '' : 'hidden'}" id="strawberries_controls_${layerConfig.id}">
-          <p class="text-gray-500 text-xs">Fresh strawberries arranged around the top of your cake</p>
+          <p class="text-gray-500 text-xs mb-3">Fresh strawberries piled naturally on your cake</p>
+          
+          <!-- Strawberry Position Options -->
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-gray-700">Strawberry Position:</label>
+            <div class="space-y-1">
+              <label class="flex items-center">
+                <input type="radio" name="strawberry_position_${layerConfig.id}" value="inner" ${(!layerConfig.strawberryPosition || layerConfig.strawberryPosition === 'inner') ? 'checked' : ''} class="mr-2 text-indigo-600">
+                <span class="text-sm text-gray-600">Inner (close to center)</span>
+              </label>
+              <label class="flex items-center">
+                <input type="radio" name="strawberry_position_${layerConfig.id}" value="mid" ${layerConfig.strawberryPosition === 'mid' ? 'checked' : ''} class="mr-2 text-indigo-600">
+                <span class="text-sm text-gray-600">Mid (middle area)</span>
+              </label>
+              <label class="flex items-center">
+                <input type="radio" name="strawberry_position_${layerConfig.id}" value="outer" ${layerConfig.strawberryPosition === 'outer' ? 'checked' : ''} class="mr-2 text-indigo-600">
+                <span class="text-sm text-gray-600">Outer (near edge)</span>
+              </label>
+              <label class="flex items-center">
+                <input type="radio" name="strawberry_position_${layerConfig.id}" value="all" ${layerConfig.strawberryPosition === 'all' ? 'checked' : ''} class="mr-2 text-indigo-600">
+                <span class="text-sm text-gray-600">All (full coverage)</span>
+              </label>
+            </div>
+          </div>
         </div>
       </div>
       
@@ -2648,8 +3456,106 @@ const addToppingsControlsUI = (layerConfig, container) => {
         </div>
       </div>
       
-      <div class="mt-4">
-        <p class="text-gray-500 text-xs italic">More toppings coming soon!</p>
+      <div class="mb-3">
+        <div class="flex items-center">
+          <div class="flex items-center h-5">
+            <input type="checkbox" id="toppings_tab_candle_${layerConfig.id}" ${hasCandle ? 'checked' : ''} class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 transition cursor-pointer">
+          </div>
+          <label for="toppings_tab_candle_${layerConfig.id}" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer select-none">Candles</label>
+        </div>
+        <div class="sub-controls pl-8 mt-2 ${hasCandle ? '' : 'hidden'}" id="candle_controls_${layerConfig.id}">
+          <p class="text-gray-500 text-xs">Beautiful birthday candles with flames evenly distributed around your cake</p>
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        <div class="flex items-center">
+          <div class="flex items-center h-5">
+            <input type="checkbox" id="toppings_tab_crush_oreo_${layerConfig.id}" ${hasCrushOreo ? 'checked' : ''} class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 transition cursor-pointer">
+          </div>
+          <label for="toppings_tab_crush_oreo_${layerConfig.id}" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer select-none">Crush Oreo</label>
+        </div>
+        <div class="sub-controls pl-8 mt-2 ${hasCrushOreo ? '' : 'hidden'}" id="crush_oreo_controls_${layerConfig.id}">
+          <p class="text-gray-500 text-xs">Crushed Oreo cookies and cream pieces sprinkled across your cake</p>
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        <div class="flex items-center">
+          <div class="flex items-center h-5">
+            <input type="checkbox" id="toppings_tab_christmas_balls_${layerConfig.id}" ${hasChristmasBalls ? 'checked' : ''} class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 transition cursor-pointer">
+          </div>
+          <label for="toppings_tab_christmas_balls_${layerConfig.id}" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer select-none">Christmas Balls</label>
+        </div>
+        <div class="sub-controls pl-8 mt-2 ${hasChristmasBalls ? '' : 'hidden'}" id="christmas_balls_controls_${layerConfig.id}">
+          <p class="text-gray-500 text-xs">Colorful Christmas ornament balls with golden caps for festive decoration</p>
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        <div class="flex items-center">
+          <div class="flex items-center h-5">
+            <input type="checkbox" id="toppings_tab_flowers_${layerConfig.id}" ${hasFlowers ? 'checked' : ''} class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 transition cursor-pointer">
+          </div>
+          <label for="toppings_tab_flowers_${layerConfig.id}" class="ml-3 text-sm font-medium text-gray-700 cursor-pointer select-none">Flowers</label>
+        </div>
+        <div class="sub-controls pl-8 mt-2 ${hasFlowers ? '' : 'hidden'}" id="flowers_controls_${layerConfig.id}">
+          <p class="text-gray-500 text-xs mb-3">Beautiful edible flowers with colorful petals arranged on your cake</p>
+          
+          <!-- Flower Position Options -->
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-gray-700">Flower Position:</label>
+            <div class="space-y-1">
+              <label class="flex items-center">
+                <input type="radio" name="flower_position_${layerConfig.id}" value="inner" ${(!layerConfig.flowerPosition || layerConfig.flowerPosition === 'inner') ? 'checked' : ''} class="mr-2 text-indigo-600">
+                <span class="text-sm text-gray-600">Inner (close to center)</span>
+              </label>
+              <label class="flex items-center">
+                <input type="radio" name="flower_position_${layerConfig.id}" value="mid" ${layerConfig.flowerPosition === 'mid' ? 'checked' : ''} class="mr-2 text-indigo-600">
+                <span class="text-sm text-gray-600">Mid (middle area)</span>
+              </label>
+              <label class="flex items-center">
+                <input type="radio" name="flower_position_${layerConfig.id}" value="outer" ${layerConfig.flowerPosition === 'outer' ? 'checked' : ''} class="mr-2 text-indigo-600">
+                <span class="text-sm text-gray-600">Outer (near edge)</span>
+              </label>
+              <label class="flex items-center">
+                <input type="radio" name="flower_position_${layerConfig.id}" value="all" ${layerConfig.flowerPosition === 'all' ? 'checked' : ''} class="mr-2 text-indigo-600">
+                <span class="text-sm text-gray-600">All (full coverage)</span>
+              </label>
+            </div>
+          </div>
+          
+          <!-- Rose Color Options -->
+          <div class="space-y-2 mt-4">
+            <label class="text-sm font-medium text-gray-700">Rose Color:</label>
+            <div class="grid grid-cols-3 gap-2">
+              <label class="flex items-center">
+                <input type="radio" name="rose_color_${layerConfig.id}" value="red" ${(!layerConfig.roseColor || layerConfig.roseColor === 'red') ? 'checked' : ''} class="mr-2 text-red-600">
+                <span class="text-sm text-gray-600">Red</span>
+              </label>
+              <label class="flex items-center">
+                <input type="radio" name="rose_color_${layerConfig.id}" value="pink" ${layerConfig.roseColor === 'pink' ? 'checked' : ''} class="mr-2 text-pink-600">
+                <span class="text-sm text-gray-600">Pink</span>
+              </label>
+              <label class="flex items-center">
+                <input type="radio" name="rose_color_${layerConfig.id}" value="white" ${layerConfig.roseColor === 'white' ? 'checked' : ''} class="mr-2 text-gray-600">
+                <span class="text-sm text-gray-600">White</span>
+              </label>
+              <label class="flex items-center">
+                <input type="radio" name="rose_color_${layerConfig.id}" value="yellow" ${layerConfig.roseColor === 'yellow' ? 'checked' : ''} class="mr-2 text-yellow-600">
+                <span class="text-sm text-gray-600">Yellow</span>
+              </label>
+              <label class="flex items-center">
+                <input type="radio" name="rose_color_${layerConfig.id}" value="purple" ${layerConfig.roseColor === 'purple' ? 'checked' : ''} class="mr-2 text-purple-600">
+                <span class="text-sm text-gray-600">Purple</span>
+              </label>
+              <label class="flex items-center">
+                <input type="radio" name="rose_color_${layerConfig.id}" value="orange" ${layerConfig.roseColor === 'orange' ? 'checked' : ''} class="mr-2 text-orange-600">
+                <span class="text-sm text-gray-600">Orange</span>
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -2681,12 +3587,74 @@ const addToppingsControlsUI = (layerConfig, container) => {
     strawberriesControls.classList.toggle('hidden', !e.target.checked);
   });
   
+  // Add event listeners for strawberry position radio buttons
+  const strawberryPositionRadios = document.querySelectorAll(`input[name="strawberry_position_${layerConfig.id}"]`);
+  strawberryPositionRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        updateLayerProperty(layerConfig.id, 'strawberryPosition', e.target.value);
+      }
+    });
+  });
+  
   const blueberriesCheckbox = document.getElementById(`toppings_tab_blueberries_${layerConfig.id}`);
   const blueberriesControls = document.getElementById(`blueberries_controls_${layerConfig.id}`);
   
   blueberriesCheckbox.addEventListener('change', (e) => {
     updateLayerProperty(layerConfig.id, 'toppings.blueberries', e.target.checked);
     blueberriesControls.classList.toggle('hidden', !e.target.checked);
+  });
+  
+  const candleCheckbox = document.getElementById(`toppings_tab_candle_${layerConfig.id}`);
+  const candleControls = document.getElementById(`candle_controls_${layerConfig.id}`);
+  
+  candleCheckbox.addEventListener('change', (e) => {
+    updateLayerProperty(layerConfig.id, 'toppings.candle', e.target.checked);
+    candleControls.classList.toggle('hidden', !e.target.checked);
+  });
+  
+  const crushOreoCheckbox = document.getElementById(`toppings_tab_crush_oreo_${layerConfig.id}`);
+  const crushOreoControls = document.getElementById(`crush_oreo_controls_${layerConfig.id}`);
+  
+  crushOreoCheckbox.addEventListener('change', (e) => {
+    updateLayerProperty(layerConfig.id, 'toppings.crush_oreo', e.target.checked);
+    crushOreoControls.classList.toggle('hidden', !e.target.checked);
+  });
+  
+  const christmasBallsCheckbox = document.getElementById(`toppings_tab_christmas_balls_${layerConfig.id}`);
+  const christmasBallsControls = document.getElementById(`christmas_balls_controls_${layerConfig.id}`);
+  
+  christmasBallsCheckbox.addEventListener('change', (e) => {
+    updateLayerProperty(layerConfig.id, 'toppings.christmas_balls', e.target.checked);
+    christmasBallsControls.classList.toggle('hidden', !e.target.checked);
+  });
+  
+  const flowersCheckbox = document.getElementById(`toppings_tab_flowers_${layerConfig.id}`);
+  const flowersControls = document.getElementById(`flowers_controls_${layerConfig.id}`);
+  
+  flowersCheckbox.addEventListener('change', (e) => {
+    updateLayerProperty(layerConfig.id, 'toppings.flowers', e.target.checked);
+    flowersControls.classList.toggle('hidden', !e.target.checked);
+  });
+  
+  // Add event listeners for flower position radio buttons
+  const flowerPositionRadios = document.querySelectorAll(`input[name="flower_position_${layerConfig.id}"]`);
+  flowerPositionRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        updateLayerProperty(layerConfig.id, 'flowerPosition', e.target.value);
+      }
+    });
+  });
+  
+  // Add event listeners for rose color radio buttons
+  const roseColorRadios = document.querySelectorAll(`input[name="rose_color_${layerConfig.id}"]`);
+  roseColorRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        updateLayerProperty(layerConfig.id, 'roseColor', e.target.value);
+      }
+    });
   });
 };
 
@@ -2857,6 +3825,13 @@ const resetCustomization = () => {
   layerIdCounter = 0;
   selectedLayerId = null;
 
+  // Reset greeting configuration
+  greetingConfig.enabled = false;
+  greetingConfig.text = '';
+  greetingConfig.color = '#000000';
+  greetingConfig.size = 0.3;
+  greetingConfig.layout = 'horizontal-top';
+
   // Clear history stack
   historyStack = [];
   const undoButton = document.getElementById('undoBtn');
@@ -2866,6 +3841,9 @@ const resetCustomization = () => {
 
   // Reset customer info
   customerInfo.message = '';
+
+  // Reset active tab to default
+  activeTab.value = 'tab-design';
 
   // Reset 3D view
   if (cakeGroup) {
@@ -2900,6 +3878,18 @@ const totalPrice = computed(() => {
   return selectedSize.value.price;
 });
 
+// Export icons for template use
+const icons = {
+  cubeOutline,
+  settingsOutline,
+  constructOutline,
+  layersOutline,
+  flameOutline,
+  iceCreamOutline,
+  sparklesOutline,
+  chatbubbleOutline,
+  cartOutline
+};
 </script>
 
 <style scoped>
@@ -2924,8 +3914,6 @@ const totalPrice = computed(() => {
   left: 0;
   width: 100%;
   background-color: rgba(255, 255, 255, 0.97);
-  padding: 15px 15px 15px 15px;
-  border-radius: 12px 12px 0 0;
   box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1);
   max-height: 50vh;
   overflow-y: auto;
@@ -2938,7 +3926,7 @@ const totalPrice = computed(() => {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1rem;
-  padding: 0.5rem;
+  padding: 1rem;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   white-space: nowrap;
@@ -2953,6 +3941,16 @@ const totalPrice = computed(() => {
 .tabs::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 0px;
+}
+
+/* Hide scrollbar for overflow-x-auto containers */
+.overflow-x-auto {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .tab-button {
@@ -2994,7 +3992,6 @@ const totalPrice = computed(() => {
 
 .action-button {
   display: block;
-  width: 100%;
   padding: 8px;
   margin-bottom: 8px;
   background: #007bff;
@@ -3023,7 +4020,8 @@ const totalPrice = computed(() => {
 .prompt {
   color: #666;
   font-style: italic;
-  margin-bottom: 15px;
+
+  padding: 16px;
 }
 
 .layer-header {
@@ -4432,16 +5430,17 @@ ion-toolbar {
 .add-to-cart-btn {
   background: #7a1e1e !important;
   font-weight: 700;
-  margin-top: 15px;
+  margin-top: 10px;
   text-transform: uppercase;
   letter-spacing: 1px;
   box-shadow: 0 4px 12px rgba(122, 30, 30, 0.3);
-  border-radius: 50px;
-  padding: 12px 24px;
+  border-radius: 12px;
+  padding: 16px 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  
 }
 
 .add-to-cart-btn:hover {
@@ -5008,7 +6007,7 @@ ion-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
+  padding: 0.5rem;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;

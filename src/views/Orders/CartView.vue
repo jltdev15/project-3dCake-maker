@@ -159,10 +159,7 @@
                   </div>
                   <div class="order-item-quantity">
                     <span class="quantity">x{{ item.quantity }}</span>
-                    <span v-if="!(item as CartItem).isCustomCake" class="price">
-                      ₱{{ ((item.unitPrice || 0) * item.quantity).toFixed(2) }}
-                    </span>
-                    <span v-else class="price-pending">Price pending</span>
+
                   </div>
                 </div>
               </div>
@@ -212,15 +209,14 @@
               <div class="total-row">
                 <span>Subtotal</span>
                 <span class="total-amount">
-                  <template v-if="hasCustomItemsOnly">Price to be determined</template>
-                  <template v-else>₱{{ Number(cartStore.cartTotal).toFixed(2) }}</template>
+                
+                  ₱{{ Number(cartStore.cartTotal).toFixed(2) }}
                 </span>
               </div>
               <div class="total-row grand-total">
                 <span>Total Amount</span>
                 <span class="grand-total-amount">
-                  <template v-if="hasCustomItemsOnly">Price to be determined</template>
-                  <template v-else>₱{{ Number(cartStore.cartTotal).toFixed(2) }}</template>
+                  ₱{{ Number(cartStore.cartTotal).toFixed(2) }}
                 </span>
               </div>
             </div>
