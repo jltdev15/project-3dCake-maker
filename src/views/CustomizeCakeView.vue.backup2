@@ -6,10 +6,10 @@
           <ion-back-button class="back-button" @click="handleBackButton($event)"></ion-back-button>
         </ion-buttons>
         <div class="flex justify-between items-center">
-          <ion-title class="ion-text-center pr-12">Customize Cake</ion-title>
+          <ion-title class="customize-title">Customize Cake</ion-title>
           <button v-if="selectedFlavor" id="addToCartBtn" class=" text-gray-50" @click="showAddToCartModal">
             <ion-icon :icon="icons.cartOutline" class="text-3xl text-[#58091F]"></ion-icon>
-
+       
           </button>
         </div>
 
@@ -82,15 +82,15 @@
                   <div class="">
                     <div class="size-visual">
                       <div class="cake-circle" :style="{
-                          width: (Array.isArray(size.diameter) ? Math.max(...size.diameter.map(d => d.diameter)) : size.diameter) * 10 + 'px',
-                          height: (Array.isArray(size.diameter) ? Math.max(...size.diameter.map(d => d.diameter)) : size.diameter) * 10 + 'px'
+                          width: (Array.isArray(size.diameter) ? size.diameter[0].diameter : size.diameter) * 10 + 'px',
+                          height: (Array.isArray(size.diameter) ? size.diameter[0].diameter : size.diameter) * 10 + 'px'
                         }">
-                        <span class="size-label">{{ Array.isArray(size.diameter) ? Math.max(...size.diameter.map(d =>
-                          d.diameter)) : size.diameter }}"</span>
+                        <span class="size-label">{{ Array.isArray(size.diameter) ? size.diameter[0].diameter : size.diameter }}"</span>
                       </div>
                     </div>
                     <div class="size-details">
                       <span class="size-name">{{ size.name }}</span>
+                      <!-- <span class="size-dimensions">{{ size.diameter }}″ × {{ size.height }}″</span> -->
                       <span class="size-price">₱{{ size.price.toFixed(2) }}</span>
                     </div>
                   </div>
@@ -119,7 +119,7 @@
           </div>
 
           <!-- Navigation Buttons -->
-          <div class="navigation-container" :class="{ 'justify-end': currentStep === 1 }">
+          <div class="p-4 flex gap-3 absolute bottom-0 left-0 right-0 bg-gray-200">
             <button v-if="currentStep > 1" class="nav-button back" @click="previousStep">
               <span class="back-icon">←</span>
               Back
@@ -152,46 +152,18 @@
         </div>
       </div>
 
-      <!-- Back Button Confirmation Modal - Tailwind Optimized -->
-      <div 
-        v-if="showBackConfirmModal" 
-        @click.self="showBackConfirmModal = false"
-        class="fixed inset-0 z-[9999] flex items-end md:items-center justify-center p-0 md:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
-      >
-        <div class="w-full max-w-none md:max-w-md bg-white rounded-t-3xl md:rounded-2xl overflow-hidden shadow-2xl transform transition-all duration-300 animate-in slide-in-from-bottom md:zoom-in">
-          <!-- Header -->
-          <div class="px-6 py-8 md:py-6 bg-gradient-to-br from-[#58091F] to-[#7A0C29] text-white text-center relative">
-            <div class="text-5xl md:text-4xl mb-4 md:mb-3 drop-shadow-md">⚠️</div>
-            <h3 class="text-2xl md:text-xl font-bold mb-2 tracking-tight">Leave Page?</h3>
-            <p class="text-base md:text-sm opacity-90 font-normal">Your cake design will be lost</p>
+      <!-- Back Button Confirmation Modal -->
+      <div class="modal-overlay" v-if="showBackConfirmModal">
+        <div class="confirmation-modal">
+          <div class="modal-header">
+            <h3>Leave Page?</h3>
           </div>
-          
-          <!-- Body -->
-          <div class="px-6 py-6 bg-gray-50">
-            <p class="text-gray-700 text-center text-lg md:text-base leading-relaxed">
-              Are you sure you want to leave the customization? All your current selections and progress will be lost.
-            </p>
+          <div class="modal-body">
+            <p>Are you sure you want to leave? Your cake design will be lost.</p>
           </div>
-          
-          <!-- Footer -->
-          <div class="px-6 py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] md:pb-5 bg-white flex flex-col md:flex-row gap-3 md:gap-4">
-            <!-- Primary Button (Keep Designing) -->
-            <button 
-              @click="showBackConfirmModal = false"
-              class="flex-1 flex items-center justify-center gap-2 px-6 py-4 md:py-3 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-bold text-lg md:text-base uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[56px] md:min-h-[48px] shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 touch-manipulation"
-            >
-              <span class="text-xl drop-shadow-sm">🍰</span>
-              Keep Designing
-            </button>
-            
-            <!-- Secondary Button (Leave) -->
-            <button 
-              @click="confirmBack"
-              class="flex-1 flex items-center justify-center gap-2 px-6 py-4 md:py-3 bg-transparent text-[#58091F] border-2 border-[#58091F] font-bold text-lg md:text-base uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[56px] md:min-h-[48px] hover:bg-[#58091F]/5 active:scale-95 transition-all duration-200 touch-manipulation"
-            >
-              <span class="text-xl">←</span>
-              Leave Page
-            </button>
+          <div class="modal-footer">
+            <button class="cancel-btn" @click="showBackConfirmModal = false">Stay</button>
+            <button class="confirm-btn" @click="confirmBack">Leave</button>
           </div>
         </div>
       </div>
@@ -234,122 +206,60 @@
       <div class="cake-customizer">
         <canvas id="cakeCanvas"></canvas>
         <div class="controls-panel">
-          <div class="sticky top-0  z-10 ">
-            <div class="bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white px-3 sm:px-4 py-3 sm:py-4 shadow-lg">
-              <div class="flex items-center justify-center space-x-3">
-                <div class="bg-white/20 backdrop-blur-sm rounded-full p-2 sm:p-3">
-                  <ion-icon :icon="icons.cubeOutline" class="text-xl sm:text-2xl text-white"></ion-icon>
-                </div>
-                <div class="text-center">
-                  <h2 class="text-lg sm:text-xl font-bold tracking-wide">3D Cake Controls</h2>
-                  <p class="text-xs sm:text-sm opacity-90 mt-1">Customize your perfect cake design</p>
-                </div>
-                <div class="bg-white/20 backdrop-blur-sm rounded-full p-2 sm:p-3">
-                  <ion-icon :icon="icons.settingsOutline" class="text-xl sm:text-2xl text-white"></ion-icon>
-                </div>
-              </div>
-            </div>
-            <div class="flex gap-1 sm:gap-2 p-2 sm:p-4 overflow-x-auto bg-gradient-to-r from-gray-50 to-gray-100 shadow-lg border-b border-gray-200" ref="tabsContainer">
+          <div class="sticky top-0  z-10 bg-[#F0E68D]">
+            <p class=" font-bold text-xl text-center p-2 pt-3 text-[#58091F]">
+              <ion-icon :icon="icons.cubeOutline" class="mr-2 align-middle text-2xl"></ion-icon>
+              3D Cake Controls
+              <ion-icon :icon="icons.settingsOutline" class="ml-2 align-middle text-2xl"></ion-icon>
+            </p>
+            <div class="flex gap-2 p-4 overflow-x-auto" ref="tabsContainer">
               <button v-if="true" 
-                :class="[
-                  'tab-button min-w-0 flex-shrink-0 flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 py-3 sm:py-2 rounded-xl transition-all duration-300 touch-manipulation',
-                  activeTab === 'tab-design' 
-                    ? 'bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white shadow-lg transform scale-105 border-2 border-white' 
-                    : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-[#58091F] shadow-sm border border-gray-200 hover:shadow-md'
-                ]"
-                data-tab="tab-design" 
-                @click="scrollToTab('tab-design')"
-              >
-                <ion-icon :icon="icons.constructOutline" :class="[
-                  'text-lg sm:text-base mb-1 sm:mb-0 sm:mr-2',
-                  activeTab === 'tab-design' ? 'text-white' : 'text-gray-500'
-                ]"></ion-icon>
-                <span class="text-xs sm:text-sm font-medium leading-tight">Actions</span>
+                class="tab-button" 
+                :class="{ 'active': activeTab === 'tab-design' }"
+                data-tab="tab-design"
+                @click="scrollToTab('tab-design')">
+                <ion-icon :icon="icons.constructOutline" class="align-middle mr-1"></ion-icon>
+                Actions
               </button>
-              
               <button v-if="false" 
-                :class="[
-                  'tab-button min-w-0 flex-shrink-0 flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 py-3 sm:py-2 rounded-xl transition-all duration-300 touch-manipulation',
-                  activeTab === 'tab-layer-editor' 
-                    ? 'bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white shadow-lg transform scale-105 border-2 border-white' 
-                    : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-[#58091F] shadow-sm border border-gray-200 hover:shadow-md'
-                ]"
-                data-tab="tab-layer-editor" 
-                @click="scrollToTab('tab-layer-editor')"
-              >
-                <ion-icon :icon="icons.layersOutline" :class="[
-                  'text-lg sm:text-base mb-1 sm:mb-0 sm:mr-2',
-                  activeTab === 'tab-layer-editor' ? 'text-white' : 'text-gray-500'
-                ]"></ion-icon>
-                <span class="text-xs sm:text-sm font-medium leading-tight">Layer Editor</span>
+                class="tab-button" 
+                :class="{ 'active': activeTab === 'tab-layer-editor' }"
+                data-tab="tab-layer-editor"
+                @click="scrollToTab('tab-layer-editor')">
+                <ion-icon :icon="icons.layersOutline" class="align-middle mr-1"></ion-icon>
+                Layer Editor
               </button>
-              
               <button 
-                :class="[
-                  'tab-button min-w-0 flex-shrink-0 flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 py-3 sm:py-2 rounded-xl transition-all duration-300 touch-manipulation',
-                  activeTab === 'tab-topper' 
-                    ? 'bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white shadow-lg transform scale-105 border-2 border-white' 
-                    : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-[#58091F] shadow-sm border border-gray-200 hover:shadow-md'
-                ]"
-                data-tab="tab-topper" 
-                @click="scrollToTab('tab-topper')"
-              >
-                <ion-icon :icon="icons.flameOutline" :class="[
-                  'text-lg sm:text-base mb-1 sm:mb-0 sm:mr-2',
-                  activeTab === 'tab-topper' ? 'text-white' : 'text-gray-500'
-                ]"></ion-icon>
-                <span class="text-xs sm:text-sm font-medium leading-tight text-center">Printed<br class="sm:hidden"> Topper</span>
+                class="tab-button" 
+                :class="{ 'active': activeTab === 'tab-topper' }"
+                data-tab="tab-topper"
+                @click="scrollToTab('tab-topper')">
+                <ion-icon :icon="icons.flameOutline" class="align-middle mr-1"></ion-icon>
+                Printed Topper
               </button>
-              
               <button 
-                :class="[
-                  'tab-button min-w-0 flex-shrink-0 flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 py-3 sm:py-2 rounded-xl transition-all duration-300 touch-manipulation',
-                  activeTab === 'tab-icing' 
-                    ? 'bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white shadow-lg transform scale-105 border-2 border-white' 
-                    : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-[#58091F] shadow-sm border border-gray-200 hover:shadow-md'
-                ]"
-                data-tab="tab-icing" 
-                @click="scrollToTab('tab-icing')"
-              >
-                <ion-icon :icon="icons.iceCreamOutline" :class="[
-                  'text-lg sm:text-base mb-1 sm:mb-0 sm:mr-2',
-                  activeTab === 'tab-icing' ? 'text-white' : 'text-gray-500'
-                ]"></ion-icon>
-                <span class="text-xs sm:text-sm font-medium leading-tight">Icing</span>
+                class="tab-button" 
+                :class="{ 'active': activeTab === 'tab-icing' }"
+                data-tab="tab-icing"
+                @click="scrollToTab('tab-icing')">
+                <ion-icon :icon="icons.iceCreamOutline" class="align-middle mr-1"></ion-icon>
+                Icing
               </button>
-              
               <button 
-                :class="[
-                  'tab-button min-w-0 flex-shrink-0 flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 py-3 sm:py-2 rounded-xl transition-all duration-300 touch-manipulation',
-                  activeTab === 'tab-toppings' 
-                    ? 'bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white shadow-lg transform scale-105 border-2 border-white' 
-                    : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-[#58091F] shadow-sm border border-gray-200 hover:shadow-md'
-                ]"
-                data-tab="tab-toppings" 
-                @click="scrollToTab('tab-toppings')"
-              >
-                <ion-icon :icon="icons.sparklesOutline" :class="[
-                  'text-lg sm:text-base mb-1 sm:mb-0 sm:mr-2',
-                  activeTab === 'tab-toppings' ? 'text-white' : 'text-gray-500'
-                ]"></ion-icon>
-                <span class="text-xs sm:text-sm font-medium leading-tight">Toppings</span>
+                class="tab-button" 
+                :class="{ 'active': activeTab === 'tab-toppings' }"
+                data-tab="tab-toppings"
+                @click="scrollToTab('tab-toppings')">
+                <ion-icon :icon="icons.sparklesOutline" class="align-middle mr-1"></ion-icon>
+                Toppings
               </button>
-              
               <button 
-                :class="[
-                  'tab-button min-w-0 flex-shrink-0 flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 py-3 sm:py-2 rounded-xl transition-all duration-300 touch-manipulation',
-                  activeTab === 'tab-greeting' 
-                    ? 'bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white shadow-lg transform scale-105 border-2 border-white' 
-                    : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-[#58091F] shadow-sm border border-gray-200 hover:shadow-md'
-                ]"
-                data-tab="tab-greeting" 
-                @click="scrollToTab('tab-greeting')"
-              >
-                <ion-icon :icon="icons.chatbubbleOutline" :class="[
-                  'text-lg sm:text-base mb-1 sm:mb-0 sm:mr-2',
-                  activeTab === 'tab-greeting' ? 'text-white' : 'text-gray-500'
-                ]"></ion-icon>
-                <span class="text-xs sm:text-sm font-medium leading-tight">Greeting</span>
+                class="tab-button" 
+                :class="{ 'active': activeTab === 'tab-greeting' }"
+                data-tab="tab-greeting"
+                @click="scrollToTab('tab-greeting')">
+                <ion-icon :icon="icons.chatbubbleOutline" class="align-middle mr-1"></ion-icon>
+                Greeting
               </button>
             </div>
           </div>
@@ -357,7 +267,7 @@
           <div class="tab-content" v-show="activeTab === 'tab-design'" id="tab-design">
             <div class="control-group">
               <button v-if="true" id="addLayerBtn" class="action-button">Add New Layer</button>
-              <button id="saveCakeBtn" class="action-button">Save Design</button>
+              <button  id="saveCakeBtn" class="action-button">Save Design</button>
               <input type="file" id="loadCakeInput" accept=".json" style="display: none;">
               <button v-if="true" id="loadCakeBtn" class="action-button"
                 onclick="document.getElementById('loadCakeInput').click()">Load Design</button>
@@ -377,332 +287,104 @@
           </div>
           <div class="tab-content" v-show="activeTab === 'tab-topper'" id="tab-topper">
             <div v-if="!selectedLayerId" class="prompt">Click a cake layer in the 3D view to edit its topper.</div>
-            <div v-else class="p-2 sm:p-4 space-y-2 sm:space-y-4">
-              <!-- Mobile-Optimized Header -->
-              <div class="bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white rounded-xl p-4 text-center shadow-md">
-       
-                <h3 class="text-lg sm:text-xl font-bold">
-                  Layer {{ currentLayerNumber }} Topper
-                </h3>
-                <p class="text-sm opacity-90 mt-1">Customize your cake decoration</p>
-              </div>
-
-              <!-- Mobile-Friendly Topper Section -->
-              <div class="bg-white rounded-xl shadow-lg border border-gray-100">
-                <!-- Enable Toggle -->
-                <div class="p-4 border-b border-gray-100">
-                  <label class="flex items-center space-x-4 cursor-pointer select-none">
-                    <div class="relative">
-                      <input 
-                        type="checkbox" 
-                        class="sr-only peer"
-                        :checked="selectedLayerConfig?.topper?.enabled"
-                        @change="updateLayerProperty(selectedLayerId, 'topper.enabled', $event.target.checked)"
-                      >
-                      <div class="w-14 h-8 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#58091F]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#58091F] peer-checked:to-[#7A0C29]"></div>
-                    </div>
-                    <div class="flex-1">
-                      <div class="text-base sm:text-lg font-semibold text-gray-800">Enable Printed Topper</div>
-                      <div class="text-sm text-gray-500">Add a custom topper to your cake design</div>
-                    </div>
-                  </label>
+            <div v-else class="p-4 space-y-4">
+              <h3 class="text-xl font-bold text-center p-2 my-2">
+                Layer {{ currentLayerNumber }} Topper
+              </h3>
+              
+              <!-- Topper Section -->
+              <div class="bg-white rounded-lg p-4 shadow-sm space-y-4">
+                <div class="flex items-center space-x-2">
+                  <input type="checkbox" 
+                    class="w-4 h-4 text-[#58091F] border-gray-300 rounded focus:ring-[#58091F]" 
+                    :checked="selectedLayerConfig?.topper?.enabled"
+                    @change="updateLayerProperty(selectedLayerId, 'topper.enabled', $event.target.checked)">
+                  <label class="text-gray-700 font-medium cursor-pointer">Enable Printed Topper</label>
                 </div>
-
-                <!-- Topper Controls -->
-                <div v-if="selectedLayerConfig?.topper?.enabled" class="p-4 space-y-6">
-                  <!-- Topper Type Selection -->
-                  <div class="space-y-3">
-                    <label class="text-base font-semibold text-gray-800 block">Choose Topper Type</label>
-                    <div class="grid grid-cols-2 gap-3">
-                      <button 
-                        @click="updateLayerProperty(selectedLayerId, 'topper.type', 'text')"
-                        :class="[
-                          'flex flex-col items-center justify-center p-4 border-2 rounded-xl transition-all duration-200 min-h-[100px] touch-manipulation',
-                          selectedLayerConfig?.topper?.type === 'text' 
-                            ? 'border-[#58091F] bg-gradient-to-br from-[#58091F]/10 to-[#7A0C29]/10 shadow-lg' 
-                            : 'border-gray-200 bg-gray-50 hover:border-gray-300 active:scale-95'
-                        ]"
-                      >
-                        <div class="text-2xl mb-2">📝</div>
-                        <span class="text-sm font-medium text-gray-700">Text Only</span>
-                      </button>
-                      <button 
-                        @click="updateLayerProperty(selectedLayerId, 'topper.type', 'image')"
-                        :class="[
-                          'flex flex-col items-center justify-center p-4 border-2 rounded-xl transition-all duration-200 min-h-[100px] touch-manipulation',
-                          selectedLayerConfig?.topper?.type === 'image' 
-                            ? 'border-[#58091F] bg-gradient-to-br from-[#58091F]/10 to-[#7A0C29]/10 shadow-lg' 
-                            : 'border-gray-200 bg-gray-50 hover:border-gray-300 active:scale-95'
-                        ]"
-                      >
-                        <div class="text-2xl mb-2">🖼️</div>
-                        <span class="text-sm font-medium text-gray-700">Image</span>
-                      </button>
-                    </div>
+                <p class="text-xs text-gray-500 pl-6">Add a custom topper to your cake design</p>
+                
+                <div v-if="selectedLayerConfig?.topper?.enabled" class="space-y-4 pl-6">
+                  <!-- Topper Type -->
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Topper Type:</label>
+                    <select 
+                      :value="selectedLayerConfig?.topper?.type || 'none'"
+                      @change="updateLayerProperty(selectedLayerId, 'topper.type', $event.target.value)"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#58091F] focus:border-[#58091F]">
+                      <option value="none">Select Type</option>
+                      <option value="text">Text Only</option>
+                      <option value="image">Image</option>
+                    </select>
                   </div>
-
+                  
                   <!-- Text Controls -->
-                  <div v-if="selectedLayerConfig?.topper?.type === 'text'" class="space-y-6 bg-gray-50 rounded-xl p-4">
-                    <div class="flex items-center space-x-2 mb-4">
-                      <div class="text-lg">📝</div>
-                      <h4 class="text-lg font-semibold text-gray-800">Text Settings</h4>
-                    </div>
-                    
+                  <div v-if="selectedLayerConfig?.topper?.type === 'text'" class="space-y-4">
                     <!-- Text Input -->
-                    <div class="space-y-3">
-                      <label class="text-sm font-semibold text-gray-700 block">Your Text</label>
-                      <input 
-                        type="text" 
+                    <div class="space-y-2">
+                      <label class="block text-sm font-medium text-gray-700">Text:</label>
+                      <input type="text" 
                         :value="selectedLayerConfig?.topper?.text || ''"
                         @input="updateLayerProperty(selectedLayerId, 'topper.text', $event.target.value)"
-                        placeholder="Happy Birthday!"
-                        class="w-full px-4 py-3 text-base border border-gray-300 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-[#58091F]/20 focus:border-[#58091F] transition-all duration-200"
-                      >
+                        placeholder="Enter text for topper"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#58091F] focus:border-[#58091F]">
                     </div>
-
-                    <!-- Font Size Slider -->
-                    <div class="space-y-3">
-                      <div class="flex justify-between items-center">
-                        <label class="text-sm font-semibold text-gray-700">Font Size</label>
-                        <div class="bg-[#58091F] text-white px-3 py-1 rounded-full text-xs font-bold">
-                          {{ (selectedLayerConfig?.topper?.fontSize || 1).toFixed(1) }}x
-                        </div>
-                      </div>
-                      <div class="relative">
-                        <input 
-                          type="range" 
-                          min="0.5" 
-                          max="4" 
-                          step="0.1"
-                          :value="selectedLayerConfig?.topper?.fontSize || 1"
-                          @input="handleThrottledTopperInput('topper.fontSize', $event)"
-                          class="w-full h-3 bg-gray-200 rounded-full appearance-none cursor-pointer slider-thumb"
-                        >
-                        <div class="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>Small</span>
-                          <span>Large</span>
-                        </div>
-                      </div>
+                    
+                    <!-- Font Size -->
+                    <div class="space-y-2">
+                      <label class="block text-sm font-medium text-gray-700">
+                        Font Size ({{ (selectedLayerConfig?.topper?.fontSize || 1).toFixed(1) }}):
+                      </label>
+                      <input type="range" 
+                        min="0.5" 
+                        max="4" 
+                        step="0.1"
+                        :value="selectedLayerConfig?.topper?.fontSize || 1"
+                        @input="handleThrottledTopperInput('topper.fontSize', $event)"
+                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                     </div>
-
-                    <!-- Font Style Buttons -->
-                    <div class="space-y-3">
-                      <label class="text-sm font-semibold text-gray-700 block">Font Style</label>
-                      <div class="text-xs text-gray-500 mb-3 bg-amber-50 border border-amber-200 rounded-lg p-2">
-                        <span class="flex items-center gap-1">
-                          <span>✨</span>
-                          Choose from authentic cake topper fonts for the perfect look
-                        </span>
-                      </div>
-                      
-                      <!-- Basic Styles Row -->
-                      <div class="grid grid-cols-3 gap-2">
-                        <button 
-                          @click="updateTopperFontStyle('normal')"
-                          :class="[
-                            'px-3 py-3 text-sm font-medium rounded-xl border-2 transition-all duration-200 touch-manipulation relative overflow-hidden',
-                            selectedLayerConfig?.topper?.style === 'normal' || !selectedLayerConfig?.topper?.style
-                              ? 'border-[#58091F] bg-[#58091F] text-white shadow-lg' 
-                              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 active:scale-95'
-                          ]"
-                        >
-                          <span class="relative z-10">Normal</span>
-                          <div v-if="selectedLayerConfig?.topper?.style === 'normal' || !selectedLayerConfig?.topper?.style" 
-                               class="absolute top-1 right-1 text-white text-xs">✓</div>
-                        </button>
-                        <button 
-                          @click="updateTopperFontStyle('bold')"
-                          :class="[
-                            'px-3 py-3 text-sm font-bold rounded-xl border-2 transition-all duration-200 touch-manipulation relative overflow-hidden',
-                            selectedLayerConfig?.topper?.style === 'bold'
-                              ? 'border-[#58091F] bg-[#58091F] text-white shadow-lg' 
-                              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 active:scale-95'
-                          ]"
-                        >
-                          <span class="relative z-10">Bold</span>
-                          <div v-if="selectedLayerConfig?.topper?.style === 'bold'" 
-                               class="absolute top-1 right-1 text-white text-xs">✓</div>
-                        </button>
-                        <button 
-                          @click="updateTopperFontStyle('italic')"
-                          :class="[
-                            'px-3 py-3 text-sm font-medium italic rounded-xl border-2 transition-all duration-200 touch-manipulation relative overflow-hidden',
-                            selectedLayerConfig?.topper?.style === 'italic'
-                              ? 'border-[#58091F] bg-[#58091F] text-white shadow-lg' 
-                              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 active:scale-95'
-                          ]"
-                        >
-                          <span class="relative z-10">Italic</span>
-                          <div v-if="selectedLayerConfig?.topper?.style === 'italic'" 
-                               class="absolute top-1 right-1 text-white text-xs">✓</div>
-                        </button>
-                      </div>
-
-                      <!-- Stylish Fonts Row 1 -->
-                      <div class="grid grid-cols-2 gap-2">
-                        <button 
-                          @click="updateTopperFontStyle('script')"
-                          :class="[
-                            'px-3 py-3 text-sm font-medium rounded-xl border-2 transition-all duration-200 touch-manipulation relative overflow-hidden',
-                            selectedLayerConfig?.topper?.style === 'script'
-                              ? 'border-[#58091F] bg-[#58091F] text-white shadow-lg' 
-                              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 active:scale-95'
-                          ]"
-                        >
-                          <div class="flex flex-col items-center">
-                            <span class="relative z-10 text-lg" style="font-family: cursive;">Script</span>
-                            <span class="text-xs opacity-70">Elegant cursive</span>
-                          </div>
-                          <div v-if="selectedLayerConfig?.topper?.style === 'script'" 
-                               class="absolute top-1 right-1 text-white text-xs">✓</div>
-                        </button>
-                        <button 
-                          @click="updateTopperFontStyle('decorative')"
-                          :class="[
-                            'px-3 py-3 text-sm font-bold rounded-xl border-2 transition-all duration-200 touch-manipulation relative overflow-hidden',
-                            selectedLayerConfig?.topper?.style === 'decorative'
-                              ? 'border-[#58091F] bg-[#58091F] text-white shadow-lg' 
-                              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 active:scale-95'
-                          ]"
-                        >
-                          <div class="flex flex-col items-center">
-                            <span class="relative z-10 text-lg">Decorative</span>
-                            <span class="text-xs opacity-70">Bold & fancy</span>
-                          </div>
-                          <div v-if="selectedLayerConfig?.topper?.style === 'decorative'" 
-                               class="absolute top-1 right-1 text-white text-xs">✓</div>
-                        </button>
-                      </div>
-
-                      <!-- Stylish Fonts Row 2 -->
-                      <div class="grid grid-cols-2 gap-2">
-                        <button 
-                          @click="updateTopperFontStyle('elegant')"
-                          :class="[
-                            'px-3 py-3 text-sm font-medium rounded-xl border-2 transition-all duration-200 touch-manipulation relative overflow-hidden',
-                            selectedLayerConfig?.topper?.style === 'elegant'
-                              ? 'border-[#58091F] bg-[#58091F] text-white shadow-lg' 
-                              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 active:scale-95'
-                          ]"
-                        >
-                          <div class="flex flex-col items-center">
-                            <span class="relative z-10 text-lg" style="letter-spacing: 0.5px;">Elegant</span>
-                            <span class="text-xs opacity-70">Clean & refined</span>
-                          </div>
-                          <div v-if="selectedLayerConfig?.topper?.style === 'elegant'" 
-                               class="absolute top-1 right-1 text-white text-xs">✓</div>
-                        </button>
-                        <button 
-                          @click="updateTopperFontStyle('playful')"
-                          :class="[
-                            'px-3 py-3 text-sm font-bold rounded-xl border-2 transition-all duration-200 touch-manipulation relative overflow-hidden',
-                            selectedLayerConfig?.topper?.style === 'playful'
-                              ? 'border-[#58091F] bg-[#58091F] text-white shadow-lg' 
-                              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 active:scale-95'
-                          ]"
-                        >
-                          <div class="flex flex-col items-center">
-                            <span class="relative z-10 text-lg">Playful</span>
-                            <span class="text-xs opacity-70">Fun & bold</span>
-                          </div>
-                          <div v-if="selectedLayerConfig?.topper?.style === 'playful'" 
-                               class="absolute top-1 right-1 text-white text-xs">✓</div>
-                        </button>
-                      </div>
-
-                      <!-- Classic Font -->
-                      <div class="grid grid-cols-1">
-                        <button 
-                          @click="updateTopperFontStyle('classic')"
-                          :class="[
-                            'px-3 py-3 text-sm font-medium rounded-xl border-2 transition-all duration-200 touch-manipulation relative overflow-hidden',
-                            selectedLayerConfig?.topper?.style === 'classic'
-                              ? 'border-[#58091F] bg-[#58091F] text-white shadow-lg' 
-                              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 active:scale-95'
-                          ]"
-                        >
-                          <div class="flex flex-col items-center">
-                            <span class="relative z-10 text-lg" style="font-family: serif;">Classic</span>
-                            <span class="text-xs opacity-70">Traditional serif - perfect for formal occasions</span>
-                          </div>
-                          <div v-if="selectedLayerConfig?.topper?.style === 'classic'" 
-                               class="absolute top-1 right-1 text-white text-xs">✓</div>
-                        </button>
-                      </div>
-
-                      <!-- Status Display -->
-                      <div class="text-xs text-center mt-3 p-2 bg-gray-50 rounded-lg border">
-                        <span v-if="!loadedFonts.normal" class="text-amber-600">
-                          <span class="animate-spin inline-block">⏳</span> Loading fonts...
-                        </span>
-                        <span v-else-if="selectedLayerConfig?.topper?.style === 'script'" class="text-blue-600">
-                          <span>✨</span> Using elegant script font
-                        </span>
-                        <span v-else-if="selectedLayerConfig?.topper?.style === 'decorative'" class="text-purple-600">
-                          <span>🎨</span> Using decorative font
-                        </span>
-                        <span v-else-if="selectedLayerConfig?.topper?.style === 'elegant'" class="text-green-600">
-                          <span>💎</span> Using elegant font
-                        </span>
-                        <span v-else-if="selectedLayerConfig?.topper?.style === 'playful'" class="text-orange-600">
-                          <span>🎉</span> Using playful font
-                        </span>
-                        <span v-else-if="selectedLayerConfig?.topper?.style === 'classic'" class="text-indigo-600">
-                          <span>📜</span> Using classic serif font
-                        </span>
-                        <span v-else-if="selectedLayerConfig?.topper?.style === 'bold' && !loadedFonts.bold" class="text-yellow-600">
-                          <span>⚡</span> Using bold simulation
-                        </span>
-                        <span v-else-if="selectedLayerConfig?.topper?.style === 'italic'" class="text-cyan-600">
-                          <span>⚡</span> Using italic transformation
-                        </span>
-                        <span v-else-if="selectedLayerConfig?.topper?.text" class="text-green-600">
-                          <span>✅</span> Text styling applied
-                        </span>
-                        <span v-else class="text-gray-500">
-                          Select a font style above
-                        </span>
-                      </div>
+                    
+                    <!-- Font Style -->
+                    <div class="space-y-2">
+                      <label class="block text-sm font-medium text-gray-700">Font Style:</label>
+                      <select 
+                        :value="selectedLayerConfig?.topper?.style || 'normal'"
+                        @change="updateLayerProperty(selectedLayerId, 'topper.style', $event.target.value)"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#58091F] focus:border-[#58091F]">
+                        <option value="normal">Normal</option>
+                        <option value="bold">Bold</option>
+                        <option value="italic">Italic</option>
+                      </select>
                     </div>
-
-                    <!-- Text Color Picker -->
-                    <div class="space-y-3">
-                      <label class="text-sm font-semibold text-gray-700 block">Text Color</label>
-                      <div class="flex items-center space-x-4 bg-white p-3 rounded-xl border border-gray-200">
-                        <input 
-                          type="color" 
+                    
+                    <!-- Text Color -->
+                    <div class="space-y-2">
+                      <label class="block text-sm font-medium text-gray-700">Text Color:</label>
+                      <div class="flex items-center gap-3">
+                        <input type="color" 
                           :value="selectedLayerConfig?.topper?.color || '#000000'"
                           @input="updateLayerProperty(selectedLayerId, 'topper.color', $event.target.value)"
-                          class="w-16 h-16 border-2 border-gray-300 rounded-xl cursor-pointer shadow-sm"
-                        >
-                        <div class="flex-1">
-                          <div class="text-sm font-medium text-gray-700">Selected Color</div>
-                          <div class="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded mt-1">
-                            {{ selectedLayerConfig?.topper?.color || '#000000' }}
-                          </div>
-                        </div>
+                          class="w-14 h-10 p-1 border border-gray-300 rounded-md shadow-sm cursor-pointer">
+                        <span class="text-sm font-mono">{{ selectedLayerConfig?.topper?.color || '#000000' }}</span>
                       </div>
                     </div>
                   </div>
-
+                  
                   <!-- Image Controls -->
                   <div v-if="selectedLayerConfig?.topper?.type === 'image'" class="space-y-4">
                     <div class="space-y-2">
                       <label class="block text-sm font-medium text-gray-700">Upload Image:</label>
-                      <div
-                        class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-[#58091F] transition-colors duration-200">
+                      <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-[#58091F] transition-colors duration-200">
                         <div class="space-y-1 text-center">
-                          <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none"
-                            viewBox="0 0 48 48" aria-hidden="true">
-                            <path
-                              d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4h-12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                          <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4h-12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                           </svg>
                           <div class="flex text-sm text-gray-600">
-                            <label
-                              class="relative cursor-pointer bg-white rounded-md font-medium text-[#58091F] hover:text-[#58091F]/80 focus-within:outline-none">
+                            <label class="relative cursor-pointer bg-white rounded-md font-medium text-[#58091F] hover:text-[#58091F]/80 focus-within:outline-none">
                               <span>Upload a file</span>
-                              <input type="file" accept="image/*" @change="handleImageUpload($event)" class="sr-only">
+                              <input type="file" 
+                                accept="image/*" 
+                                @change="handleImageUpload($event)"
+                                class="sr-only">
                             </label>
                             <p class="pl-1">or drag and drop</p>
                           </div>
@@ -711,14 +393,14 @@
                       </div>
                     </div>
                   </div>
-
+                  
                   <!-- Position and Size Controls (shown for both text and image) -->
-                  <div v-if="selectedLayerConfig?.topper?.type && selectedLayerConfig?.topper?.type !== 'none'"
-                    class="space-y-4">
+                  <div v-if="selectedLayerConfig?.topper?.type && selectedLayerConfig?.topper?.type !== 'none'" class="space-y-4">
                     <!-- Position -->
                     <div class="space-y-2">
                       <label class="block text-sm font-medium text-gray-700">Topper Position:</label>
-                      <select :value="selectedLayerConfig?.topper?.position || 'center'"
+                      <select 
+                        :value="selectedLayerConfig?.topper?.position || 'center'"
                         @change="updateLayerProperty(selectedLayerId, 'topper.position', $event.target.value)"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#58091F] focus:border-[#58091F]">
                         <option value="center">Center</option>
@@ -734,23 +416,30 @@
                         <option value="back-right">Back Right</option>
                       </select>
                     </div>
-
+                    
                     <!-- Size -->
                     <div class="space-y-2">
                       <label class="block text-sm font-medium text-gray-700">
                         Topper Size ({{ (selectedLayerConfig?.topper?.size || 1).toFixed(2) }}):
                       </label>
-                      <input type="range" min="0.5" max="2" step="0.01" :value="selectedLayerConfig?.topper?.size || 1"
+                      <input type="range" 
+                        min="0.5" 
+                        max="2" 
+                        step="0.01"
+                        :value="selectedLayerConfig?.topper?.size || 1"
                         @input="handleThrottledTopperInput('topper.size', $event)"
                         class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                     </div>
-
+                    
                     <!-- Stick Height -->
                     <div class="space-y-2">
                       <label class="block text-sm font-medium text-gray-700">
                         Stick Height ({{ (selectedLayerConfig?.topper?.stickHeight || 0.4).toFixed(1) }}):
                       </label>
-                      <input type="range" min="0.1" max="1.5" step="0.1"
+                      <input type="range" 
+                        min="0.1" 
+                        max="1.5" 
+                        step="0.1"
                         :value="selectedLayerConfig?.topper?.stickHeight || 0.4"
                         @input="handleThrottledTopperInput('topper.stickHeight', $event)"
                         class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
@@ -763,216 +452,113 @@
           <!-- Icing -->
           <div class="tab-content" v-show="activeTab === 'tab-icing'" id="tab-icing">
             <div v-if="!selectedLayerId" class="prompt">Click a cake layer in the 3D view to edit its icing.</div>
-            <div v-else class="p-3 sm:p-4 space-y-3 sm:space-y-4">
-              <!-- Mobile-Optimized Header -->
-              <div class="bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white rounded-xl p-4 text-center shadow-md">
-                <div class="text-2xl mb-2">🧁</div>
-                <h3 class="text-lg sm:text-xl font-bold">
-                  Layer {{ currentLayerNumber }} Icing
-                </h3>
-                <p class="text-sm opacity-90 mt-1">Customize your icing decoration</p>
-              </div>
-
+            <div v-else class="p-4 space-y-4">
+              <h3 class="text-xl font-bold text-center p-2 my-2">
+                Layer {{ currentLayerNumber }} Icing
+              </h3>
+              
               <!-- Edge Icing Section -->
-              <div class="bg-white rounded-xl shadow-lg border border-gray-100">
-                <!-- Enable Toggle -->
-                <div class="p-4 border-b border-gray-100">
-                  <label class="flex items-center space-x-4 cursor-pointer select-none">
-                    <div class="relative">
-                      <input 
-                        type="checkbox" 
-                        class="sr-only peer"
-                        :checked="selectedLayerConfig?.edgeIcing?.enabled"
-                        @change="updateLayerProperty(selectedLayerId, 'edgeIcing.enabled', $event.target.checked)"
-                      >
-                      <div class="w-14 h-8 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#58091F]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#58091F] peer-checked:to-[#7A0C29]"></div>
-                    </div>
-                    <div class="flex-1">
-                      <div class="text-base sm:text-lg font-semibold text-gray-800">Enable Edge Icing</div>
-                      <div class="text-sm text-gray-500">Add decorative icing around the edge of your cake</div>
-                    </div>
-                  </label>
+              <div class="bg-white rounded-lg p-4 shadow-sm space-y-4">
+                <div class="flex items-center space-x-2">
+                  <input type="checkbox" 
+                    class="w-4 h-4 text-[#58091F] border-gray-300 rounded focus:ring-[#58091F]" 
+                    :checked="selectedLayerConfig?.edgeIcing?.enabled"
+                    @change="updateLayerProperty(selectedLayerId, 'edgeIcing.enabled', $event.target.checked)">
+                  <label class="text-gray-700 font-medium cursor-pointer">Enable Edge Icing</label>
                 </div>
-
-                <!-- Edge Icing Controls -->
-                <div v-if="selectedLayerConfig?.edgeIcing?.enabled" class="p-4 space-y-6">
-                  <div class="flex items-center space-x-2 mb-4">
-                    <div class="text-lg">🎨</div>
-                    <h4 class="text-lg font-semibold text-gray-800">Edge Icing Settings</h4>
+                <p class="text-xs text-gray-500 pl-6">Add decorative icing around the edge of your cake</p>
+                
+                <div v-if="selectedLayerConfig?.edgeIcing?.enabled" class="space-y-4 pl-6">
+                  <!-- Edge Style -->
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Edge Style:</label>
+                    <select 
+                      :value="selectedLayerConfig?.edgeIcing?.style || 'smooth'"
+                      @change="updateLayerProperty(selectedLayerId, 'edgeIcing.style', $event.target.value)"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#58091F] focus:border-[#58091F]">
+                      <option value="smooth">Smooth Ring</option>
+                      <option value="curl">Curl Pattern</option>
+                      <option value="shell">Shell Pattern</option>
+                      <option value="rosette">Rosette Pattern</option>
+                      <option value="ruffle">Ruffle Pattern</option>
+                      <option value="zigzag">Zigzag Pattern</option>
+                    </select>
                   </div>
-
-                  <!-- Edge Style Selection -->
-                  <div class="space-y-3">
-                    <label class="text-sm font-semibold text-gray-700 block">Icing Style</label>
-                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                      <button 
-                        v-for="style in [
-                          { value: 'smooth', label: 'Smooth', icon: '⭕' },
-                          { value: 'curl', label: 'Curl', icon: '🌀' },
-                          { value: 'shell', label: 'Shell', icon: '🐚' },
-                          { value: 'rosette', label: 'Rosette', icon: '🌹' },
-                          { value: 'ruffle', label: 'Ruffle', icon: '〰️' },
-                          { value: 'zigzag', label: 'Zigzag', icon: '⚡' }
-                        ]"
-                        :key="style.value"
-                        @click="updateLayerProperty(selectedLayerId, 'edgeIcing.style', style.value)"
-                        :class="[
-                          'flex flex-col items-center justify-center p-3 border-2 rounded-xl transition-all duration-200 min-h-[80px] touch-manipulation',
-                          (selectedLayerConfig?.edgeIcing?.style || 'smooth') === style.value
-                            ? 'border-[#58091F] bg-gradient-to-br from-[#58091F]/10 to-[#7A0C29]/10 shadow-lg' 
-                            : 'border-gray-200 bg-gray-50 hover:border-gray-300 active:scale-95'
-                        ]"
-                      >
-                        <div class="text-lg mb-1">{{ style.icon }}</div>
-                        <span class="text-xs font-medium text-gray-700">{{ style.label }}</span>
-                      </button>
-                    </div>
+                  
+                  <!-- Edge Color -->
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Edge Color:</label>
+                    <input type="color" 
+                      :value="selectedLayerConfig?.edgeIcing?.color || '#FFFFFF'"
+                      @input="updateLayerProperty(selectedLayerId, 'edgeIcing.color', $event.target.value)"
+                      class="w-full h-10 p-1 border border-gray-300 rounded-md shadow-sm cursor-pointer">
                   </div>
-
-                  <!-- Edge Color Picker -->
-                  <div class="space-y-3">
-                    <label class="text-sm font-semibold text-gray-700 block">Edge Color</label>
-                    <div class="flex items-center space-x-4 bg-gray-50 p-3 rounded-xl border border-gray-200">
-                      <input 
-                        type="color" 
-                        :value="selectedLayerConfig?.edgeIcing?.color || '#FFFFFF'"
-                        @input="updateLayerProperty(selectedLayerId, 'edgeIcing.color', $event.target.value)"
-                        class="w-16 h-16 border-2 border-gray-300 rounded-xl cursor-pointer shadow-sm"
-                      >
-                      <div class="flex-1">
-                        <div class="text-sm font-medium text-gray-700">Selected Color</div>
-                        <div class="text-xs font-mono text-gray-500 bg-white px-2 py-1 rounded mt-1">
-                          {{ selectedLayerConfig?.edgeIcing?.color || '#FFFFFF' }}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Edge Thickness Slider -->
-                  <div class="space-y-3">
-                    <div class="flex justify-between items-center">
-                      <label class="text-sm font-semibold text-gray-700">Edge Thickness</label>
-                      <div class="bg-[#58091F] text-white px-3 py-1 rounded-full text-xs font-bold">
-                        {{ (selectedLayerConfig?.edgeIcing?.thickness || 0.05).toFixed(2) }}
-                      </div>
-                    </div>
-                    <div class="relative">
-                      <input 
-                        type="range" 
-                        min="0.02" 
-                        max="0.3" 
-                        step="0.01"
-                        :value="selectedLayerConfig?.edgeIcing?.thickness || 0.05"
-                        @input="updateLayerProperty(selectedLayerId, 'edgeIcing.thickness', parseFloat($event.target.value))"
-                        class="w-full h-3 bg-gray-200 rounded-full appearance-none cursor-pointer slider-thumb"
-                      >
-                      <div class="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>Thin</span>
-                        <span>Thick</span>
-                      </div>
-                    </div>
+                  
+                  <!-- Edge Thickness -->
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">
+                      Edge Detail/Thickness ({{ (selectedLayerConfig?.edgeIcing?.thickness || 0.05).toFixed(2) }}):
+                    </label>
+                    <input type="range" 
+                      min="0.02" 
+                      max="0.3" 
+                      step="0.01"
+                      :value="selectedLayerConfig?.edgeIcing?.thickness || 0.05"
+                      @input="updateLayerProperty(selectedLayerId, 'edgeIcing.thickness', parseFloat($event.target.value))"
+                      class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                   </div>
                 </div>
               </div>
-
+              
               <!-- Bottom Icing Section -->
-              <div class="bg-white rounded-xl shadow-lg border border-gray-100">
-                <!-- Enable Toggle -->
-                <div class="p-4 border-b border-gray-100">
-                  <label class="flex items-center space-x-4 cursor-pointer select-none">
-                    <div class="relative">
-                      <input 
-                        type="checkbox" 
-                        class="sr-only peer"
-                        :checked="selectedLayerConfig?.bottomIcing?.enabled"
-                        @change="updateLayerProperty(selectedLayerId, 'bottomIcing.enabled', $event.target.checked)"
-                      >
-                      <div class="w-14 h-8 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#58091F]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#58091F] peer-checked:to-[#7A0C29]"></div>
-                    </div>
-                    <div class="flex-1">
-                      <div class="text-base sm:text-lg font-semibold text-gray-800">Enable Bottom Icing</div>
-                      <div class="text-sm text-gray-500">Add decorative icing to the bottom edge of your cake</div>
-                    </div>
-                  </label>
+              <div class="bg-white rounded-lg p-4 shadow-sm space-y-4">
+                <div class="flex items-center space-x-2">
+                  <input type="checkbox" 
+                    class="w-4 h-4 text-[#58091F] border-gray-300 rounded focus:ring-[#58091F]" 
+                    :checked="selectedLayerConfig?.bottomIcing?.enabled"
+                    @change="updateLayerProperty(selectedLayerId, 'bottomIcing.enabled', $event.target.checked)">
+                  <label class="text-gray-700 font-medium cursor-pointer">Enable Bottom Icing</label>
                 </div>
-
-                <!-- Bottom Icing Controls -->
-                <div v-if="selectedLayerConfig?.bottomIcing?.enabled" class="p-4 space-y-6">
-                  <div class="flex items-center space-x-2 mb-4">
-                    <div class="text-lg">🎂</div>
-                    <h4 class="text-lg font-semibold text-gray-800">Bottom Icing Settings</h4>
+                <p class="text-xs text-gray-500 pl-6">Add decorative icing to the bottom edge of your cake</p>
+                
+                <div v-if="selectedLayerConfig?.bottomIcing?.enabled" class="space-y-4 pl-6">
+                  <!-- Bottom Style -->
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Bottom Style:</label>
+                    <select 
+                      :value="selectedLayerConfig?.bottomIcing?.style || 'smooth'"
+                      @change="updateLayerProperty(selectedLayerId, 'bottomIcing.style', $event.target.value)"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#58091F] focus:border-[#58091F]">
+                      <option value="smooth">Smooth Ring</option>
+                      <option value="curl">Curl Pattern</option>
+                      <option value="shell">Shell Pattern</option>
+                      <option value="rosette">Rosette Pattern</option>
+                      <option value="ruffle">Ruffle Pattern</option>
+                      <option value="zigzag">Zigzag Pattern</option>
+                    </select>
                   </div>
-
-                  <!-- Bottom Style Selection -->
-                  <div class="space-y-3">
-                    <label class="text-sm font-semibold text-gray-700 block">Bottom Style</label>
-                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                      <button 
-                        v-for="style in [
-                          { value: 'smooth', label: 'Smooth', icon: '⭕' },
-                          { value: 'curl', label: 'Curl', icon: '🌀' },
-                          { value: 'shell', label: 'Shell', icon: '🐚' },
-                          { value: 'rosette', label: 'Rosette', icon: '🌹' },
-                          { value: 'ruffle', label: 'Ruffle', icon: '〰️' },
-                          { value: 'zigzag', label: 'Zigzag', icon: '⚡' }
-                        ]"
-                        :key="style.value"
-                        @click="updateLayerProperty(selectedLayerId, 'bottomIcing.style', style.value)"
-                        :class="[
-                          'flex flex-col items-center justify-center p-3 border-2 rounded-xl transition-all duration-200 min-h-[80px] touch-manipulation',
-                          (selectedLayerConfig?.bottomIcing?.style || 'smooth') === style.value
-                            ? 'border-[#58091F] bg-gradient-to-br from-[#58091F]/10 to-[#7A0C29]/10 shadow-lg' 
-                            : 'border-gray-200 bg-gray-50 hover:border-gray-300 active:scale-95'
-                        ]"
-                      >
-                        <div class="text-lg mb-1">{{ style.icon }}</div>
-                        <span class="text-xs font-medium text-gray-700">{{ style.label }}</span>
-                      </button>
-                    </div>
+                  
+                  <!-- Bottom Color -->
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Bottom Color:</label>
+                    <input type="color" 
+                      :value="selectedLayerConfig?.bottomIcing?.color || '#FFFFFF'"
+                      @input="updateLayerProperty(selectedLayerId, 'bottomIcing.color', $event.target.value)"
+                      class="w-full h-10 p-1 border border-gray-300 rounded-md shadow-sm cursor-pointer">
                   </div>
-
-                  <!-- Bottom Color Picker -->
-                  <div class="space-y-3">
-                    <label class="text-sm font-semibold text-gray-700 block">Bottom Color</label>
-                    <div class="flex items-center space-x-4 bg-gray-50 p-3 rounded-xl border border-gray-200">
-                      <input 
-                        type="color" 
-                        :value="selectedLayerConfig?.bottomIcing?.color || '#FFFFFF'"
-                        @input="updateLayerProperty(selectedLayerId, 'bottomIcing.color', $event.target.value)"
-                        class="w-16 h-16 border-2 border-gray-300 rounded-xl cursor-pointer shadow-sm"
-                      >
-                      <div class="flex-1">
-                        <div class="text-sm font-medium text-gray-700">Selected Color</div>
-                        <div class="text-xs font-mono text-gray-500 bg-white px-2 py-1 rounded mt-1">
-                          {{ selectedLayerConfig?.bottomIcing?.color || '#FFFFFF' }}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Bottom Thickness Slider -->
-                  <div class="space-y-3">
-                    <div class="flex justify-between items-center">
-                      <label class="text-sm font-semibold text-gray-700">Bottom Thickness</label>
-                      <div class="bg-[#58091F] text-white px-3 py-1 rounded-full text-xs font-bold">
-                        {{ (selectedLayerConfig?.bottomIcing?.thickness || 0.05).toFixed(2) }}
-                      </div>
-                    </div>
-                    <div class="relative">
-                      <input 
-                        type="range" 
-                        min="0.02" 
-                        max="0.3" 
-                        step="0.01"
-                        :value="selectedLayerConfig?.bottomIcing?.thickness || 0.05"
-                        @input="updateLayerProperty(selectedLayerId, 'bottomIcing.thickness', parseFloat($event.target.value))"
-                        class="w-full h-3 bg-gray-200 rounded-full appearance-none cursor-pointer slider-thumb"
-                      >
-                      <div class="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>Thin</span>
-                        <span>Thick</span>
-                      </div>
-                    </div>
+                  
+                  <!-- Bottom Thickness -->
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">
+                      Bottom Detail/Thickness ({{ (selectedLayerConfig?.bottomIcing?.thickness || 0.05).toFixed(2) }}):
+                    </label>
+                    <input type="range" 
+                      min="0.02" 
+                      max="0.3" 
+                      step="0.01"
+                      :value="selectedLayerConfig?.bottomIcing?.thickness || 0.05"
+                      @input="updateLayerProperty(selectedLayerId, 'bottomIcing.thickness', parseFloat($event.target.value))"
+                      class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                   </div>
                 </div>
               </div>
@@ -981,382 +567,334 @@
           <!-- Toppings -->
           <div class="tab-content" v-show="activeTab === 'tab-toppings'" id="tab-toppings">
             <div v-if="!selectedLayerId" class="prompt">Click a cake layer in the 3D view to edit its toppings.</div>
-            <div v-else class="p-3 sm:p-4 space-y-3 sm:space-y-4">
-              <!-- Mobile-Optimized Header -->
-              <div class="bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white rounded-xl p-4 text-center shadow-md">
-                <div class="text-2xl mb-2">🍓</div>
-                <h3 class="text-lg sm:text-xl font-bold">
-                  Layer {{ currentLayerNumber }} Toppings
-                </h3>
-                <p class="text-sm opacity-90 mt-1">Add delicious toppings to your cake</p>
-              </div>
-
-              <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-4 space-y-6">
-                <div class="flex items-center space-x-2 mb-4">
-                  <div class="text-lg">🎊</div>
-                  <h4 class="text-lg font-semibold text-gray-800">Available Toppings</h4>
-                </div>
-
+            <div v-else class="p-4 space-y-4">
+              <h3 class="text-xl font-bold text-center p-2 my-2">
+                Layer {{ currentLayerNumber }} Toppings
+              </h3>
+              
+              <div class="bg-white rounded-lg p-4 shadow-sm space-y-4">
+                <p class="text-sm font-medium text-gray-700 mb-3">Add toppings to your cake layer:</p>
+                
                 <!-- Sprinkles -->
-                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                  <label class="flex items-center space-x-4 cursor-pointer select-none">
-                    <div class="relative">
-                      <input 
-                        type="checkbox" 
-                        class="sr-only peer"
-                        :checked="selectedLayerConfig?.toppings?.some(t => t.type === 'sprinkles')"
-                        @change="updateToppingState('sprinkles', $event.target.checked)"
-                      >
-                      <div class="w-12 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#58091F]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#58091F] peer-checked:to-[#7A0C29]"></div>
-                    </div>
-                    <div class="flex-1">
-                      <div class="flex items-center space-x-2">
-                        <span class="text-lg">🌈</span>
-                        <div class="text-base font-semibold text-gray-800">Sprinkles</div>
-                      </div>
-                      <div class="text-sm text-gray-500 mt-1">Colorful sprinkles randomly distributed across the top</div>
-                    </div>
-                  </label>
+                <div class="space-y-2">
+                  <div class="flex items-center space-x-2">
+                    <input type="checkbox" 
+                      class="w-4 h-4 text-[#58091F] border-gray-300 rounded focus:ring-[#58091F]" 
+                      :checked="selectedLayerConfig?.toppings?.some(t => t.type === 'sprinkles')"
+                      @change="updateToppingState('sprinkles', $event.target.checked)">
+                    <label class="text-gray-700 font-medium cursor-pointer">Sprinkles</label>
+                  </div>
+                  <div v-if="selectedLayerConfig?.toppings?.some(t => t.type === 'sprinkles')" 
+                    class="pl-6 text-xs text-gray-500">
+                    Colorful sprinkles randomly distributed across the top of the cake
+                  </div>
                 </div>
 
                 <!-- Flowers -->
-                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                  <label class="flex items-center space-x-4 cursor-pointer select-none">
-                    <div class="relative">
-                      <input 
-                        type="checkbox" 
-                        class="sr-only peer"
-                        :checked="selectedLayerConfig?.toppings?.some(t => t.type === 'flowers')"
-                        @change="updateToppingState('flowers', $event.target.checked)"
-                      >
-                      <div class="w-12 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#58091F]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#58091F] peer-checked:to-[#7A0C29]"></div>
-                    </div>
-                    <div class="flex-1">
-                      <div class="flex items-center space-x-2">
-                        <span class="text-lg">🌸</span>
-                        <div class="text-base font-semibold text-gray-800">Flowers</div>
+                <div class="space-y-2">
+                  <div class="flex items-center space-x-2">
+                    <input type="checkbox" 
+                      class="w-4 h-4 text-[#58091F] border-gray-300 rounded focus:ring-[#58091F]" 
+                      :checked="selectedLayerConfig?.toppings?.some(t => t.type === 'flowers')"
+                      @change="updateToppingState('flowers', $event.target.checked)">
+                    <label class="text-gray-700 font-medium cursor-pointer">Flowers</label>
+                  </div>
+                  <div v-if="selectedLayerConfig?.toppings?.some(t => t.type === 'flowers')" 
+                    class="pl-6 space-y-3">
+                    <p class="text-xs text-gray-500">Beautiful edible flowers with colorful petals arranged on your cake</p>
+                    
+                    <!-- Flower Position Options -->
+                    <div class="space-y-2">
+                      <label class="text-sm font-medium text-gray-700">Flower Position:</label>
+                      <div class="space-y-1">
+                        <label class="flex items-center">
+                          <input type="radio" 
+                            name="flower_position" 
+                            value="inner" 
+                            :checked="!selectedLayerConfig?.flowerPosition || selectedLayerConfig?.flowerPosition === 'inner'"
+                            @change="updateLayerProperty(selectedLayerId, 'flowerPosition', 'inner')"
+                            class="mr-2 text-[#58091F]">
+                          <span class="text-sm text-gray-600">Inner (close to center)</span>
+                        </label>
+                        <label class="flex items-center">
+                          <input type="radio" 
+                            name="flower_position" 
+                            value="mid" 
+                            :checked="selectedLayerConfig?.flowerPosition === 'mid'"
+                            @change="updateLayerProperty(selectedLayerId, 'flowerPosition', 'mid')"
+                            class="mr-2 text-[#58091F]">
+                          <span class="text-sm text-gray-600">Mid (middle area)</span>
+                        </label>
+                        <label class="flex items-center">
+                          <input type="radio" 
+                            name="flower_position" 
+                            value="outer" 
+                            :checked="selectedLayerConfig?.flowerPosition === 'outer'"
+                            @change="updateLayerProperty(selectedLayerId, 'flowerPosition', 'outer')"
+                            class="mr-2 text-[#58091F]">
+                          <span class="text-sm text-gray-600">Outer (near edge)</span>
+                        </label>
+                        <label class="flex items-center">
+                          <input type="radio" 
+                            name="flower_position" 
+                            value="all" 
+                            :checked="selectedLayerConfig?.flowerPosition === 'all'"
+                            @change="updateLayerProperty(selectedLayerId, 'flowerPosition', 'all')"
+                            class="mr-2 text-[#58091F]">
+                          <span class="text-sm text-gray-600">All (full coverage)</span>
+                        </label>
                       </div>
-                      <div class="text-sm text-gray-500 mt-1">Beautiful edible flowers with colorful petals</div>
-                    </div>
-                  </label>
-                  
-                  <!-- Flower Position Options -->
-                  <div v-if="selectedLayerConfig?.toppings?.some(t => t.type === 'flowers')" class="mt-4 pt-4 border-t border-gray-200">
-                    <label class="text-sm font-semibold text-gray-700 block mb-3">Flower Position</label>
-                    <div class="grid grid-cols-2 gap-2">
-                      <button 
-                        v-for="position in [
-                          { value: 'inner', label: 'Inner', desc: 'Close to center' },
-                          { value: 'mid', label: 'Mid', desc: 'Middle area' },
-                          { value: 'outer', label: 'Outer', desc: 'Near edge' },
-                          { value: 'all', label: 'All', desc: 'Full coverage' }
-                        ]"
-                        :key="position.value"
-                        @click="updateLayerProperty(selectedLayerId, 'flowerPosition', position.value)"
-                        :class="[
-                          'flex flex-col p-3 border-2 rounded-lg transition-all duration-200 touch-manipulation',
-                          (!selectedLayerConfig?.flowerPosition && position.value === 'inner') || selectedLayerConfig?.flowerPosition === position.value
-                            ? 'border-[#58091F] bg-[#58091F] text-white shadow-lg' 
-                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 active:scale-95'
-                        ]"
-                      >
-                        <span class="text-sm font-medium">{{ position.label }}</span>
-                        <span class="text-xs opacity-75">{{ position.desc }}</span>
-                      </button>
                     </div>
                   </div>
                 </div>
 
                 <!-- Cherries -->
-                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                  <label class="flex items-center space-x-4 cursor-pointer select-none">
-                    <div class="relative">
-                      <input 
-                        type="checkbox" 
-                        class="sr-only peer"
-                        :checked="selectedLayerConfig?.toppings?.some(t => t.type === 'cherries')"
-                        @change="updateToppingState('cherries', $event.target.checked)"
-                      >
-                      <div class="w-12 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#58091F]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#58091F] peer-checked:to-[#7A0C29]"></div>
-                    </div>
-                    <div class="flex-1">
-                      <div class="flex items-center space-x-2">
-                        <span class="text-lg">🍒</span>
-                        <div class="text-base font-semibold text-gray-800">Cherries</div>
-                      </div>
-                      <div class="text-sm text-gray-500 mt-1">Red cherries with green stems placed on top</div>
-                    </div>
-                  </label>
+                <div class="space-y-2">
+                  <div class="flex items-center space-x-2">
+                    <input type="checkbox" 
+                      class="w-4 h-4 text-[#58091F] border-gray-300 rounded focus:ring-[#58091F]" 
+                      :checked="selectedLayerConfig?.toppings?.some(t => t.type === 'cherries')"
+                      @change="updateToppingState('cherries', $event.target.checked)">
+                    <label class="text-gray-700 font-medium cursor-pointer">Cherries</label>
+                  </div>
+                  <div v-if="selectedLayerConfig?.toppings?.some(t => t.type === 'cherries')" 
+                    class="pl-6 text-xs text-gray-500">
+                    Red cherries with green stems placed on top of your cake
+                  </div>
                 </div>
 
                 <!-- Strawberries -->
-                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                  <label class="flex items-center space-x-4 cursor-pointer select-none">
-                    <div class="relative">
-                      <input 
-                        type="checkbox" 
-                        class="sr-only peer"
-                        :checked="selectedLayerConfig?.toppings?.some(t => t.type === 'strawberries')"
-                        @change="updateToppingState('strawberries', $event.target.checked)"
-                      >
-                      <div class="w-12 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#58091F]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#58091F] peer-checked:to-[#7A0C29]"></div>
-                    </div>
-                    <div class="flex-1">
-                      <div class="flex items-center space-x-2">
-                        <span class="text-lg">🍓</span>
-                        <div class="text-base font-semibold text-gray-800">Strawberries</div>
+                <div class="space-y-2">
+                  <div class="flex items-center space-x-2">
+                    <input type="checkbox" 
+                      class="w-4 h-4 text-[#58091F] border-gray-300 rounded focus:ring-[#58091F]" 
+                      :checked="selectedLayerConfig?.toppings?.some(t => t.type === 'strawberries')"
+                      @change="updateToppingState('strawberries', $event.target.checked)">
+                    <label class="text-gray-700 font-medium cursor-pointer">Strawberries</label>
+                  </div>
+                  <div v-if="selectedLayerConfig?.toppings?.some(t => t.type === 'strawberries')" 
+                    class="pl-6 space-y-3">
+                    <p class="text-xs text-gray-500">Fresh strawberries piled naturally on your cake</p>
+                    
+                    <!-- Strawberry Position Options -->
+                    <div class="space-y-2">
+                      <label class="text-sm font-medium text-gray-700">Strawberry Position:</label>
+                      <div class="space-y-1">
+                        <label class="flex items-center">
+                          <input type="radio" 
+                            name="strawberry_position" 
+                            value="inner" 
+                            :checked="!selectedLayerConfig?.strawberryPosition || selectedLayerConfig?.strawberryPosition === 'inner'"
+                            @change="updateLayerProperty(selectedLayerId, 'strawberryPosition', 'inner')"
+                            class="mr-2 text-[#58091F]">
+                          <span class="text-sm text-gray-600">Inner (close to center)</span>
+                        </label>
+                        <label class="flex items-center">
+                          <input type="radio" 
+                            name="strawberry_position" 
+                            value="mid" 
+                            :checked="selectedLayerConfig?.strawberryPosition === 'mid'"
+                            @change="updateLayerProperty(selectedLayerId, 'strawberryPosition', 'mid')"
+                            class="mr-2 text-[#58091F]">
+                          <span class="text-sm text-gray-600">Mid (middle area)</span>
+                        </label>
+                        <label class="flex items-center">
+                          <input type="radio" 
+                            name="strawberry_position" 
+                            value="outer" 
+                            :checked="selectedLayerConfig?.strawberryPosition === 'outer'"
+                            @change="updateLayerProperty(selectedLayerId, 'strawberryPosition', 'outer')"
+                            class="mr-2 text-[#58091F]">
+                          <span class="text-sm text-gray-600">Outer (near edge)</span>
+                        </label>
+                        <label class="flex items-center">
+                          <input type="radio" 
+                            name="strawberry_position" 
+                            value="all" 
+                            :checked="selectedLayerConfig?.strawberryPosition === 'all'"
+                            @change="updateLayerProperty(selectedLayerId, 'strawberryPosition', 'all')"
+                            class="mr-2 text-[#58091F]">
+                          <span class="text-sm text-gray-600">All (full coverage)</span>
+                        </label>
                       </div>
-                      <div class="text-sm text-gray-500 mt-1">Fresh strawberries piled naturally on your cake</div>
-                    </div>
-                  </label>
-                  
-                  <!-- Strawberry Position Options -->
-                  <div v-if="selectedLayerConfig?.toppings?.some(t => t.type === 'strawberries')" class="mt-4 pt-4 border-t border-gray-200">
-                    <label class="text-sm font-semibold text-gray-700 block mb-3">Strawberry Position</label>
-                    <div class="grid grid-cols-2 gap-2">
-                      <button 
-                        v-for="position in [
-                          { value: 'inner', label: 'Inner', desc: 'Close to center' },
-                          { value: 'mid', label: 'Mid', desc: 'Middle area' },
-                          { value: 'outer', label: 'Outer', desc: 'Near edge' },
-                          { value: 'all', label: 'All', desc: 'Full coverage' }
-                        ]"
-                        :key="position.value"
-                        @click="updateLayerProperty(selectedLayerId, 'strawberryPosition', position.value)"
-                        :class="[
-                          'flex flex-col p-3 border-2 rounded-lg transition-all duration-200 touch-manipulation',
-                          (!selectedLayerConfig?.strawberryPosition && position.value === 'inner') || selectedLayerConfig?.strawberryPosition === position.value
-                            ? 'border-[#58091F] bg-[#58091F] text-white shadow-lg' 
-                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 active:scale-95'
-                        ]"
-                      >
-                        <span class="text-sm font-medium">{{ position.label }}</span>
-                        <span class="text-xs opacity-75">{{ position.desc }}</span>
-                      </button>
                     </div>
                   </div>
                 </div>
 
                 <!-- Blueberries -->
-                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                  <label class="flex items-center space-x-4 cursor-pointer select-none">
-                    <div class="relative">
-                      <input 
-                        type="checkbox" 
-                        class="sr-only peer"
-                        :checked="selectedLayerConfig?.toppings?.some(t => t.type === 'blueberries')"
-                        @change="updateToppingState('blueberries', $event.target.checked)"
-                      >
-                      <div class="w-12 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#58091F]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#58091F] peer-checked:to-[#7A0C29]"></div>
-                    </div>
-                    <div class="flex-1">
-                      <div class="flex items-center space-x-2">
-                        <span class="text-lg">🫐</span>
-                        <div class="text-base font-semibold text-gray-800">Blueberries</div>
-                      </div>
-                      <div class="text-sm text-gray-500 mt-1">Fresh blueberries scattered across the top</div>
-                    </div>
-                  </label>
+                <div class="space-y-2">
+                  <div class="flex items-center space-x-2">
+                    <input type="checkbox" 
+                      class="w-4 h-4 text-[#58091F] border-gray-300 rounded focus:ring-[#58091F]" 
+                      :checked="selectedLayerConfig?.toppings?.some(t => t.type === 'blueberries')"
+                      @change="updateToppingState('blueberries', $event.target.checked)">
+                    <label class="text-gray-700 font-medium cursor-pointer">Blueberries</label>
+                  </div>
+                  <div v-if="selectedLayerConfig?.toppings?.some(t => t.type === 'blueberries')" 
+                    class="pl-6 text-xs text-gray-500">
+                    Fresh blueberries scattered across the top of your cake
+                  </div>
                 </div>
 
                 <!-- Candles -->
-                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                  <label class="flex items-center space-x-4 cursor-pointer select-none">
-                    <div class="relative">
-                      <input 
-                        type="checkbox" 
-                        class="sr-only peer"
-                        :checked="selectedLayerConfig?.toppings?.some(t => t.type === 'candle')"
-                        @change="updateToppingState('candle', $event.target.checked)"
-                      >
-                      <div class="w-12 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#58091F]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#58091F] peer-checked:to-[#7A0C29]"></div>
-                    </div>
-                    <div class="flex-1">
-                      <div class="flex items-center space-x-2">
-                        <span class="text-lg">🕯️</span>
-                        <div class="text-base font-semibold text-gray-800">Candles</div>
-                      </div>
-                      <div class="text-sm text-gray-500 mt-1">Beautiful birthday candles with flames</div>
-                    </div>
-                  </label>
+                <div class="space-y-2">
+                  <div class="flex items-center space-x-2">
+                    <input type="checkbox" 
+                      class="w-4 h-4 text-[#58091F] border-gray-300 rounded focus:ring-[#58091F]" 
+                      :checked="selectedLayerConfig?.toppings?.some(t => t.type === 'candle')"
+                      @change="updateToppingState('candle', $event.target.checked)">
+                    <label class="text-gray-700 font-medium cursor-pointer">Candles</label>
+                  </div>
+                  <div v-if="selectedLayerConfig?.toppings?.some(t => t.type === 'candle')" 
+                    class="pl-6 text-xs text-gray-500">
+                    Beautiful birthday candles with flames evenly distributed around your cake
+                  </div>
                 </div>
 
                 <!-- Crush Oreo -->
-                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                  <label class="flex items-center space-x-4 cursor-pointer select-none">
-                    <div class="relative">
-                      <input 
-                        type="checkbox" 
-                        class="sr-only peer"
-                        :checked="selectedLayerConfig?.toppings?.some(t => t.type === 'crush_oreo')"
-                        @change="updateToppingState('crush_oreo', $event.target.checked)"
-                      >
-                      <div class="w-12 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#58091F]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#58091F] peer-checked:to-[#7A0C29]"></div>
-                    </div>
-                    <div class="flex-1">
-                      <div class="flex items-center space-x-2">
-                        <span class="text-lg">🍪</span>
-                        <div class="text-base font-semibold text-gray-800">Crush Oreo</div>
-                      </div>
-                      <div class="text-sm text-gray-500 mt-1">Crushed Oreo cookies and cream pieces</div>
-                    </div>
-                  </label>
+                <div class="space-y-2">
+                  <div class="flex items-center space-x-2">
+                    <input type="checkbox" 
+                      class="w-4 h-4 text-[#58091F] border-gray-300 rounded focus:ring-[#58091F]" 
+                      :checked="selectedLayerConfig?.toppings?.some(t => t.type === 'crush_oreo')"
+                      @change="updateToppingState('crush_oreo', $event.target.checked)">
+                    <label class="text-gray-700 font-medium cursor-pointer">Crush Oreo</label>
+                  </div>
+                  <div v-if="selectedLayerConfig?.toppings?.some(t => t.type === 'crush_oreo')" 
+                    class="pl-6 text-xs text-gray-500">
+                    Crushed Oreo cookies and cream pieces sprinkled across your cake
+                  </div>
                 </div>
 
                 <!-- Christmas Balls -->
-                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                  <label class="flex items-center space-x-4 cursor-pointer select-none">
-                    <div class="relative">
-                      <input 
-                        type="checkbox" 
-                        class="sr-only peer"
-                        :checked="selectedLayerConfig?.toppings?.some(t => t.type === 'christmas_balls')"
-                        @change="updateToppingState('christmas_balls', $event.target.checked)"
-                      >
-                      <div class="w-12 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#58091F]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#58091F] peer-checked:to-[#7A0C29]"></div>
-                    </div>
-                    <div class="flex-1">
-                      <div class="flex items-center space-x-2">
-                        <span class="text-lg">🎄</span>
-                        <div class="text-base font-semibold text-gray-800">Christmas Balls</div>
-                      </div>
-                      <div class="text-sm text-gray-500 mt-1">Colorful Christmas ornament balls with golden caps</div>
-                    </div>
-                  </label>
+                <div class="space-y-2">
+                  <div class="flex items-center space-x-2">
+                    <input type="checkbox" 
+                      class="w-4 h-4 text-[#58091F] border-gray-300 rounded focus:ring-[#58091F]" 
+                      :checked="selectedLayerConfig?.toppings?.some(t => t.type === 'christmas_balls')"
+                      @change="updateToppingState('christmas_balls', $event.target.checked)">
+                    <label class="text-gray-700 font-medium cursor-pointer">Christmas Balls</label>
+                  </div>
+                  <div v-if="selectedLayerConfig?.toppings?.some(t => t.type === 'christmas_balls')" 
+                    class="pl-6 text-xs text-gray-500">
+                    Colorful Christmas ornament balls with golden caps for festive decoration
+                  </div>
                 </div>
 
-
+                <!-- Flowers -->
+                <div class="space-y-2">
+                  <div class="flex items-center space-x-2">
+                    <input type="checkbox" 
+                      class="w-4 h-4 text-[#58091F] border-gray-300 rounded focus:ring-[#58091F]" 
+                      :checked="selectedLayerConfig?.toppings?.some(t => t.type === 'flowers')"
+                      @change="updateToppingState('flowers', $event.target.checked)">
+                    <label class="text-gray-700 font-medium cursor-pointer">Flowers</label>
+                  </div>
+                  <div v-if="selectedLayerConfig?.toppings?.some(t => t.type === 'flowers')" 
+                    class="pl-6 space-y-3">
+                    <p class="text-xs text-gray-500">Beautiful edible flowers with colorful petals arranged on your cake</p>
+                    
+                    <!-- Flower Position Options -->
+                    <div class="space-y-2">
+                      <label class="text-sm font-medium text-gray-700">Flower Position:</label>
+                      <div class="space-y-1">
+                        <label class="flex items-center">
+                          <input type="radio" 
+                            name="flower_position" 
+                            value="inner" 
+                            :checked="!selectedLayerConfig?.flowerPosition || selectedLayerConfig?.flowerPosition === 'inner'"
+                            @change="updateLayerProperty(selectedLayerId, 'flowerPosition', 'inner')"
+                            class="mr-2 text-[#58091F]">
+                          <span class="text-sm text-gray-600">Inner (close to center)</span>
+                        </label>
+                        <label class="flex items-center">
+                          <input type="radio" 
+                            name="flower_position" 
+                            value="mid" 
+                            :checked="selectedLayerConfig?.flowerPosition === 'mid'"
+                            @change="updateLayerProperty(selectedLayerId, 'flowerPosition', 'mid')"
+                            class="mr-2 text-[#58091F]">
+                          <span class="text-sm text-gray-600">Mid (middle area)</span>
+                        </label>
+                        <label class="flex items-center">
+                          <input type="radio" 
+                            name="flower_position" 
+                            value="outer" 
+                            :checked="selectedLayerConfig?.flowerPosition === 'outer'"
+                            @change="updateLayerProperty(selectedLayerId, 'flowerPosition', 'outer')"
+                            class="mr-2 text-[#58091F]">
+                          <span class="text-sm text-gray-600">Outer (near edge)</span>
+                        </label>
+                        <label class="flex items-center">
+                          <input type="radio" 
+                            name="flower_position" 
+                            value="all" 
+                            :checked="selectedLayerConfig?.flowerPosition === 'all'"
+                            @change="updateLayerProperty(selectedLayerId, 'flowerPosition', 'all')"
+                            class="mr-2 text-[#58091F]">
+                          <span class="text-sm text-gray-600">All (full coverage)</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
           <!-- Greeting Text -->
           <div class="tab-content" v-show="activeTab === 'tab-greeting'" id="tab-greeting">
-            <div class="p-3 sm:p-4 space-y-3 sm:space-y-4">
-              <!-- Mobile-Optimized Header -->
-              <div class="bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white rounded-xl p-4 text-center shadow-md">
-                <div class="text-2xl mb-2">💬</div>
-                <h3 class="text-lg sm:text-xl font-bold">
-                  Greeting Text
-                </h3>
-                <p class="text-sm opacity-90 mt-1">Add a personalized message to your cake</p>
+            <div class="p-4 space-y-4">
+              <div class="flex items-center space-x-2 bg-white rounded-lg p-3 shadow-sm">
+                <input type="checkbox" 
+                  class="w-4 h-4 text-[#58091F] border-gray-300 rounded focus:ring-[#58091F]" 
+                  v-model="greetingConfig.enabled" 
+                  @change="onGreetingChange">
+                <label class="text-gray-700 font-medium">Enable Greeting Text</label>
               </div>
-
-              <!-- Enable Toggle -->
-              <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-4">
-                <label class="flex items-center space-x-4 cursor-pointer select-none">
-                  <div class="relative">
-                    <input 
-                      type="checkbox" 
-                      class="sr-only peer"
-                      v-model="greetingConfig.enabled" 
-                      @change="onGreetingChange"
-                    >
-                    <div class="w-14 h-8 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#58091F]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-[#58091F] peer-checked:to-[#7A0C29]"></div>
-                  </div>
-                  <div class="flex-1">
-                    <div class="text-base sm:text-lg font-semibold text-gray-800">Enable Greeting Text</div>
-                    <div class="text-sm text-gray-500">Add custom text to your cake</div>
-                  </div>
-                </label>
-              </div>
-
-              <!-- Greeting Controls -->
-              <div v-if="greetingConfig.enabled" class="bg-white rounded-xl shadow-lg border border-gray-100 p-4 space-y-6">
-                <div class="flex items-center space-x-2 mb-4">
-                  <div class="text-lg">✍️</div>
-                  <h4 class="text-lg font-semibold text-gray-800">Text Settings</h4>
+              
+              <div v-if="greetingConfig.enabled" class="space-y-4 bg-white rounded-lg p-4 shadow-sm">
+                <div class="space-y-2">
+                  <label for="greeting_text" class="block text-sm font-medium text-gray-700">Message:</label>
+                  <input type="text" 
+                    id="greeting_text" 
+                    v-model="greetingConfig.text" 
+                    @input="onGreetingChange"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#58091F] focus:border-[#58091F]">
                 </div>
-
-                <!-- Message Input -->
-                <div class="space-y-3">
-                  <label class="text-sm font-semibold text-gray-700 block">Your Message</label>
-                  <div class="relative">
-                    <input 
-                      type="text" 
-                      v-model="greetingConfig.text" 
-                      @input="onGreetingChange"
-                      placeholder="Enter your greeting message..."
-                      class="w-full px-4 py-3 text-base border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-[#58091F]/20 focus:border-[#58091F] transition-all duration-200"
-                    >
-                    <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                      📝
-                    </div>
-                  </div>
+                
+                <div class="space-y-2">
+                  <label for="greeting_color" class="block text-sm font-medium text-gray-700">Text Color:</label>
+                  <input type="color" 
+                    id="greeting_color" 
+                    v-model="greetingConfig.color" 
+                    @input="onGreetingChange"
+                    class="w-full h-10 p-1 border border-gray-300 rounded-md shadow-sm cursor-pointer">
                 </div>
-
-                <!-- Text Color Picker -->
-                <div class="space-y-3">
-                  <label class="text-sm font-semibold text-gray-700 block">Text Color</label>
-                  <div class="flex items-center space-x-4 bg-gray-50 p-3 rounded-xl border border-gray-200">
-                    <input 
-                      type="color" 
-                      v-model="greetingConfig.color" 
-                      @input="onGreetingChange"
-                      class="w-16 h-16 border-2 border-gray-300 rounded-xl cursor-pointer shadow-sm"
-                    >
-                    <div class="flex-1">
-                      <div class="text-sm font-medium text-gray-700">Selected Color</div>
-                      <div class="text-xs font-mono text-gray-500 bg-white px-2 py-1 rounded mt-1">
-                        {{ greetingConfig.color }}
-                      </div>
-                    </div>
-                  </div>
+                
+                <div class="space-y-2">
+                  <label for="greeting_size" class="block text-sm font-medium text-gray-700">
+                    Text Size ({{ greetingConfig.size.toFixed(2) }}):
+                  </label>
+                  <input type="range" 
+                    id="greeting_size" 
+                    min="0.1" 
+                    max="0.8" 
+                    step="0.01"
+                    v-model.number="greetingConfig.size" 
+                    @input="onGreetingChange"
+                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                 </div>
-
-                <!-- Text Size Slider -->
-                <div class="space-y-3">
-                  <div class="flex justify-between items-center">
-                    <label class="text-sm font-semibold text-gray-700">Text Size</label>
-                    <div class="bg-[#58091F] text-white px-3 py-1 rounded-full text-xs font-bold">
-                      {{ greetingConfig.size.toFixed(2) }}
-                    </div>
-                  </div>
-                  <div class="relative">
-                    <input 
-                      type="range" 
-                      min="0.1" 
-                      max="0.8" 
-                      step="0.01"
-                      v-model.number="greetingConfig.size" 
-                      @input="onGreetingChange"
-                      class="w-full h-3 bg-gray-200 rounded-full appearance-none cursor-pointer slider-thumb"
-                    >
-                    <div class="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>Small</span>
-                      <span>Large</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Layout Selection -->
-                <div class="space-y-3">
-                  <label class="text-sm font-semibold text-gray-700 block">Text Layout</label>
-                  <div class="grid grid-cols-1 gap-3">
-                    <button 
-                      v-for="layout in [
-                        { value: 'horizontal-top', label: 'Horizontal', desc: 'On Top, Flat', icon: '➡️' },
-                        { value: 'circular-top', label: 'Circular', desc: 'On Top, Curved', icon: '🔄' },
-                        { value: 'vertical-side', label: 'Vertical', desc: 'On Side, Upright', icon: '⬆️' }
-                      ]"
-                      :key="layout.value"
-                      @click="greetingConfig.layout = layout.value; onGreetingChange()"
-                      :class="[
-                        'flex items-center justify-between p-4 border-2 rounded-xl transition-all duration-200 touch-manipulation',
-                        greetingConfig.layout === layout.value
-                          ? 'border-[#58091F] bg-gradient-to-br from-[#58091F]/10 to-[#7A0C29]/10 shadow-lg' 
-                          : 'border-gray-200 bg-gray-50 hover:border-gray-300 active:scale-95'
-                      ]"
-                    >
-                      <div class="flex items-center space-x-3">
-                        <div class="text-lg">{{ layout.icon }}</div>
-                        <div class="text-left">
-                          <div class="font-medium text-gray-800">{{ layout.label }}</div>
-                          <div class="text-sm text-gray-500">{{ layout.desc }}</div>
-                        </div>
-                      </div>
-                      <div v-if="greetingConfig.layout === layout.value" class="text-[#58091F] text-lg">✓</div>
-                    </button>
-                  </div>
+                
+                <div class="space-y-2">
+                  <label for="greeting_layout" class="block text-sm font-medium text-gray-700">Layout:</label>
+                  <select id="greeting_layout" 
+                    v-model="greetingConfig.layout" 
+                    @change="onGreetingChange"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#58091F] focus:border-[#58091F]">
+                    <option value="horizontal-top">Horizontal (On Top, Flat)</option>
+                    <option value="circular-top">Circular (On Top, Flat)</option>
+                    <option value="vertical-side">Vertical (On Side, Upright)</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -1853,7 +1391,7 @@ const initScene = () => {
   scene.add(directionalLight);
   
   // Create and position the cake stand (use default 6 if not available)
-  cakeStand = createCakeStand(selectedSize.value ? (Array.isArray(selectedSize.value.diameter) ? Math.max(...selectedSize.value.diameter.map(d => d.diameter)) : selectedSize.value.diameter) : 6);
+  cakeStand = createCakeStand(selectedSize.value ? selectedSize.value.diameter : 6);
   cakeStand.position.y = 0;
   scene.add(cakeStand);
   
@@ -2015,152 +1553,18 @@ const createLayerMesh = (radius, height, color, layerId) => {
   return layerMesh;
 };
 
-// Load multiple font variants for different styles including stylish cake topper fonts
-let loadedFonts = {
-  normal: null,
-  bold: null,
-  italic: null,
-  script: null,
-  decorative: null,
-  elegant: null,
-  playful: null,
-  classic: null
-};
-
+// Load the font once and reuse it
+let loadedFont = null;
 const fontLoader = new FontLoader();
-
-// Load regular font
 fontLoader.load('https://cdn.jsdelivr.net/npm/three@0.164.1/examples/fonts/helvetiker_regular.typeface.json', (font) => {
-  loadedFonts.normal = font;
-  console.log('Regular font loaded');
+  loadedFont = font;
+  console.log('Font loaded:', loadedFont);
   // Only call renderCake if the scene is fully initialized
   if (typeof renderCake === 'function' && cakeGroup && scene && renderer) {
     console.log('Triggering renderCake after font load');
     renderCake();
   }
 });
-
-// Load bold font
-fontLoader.load('https://cdn.jsdelivr.net/npm/three@0.164.1/examples/fonts/helvetiker_bold.typeface.json', (font) => {
-  loadedFonts.bold = font;
-  console.log('Bold font loaded');
-  // Re-render if needed
-  if (typeof renderCake === 'function' && cakeGroup && scene && renderer) {
-    renderCake();
-  }
-}, undefined, (error) => {
-  console.warn('Bold font not available, using regular font as fallback');
-  loadedFonts.bold = loadedFonts.normal; // Fallback to normal
-});
-
-// Load script font (elegant cursive style)
-fontLoader.load('https://cdn.jsdelivr.net/npm/three@0.164.1/examples/fonts/gentilis_regular.typeface.json', (font) => {
-  loadedFonts.script = font;
-  console.log('Script font loaded');
-  if (typeof renderCake === 'function' && cakeGroup && scene && renderer) {
-    renderCake();
-  }
-}, undefined, (error) => {
-  console.warn('Script font not available, using regular font as fallback');
-  loadedFonts.script = loadedFonts.normal;
-});
-
-// Load decorative font (bold gentilis for decorative style)
-fontLoader.load('https://cdn.jsdelivr.net/npm/three@0.164.1/examples/fonts/gentilis_bold.typeface.json', (font) => {
-  loadedFonts.decorative = font;
-  console.log('Decorative font loaded');
-  if (typeof renderCake === 'function' && cakeGroup && scene && renderer) {
-    renderCake();
-  }
-}, undefined, (error) => {
-  console.warn('Decorative font not available, using bold font as fallback');
-  loadedFonts.decorative = loadedFonts.bold || loadedFonts.normal;
-});
-
-// Load elegant font (optimer regular - clean and elegant)
-fontLoader.load('https://cdn.jsdelivr.net/npm/three@0.164.1/examples/fonts/optimer_regular.typeface.json', (font) => {
-  loadedFonts.elegant = font;
-  console.log('Elegant font loaded');
-  if (typeof renderCake === 'function' && cakeGroup && scene && renderer) {
-    renderCake();
-  }
-}, undefined, (error) => {
-  console.warn('Elegant font not available, using regular font as fallback');
-  loadedFonts.elegant = loadedFonts.normal;
-});
-
-// Load playful font (optimer bold - fun and bold)
-fontLoader.load('https://cdn.jsdelivr.net/npm/three@0.164.1/examples/fonts/optimer_bold.typeface.json', (font) => {
-  loadedFonts.playful = font;
-  console.log('Playful font loaded');
-  if (typeof renderCake === 'function' && cakeGroup && scene && renderer) {
-    renderCake();
-  }
-}, undefined, (error) => {
-  console.warn('Playful font not available, using bold font as fallback');
-  loadedFonts.playful = loadedFonts.bold || loadedFonts.normal;
-});
-
-// Load classic font (droid serif - traditional serif style)
-fontLoader.load('https://cdn.jsdelivr.net/npm/three@0.164.1/examples/fonts/droid/droid_serif_regular.typeface.json', (font) => {
-  loadedFonts.classic = font;
-  console.log('Classic font loaded');
-  if (typeof renderCake === 'function' && cakeGroup && scene && renderer) {
-    renderCake();
-  }
-}, undefined, (error) => {
-  console.warn('Classic font not available, using regular font as fallback');
-  loadedFonts.classic = loadedFonts.normal;
-});
-
-// For italic, we'll use transformation since italic fonts are less commonly available
-// We'll apply a shear transformation to simulate italic
-loadedFonts.italic = 'transform'; // Special marker to use transform
-
-// Compatibility getter for legacy code
-Object.defineProperty(window, 'loadedFont', {
-  get: function() {
-    return loadedFonts.normal;
-  }
-});
-
-// Helper function to get the appropriate font based on style
-const getFontForStyle = (style) => {
-  if (!style || style === 'normal') {
-    return loadedFonts.normal;
-  } else if (style === 'bold') {
-    return loadedFonts.bold || loadedFonts.normal; // Fallback to normal if bold not available
-  } else if (style === 'italic') {
-    return loadedFonts.normal; // We'll use transform for italic
-  } else if (style === 'script') {
-    return loadedFonts.script || loadedFonts.normal; // Elegant cursive style
-  } else if (style === 'decorative') {
-    return loadedFonts.decorative || loadedFonts.bold || loadedFonts.normal; // Bold decorative style
-  } else if (style === 'elegant') {
-    return loadedFonts.elegant || loadedFonts.normal; // Clean elegant style
-  } else if (style === 'playful') {
-    return loadedFonts.playful || loadedFonts.bold || loadedFonts.normal; // Fun playful style
-  } else if (style === 'classic') {
-    return loadedFonts.classic || loadedFonts.normal; // Traditional serif style
-  }
-  return loadedFonts.normal; // Default fallback
-};
-
-// Enhanced function to update topper font style with immediate feedback
-const updateTopperFontStyle = (style) => {
-  if (!selectedLayerId.value) return;
-  
-  console.log(`Updating topper font style to: ${style}`);
-  
-  // Save state for undo functionality
-  saveToHistory();
-  
-  // Update the layer property
-  updateLayerProperty(selectedLayerId.value, 'topper.style', style);
-  
-  // Force immediate re-render for visual feedback
-  renderCake();
-};
 
 // Performance optimization: Cache geometry to avoid recreation
 let geometryCache = new Map();
@@ -2332,94 +1736,30 @@ const addDecorations = (layerMesh, layerConfig) => {
 
     // Only create topper text if font is loaded
     if (topper.type === 'text') {
-      const fontStyle = topper.style || 'normal';
-      const selectedFont = getFontForStyle(fontStyle);
-      
-      if (!selectedFont) {
+      if (!loadedFont) {
         console.warn('Font not loaded yet, skipping topper text creation');
         return;
       }
       if (topper.text && topper.text.trim().length > 0) {
         const topperText = topper.text.trim();
         const sizeMultiplier = topper.size || 1;
-        
-        // Create text geometry with appropriate font
         const textGeometry = new TextGeometry(topperText, {
-          font: selectedFont,
+          font: loadedFont,
           size: 0.12 * topper.fontSize * sizeMultiplier,
           height: 0.02 * sizeMultiplier,
           curveSegments: 4,
           bevelEnabled: false
         });
-        
         textGeometry.computeBoundingBox();
         const textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
         textGeometry.translate(-textWidth / 2, 0, 0); // Center horizontally
-        
-        // Enhanced material for better text appearance
         const textMaterial = new THREE.MeshStandardMaterial({
-          color: topper.color || '#000000',
-          roughness: 0.3,
-          metalness: 0.1,
-          transparent: false
+          color: topper.color,
+          roughness: 0.7,
+          metalness: 0.1
         });
-        
         const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-        
-        // Apply font style transformations and enhancements
-        if (fontStyle === 'italic') {
-          // Apply italic transformation (shear)
-          const matrix = new THREE.Matrix4();
-          matrix.set(
-            1, 0, 0.2, 0,  // Shear in X direction
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1
-          );
-          textMesh.geometry.applyMatrix4(matrix);
-        }
-        
-        if (fontStyle === 'bold' && !loadedFonts.bold) {
-          // If bold font not available, simulate bold with scaling
-          textMesh.scale.x = 1.1;
-          textMesh.scale.z = 1.2; // Make text thicker
-        }
-        
-        // Apply stylish font enhancements
-        if (fontStyle === 'script') {
-          // Script font gets elegant material properties
-          textMaterial.roughness = 0.2;
-          textMaterial.metalness = 0.3;
-          // Slight rotation for more elegant appearance
-          textMesh.rotation.z = Math.PI * 0.02; // 3.6 degrees
-        } else if (fontStyle === 'decorative') {
-          // Decorative font gets enhanced metallic look
-          textMaterial.roughness = 0.1;
-          textMaterial.metalness = 0.5;
-          // Add slight scale enhancement
-          textMesh.scale.set(1.05, 1.05, 1.2);
-        } else if (fontStyle === 'elegant') {
-          // Elegant font gets refined material properties
-          textMaterial.roughness = 0.25;
-          textMaterial.metalness = 0.2;
-          // Add slight letter spacing effect via scaling
-          textMesh.scale.x = 1.02;
-        } else if (fontStyle === 'playful') {
-          // Playful font gets fun scaling
-          textMaterial.roughness = 0.4;
-          textMaterial.metalness = 0.1;
-          // Add slight bounce effect with scaling
-          textMesh.scale.set(1.08, 1.05, 1.1);
-        } else if (fontStyle === 'classic') {
-          // Classic font gets traditional serif enhancement
-          textMaterial.roughness = 0.35;
-          textMaterial.metalness = 0.15;
-          // Add subtle shadow depth
-          textMesh.scale.z = 1.3;
-        }
-        
-        textMesh.position.set(topperX, stickTopY + textYOffset, topperZ);
-        textMesh.name = "topperText";
+        textMesh.position.set(topperX, stickTopY + textYOffset, topperZ); // Use calculated position
         topperGroup.add(textMesh);
       }
     }
@@ -3682,7 +3022,7 @@ const addGreetingTextToCake = (currentHeightOffset, topLayerRadius, topLayerHeig
     cakeGroup.remove(existingGreeting);
   }
 
-  if (!greetingConfig.enabled || !greetingConfig.text || !loadedFonts.normal) {
+  if (!greetingConfig.enabled || !greetingConfig.text || !loadedFont) {
     return;
   }
 
@@ -3690,7 +3030,7 @@ const addGreetingTextToCake = (currentHeightOffset, topLayerRadius, topLayerHeig
   greetingGroup.name = "greetingGroup";
 
   const textGeometry = new TextGeometry(greetingConfig.text, {
-    font: loadedFonts.normal,
+    font: loadedFont,
     size: greetingConfig.size,
     height: greetingConfig.depth,
     curveSegments: 12,
@@ -3729,7 +3069,7 @@ const addGreetingTextToCake = (currentHeightOffset, topLayerRadius, topLayerHeig
       textPath.add(circle);
       // Apply the path to the text
       textMesh.geometry = new THREE.TextGeometry(greetingConfig.text, {
-        font: loadedFonts.normal,
+        font: loadedFont,
         size: greetingConfig.size,
         height: greetingConfig.depth,
         curveSegments: 12,
@@ -4543,41 +3883,15 @@ const finishSelection = () => {
 };
 
 const generateCakeFromSelections = () => {
-  console.log('=== generateCakeFromSelections called ===');
-  console.log('selectedLayers:', selectedLayers.value);
-  console.log('selectedSize:', selectedSize.value);
-  console.log('selectedFlavor:', selectedFlavor.value);
-  
   // Clear existing layers
   cakeLayers.value = [];
   layerIdCounter = 0;
   
-  // Check if the selected size has specific tier configurations (diameter as array)
-  if (selectedSize.value && Array.isArray(selectedSize.value.diameter)) {
-    console.log('Multi-tier detected, diameter array:', selectedSize.value.diameter);
-    // Multi-tier cake: create layers based on diameter array data (reverse for bottom-to-top order)
-    const reversedTiers = [...selectedSize.value.diameter].reverse();
-    console.log('Reversed tiers (bottom to top):', reversedTiers);
-    reversedTiers.forEach((tier, index) => {
-      layerIdCounter++;
-      const layerId = `layer_${layerIdCounter}`;
-      const layer = {
-        id: layerId,
-        ...JSON.parse(JSON.stringify(defaultLayerSettings)),
-        radius: tier.diameter / 2, // Convert diameter to radius
-        height: tier.height * 0.5, // Scale factor for 3D units
-        color: selectedFlavor.value ? selectedFlavor.value.color : '#F0E68D'
-      };
-      console.log(`Created tier ${index + 1}:`, layer);
-      cakeLayers.value.push(layer);
-    });
-  } else {
-    console.log('Single-tier or fallback logic');
-    // Single-tier cake or fallback: use original logic
+  // Generate layers based on selection (with 0.5 scaling factor: inches to 3D units)
   for (let i = 0; i < selectedLayers.value; i++) {
     layerIdCounter++;
     const layerId = `layer_${layerIdCounter}`;
-      const baseRadius = selectedSize.value ? (Array.isArray(selectedSize.value.diameter) ? Math.max(...selectedSize.value.diameter.map(d => d.diameter)) / 2 : selectedSize.value.diameter / 2) : 3;
+    const baseRadius = selectedSize.value ? (selectedSize.value.diameter / 2) : 3;
     const radiusReduction = i * 0.4;
     const layer = {
       id: layerId,
@@ -4586,12 +3900,8 @@ const generateCakeFromSelections = () => {
       height: selectedSize.value ? (selectedLayers.value === 1 ? selectedSize.value.height * 0.5 : selectedSize.value.height * 0.5 / selectedLayers.value) : 0.8,
       color: selectedFlavor.value ? selectedFlavor.value.color : '#F0E68D'
     };
-      console.log(`Created layer ${i + 1}:`, layer);
     cakeLayers.value.push(layer);
     }
-    }
-  
-  console.log('Final cakeLayers:', cakeLayers.value);
   
   // Render the generated cake
   renderCake();
@@ -4603,10 +3913,6 @@ const generateCakeFromSelections = () => {
 };
 
 const renderCake = () => {
-  console.log('=== renderCake called ===');
-  console.log('cakeLayers.value.length:', cakeLayers.value.length);
-  console.log('cakeGroup initialized:', !!cakeGroup);
-  
   // Safety check to ensure cakeGroup is initialized
   if (!cakeGroup) {
     console.warn('cakeGroup not initialized yet, skipping render');
@@ -4642,29 +3948,17 @@ const renderCake = () => {
   let topLayerHeight = 0;
 
   if (cakeLayers.value.length > 0) {
-    console.log('Creating layer meshes for', cakeLayers.value.length, 'layers');
     cakeLayers.value.forEach((layerConfig, index) => {
-      console.log(`Creating mesh for layer ${index + 1}:`, {
-        radius: layerConfig.radius,
-        height: layerConfig.height,
-        color: layerConfig.color,
-        id: layerConfig.id
-      });
       const layerMesh = createLayerMesh(layerConfig.radius, layerConfig.height, layerConfig.color, layerConfig.id);
       layerMesh.position.y = currentHeightOffset + layerConfig.height / 2;
-      console.log(`Layer ${index + 1} positioned at y:`, layerMesh.position.y);
       addDecorations(layerMesh, layerConfig);
       cakeGroup.add(layerMesh);
-      console.log(`Layer ${index + 1} added to cakeGroup`);
       currentHeightOffset += layerConfig.height;
       if (index === cakeLayers.value.length - 1) {
         topLayerRadius = layerConfig.radius;
         topLayerHeight = layerConfig.height;
       }
     });
-    console.log('cakeGroup.children.length after adding layers:', cakeGroup.children.length);
-  } else {
-    console.log('No layers to render');
   }
   
   // Add greeting text after layers
@@ -5280,236 +4574,71 @@ select {
   z-index: 10;
 }
 
-/* Navigation Container - Mobile First Design */
-.navigation-container {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(135deg, #F0E68D 0%, #DDD067 100%);
-  padding: 16px 20px;
-  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  border-top: 3px solid #58091F;
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-}
-
-.navigation-container.justify-end {
-  justify-content: flex-end;
-}
-
 .nav-button {
-  padding: 18px 28px;
+  flex: 1;
+  padding: 0.875rem 1.5rem;
   font-size: 1rem;
-  font-weight: 700;
-  border-radius: 14px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
+  border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 130px;
-  min-height: 52px;
+  min-width: 120px;
   letter-spacing: 0.3px;
-  text-transform: uppercase;
-  white-space: nowrap;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
 }
 
-/* Secondary Button (Back) - Outline Style */
 .nav-button.back {
-  background: transparent;
-  color: #58091F;
-  border: 2px solid #58091F;
-  box-shadow: 0 2px 6px rgba(88, 9, 31, 0.1);
+  background-color: #f5f5f5;
+  color: #666;
+  border: 1px solid #e0e0e0;
 }
 
-.nav-button.back:hover:not(:disabled) {
-  background: rgba(88, 9, 31, 0.05);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(88, 9, 31, 0.15);
+.nav-button.back:hover {
+  background-color: #eeeeee;
+  color: #444;
 }
 
-.nav-button.back:active:not(:disabled) {
-  background: rgba(88, 9, 31, 0.1);
-  transform: translateY(0) scale(0.96);
-  transition-duration: 0.1s;
-}
-
-/* Primary Button (Next/Finish) - Filled Style */
 .nav-button.next,
 .nav-button.finish {
-  background: linear-gradient(135deg, #58091F 0%, #7A0C29 100%);
+  background: linear-gradient(135deg, #28a745 0%, #218838 100%);
   color: white;
-  border: 2px solid #58091F;
-  box-shadow: 0 4px 10px rgba(88, 9, 31, 0.25);
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
 }
 
-.nav-button.next:hover:not(:disabled),
-.nav-button.finish:hover:not(:disabled) {
-  background: linear-gradient(135deg, #7A0C29 0%, #58091F 100%);
-  transform: translateY(-1px) scale(1.02);
-  box-shadow: 0 6px 18px rgba(88, 9, 31, 0.35);
+.nav-button.next:hover,
+.nav-button.finish:hover {
+  background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
 }
 
-.nav-button.next:active:not(:disabled),
-.nav-button.finish:active:not(:disabled) {
-  background: linear-gradient(135deg, #4A0716 0%, #58091F 100%);
-  transform: translateY(0) scale(0.96);
-  box-shadow: 0 2px 8px rgba(88, 9, 31, 0.4);
-  transition-duration: 0.1s;
-}
-
-/* Enhanced Mobile Touch Feedback */
-@media (max-width: 768px) {
-  .nav-button:active:not(:disabled) {
-    transform: scale(0.94);
-    transition-duration: 0.1s;
-  }
-  
-  .nav-button.back:active:not(:disabled) {
-    background: rgba(88, 9, 31, 0.15);
-  }
+.nav-button:active {
+  transform: translateY(1px);
 }
 
 .nav-button:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
   transform: none !important;
-  filter: grayscale(0.5);
-}
-
-/* Navigation Button Icons */
-.back-icon,
-.next-icon,
-.finish-icon {
-  font-size: 1.3rem;
-  font-weight: bold;
-  margin: 0 8px;
-  transition: all 0.3s ease;
-}
-
-.nav-button.back .back-icon {
-  margin-right: 8px;
-  margin-left: 0;
-}
-
-.nav-button.next .next-icon,
-.nav-button.finish .finish-icon {
-  margin-left: 8px;
-  margin-right: 0;
-}
-
-.nav-button:hover:not(:disabled) .back-icon,
-.nav-button:hover:not(:disabled) .next-icon,
-.nav-button:hover:not(:disabled) .finish-icon {
-  transform: scale(1.1);
-}
-
-/* Enhance finish button with special styling */
-.nav-button.finish {
-  background: linear-gradient(135deg, #58091F 0%, #7A0C29 100%);
-  position: relative;
-}
-
-.nav-button.finish::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(240, 230, 141, 0.2) 0%, rgba(221, 208, 103, 0.2) 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.nav-button.finish:hover:not(:disabled)::before {
-  opacity: 1;
 }
 
 /* Removed arrow icons */
 
-/* Mobile-First Responsive Design */
-
-/* Large Mobile / Small Tablet */
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .navigation-container {
-    padding: 20px 16px;
-    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-    gap: 16px;
+  .modal-navigation {
+    flex-direction: column;
+    padding: 1rem;
   }
 
   .nav-button {
-    padding: 20px 32px;
-    font-size: 1.1rem;
-    min-width: 140px;
-    min-height: 56px;
-    border-radius: 16px;
-  }
-
-  .back-icon,
-  .next-icon,
-  .finish-icon {
-    font-size: 1.4rem;
-    margin: 0 8px;
-  }
-}
-
-/* Mobile Portrait */
-@media (max-width: 480px) {
-  .navigation-container {
-    padding: 16px;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-    gap: 12px;
-    flex-wrap: wrap;
-    justify-content: stretch;
-  }
-
-  .nav-button {
-    flex: 1;
-    min-width: 0;
-    padding: 18px 20px;
-    font-size: 1rem;
-    min-height: 54px;
-    max-width: calc(50% - 6px);
-  }
-
-  .back-icon,
-  .next-icon,
-  .finish-icon {
-    font-size: 1.3rem;
-    margin: 0 6px;
-  }
-}
-
-/* Very Small Mobile */
-@media (max-width: 360px) {
-  .navigation-container {
-    padding: 14px 12px;
-    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-    gap: 8px;
-  }
-
-  .nav-button {
-    padding: 16px 18px;
-    font-size: 0.95rem;
-    min-height: 52px;
-    letter-spacing: 0.2px;
-  }
-
-  .back-icon,
-  .next-icon,
-  .finish-icon {
-    font-size: 1.2rem;
-    margin: 0 4px;
+    width: 100%;
+    min-width: unset;
   }
 }
 
@@ -6208,43 +5337,9 @@ ion-toolbar {
   transform: scale(1.1);
 }
 
-.option-button.selected {
-  border: 3px solid #58091F !important;
-  background: rgba(240, 230, 141, 0.1) !important;
-  box-shadow: 0 4px 16px rgba(88, 9, 31, 0.15) !important;
-  transform: scale(1.02);
-}
-
 .option-button.selected .flavor-preview {
   transform: scale(1.15);
-  box-shadow: 0 4px 12px rgba(88, 9, 31, 0.3);
-  border: 2px solid #58091F;
-}
-
-.option-button.selected .flavor-preview::after {
-  content: '✓';
-  position: absolute;
-  width: auto;
-  height: auto;
-  border: none;
-  color: #fff;
-  font-size: 1.2rem;
-  font-weight: bold;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.option-button.selected .option-label {
-  color: #58091F !important;
-  font-weight: 700 !important;
-}
-
-.option-button.selected .flavor-description {
-  background: rgba(88, 9, 31, 0.1) !important;
-  color: #58091F !important;
-  font-weight: 600 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* Topper Controls Styles */
@@ -6584,36 +5679,87 @@ ion-toolbar {
   font-size: 1.1rem;
 }
 
-/* Custom slider styling for mobile-friendly controls */
-.slider-thumb::-webkit-slider-thumb {
-  appearance: none;
-  height: 24px;
-  width: 24px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #58091F 0%, #7A0C29 100%);
+/* Confirmation Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.confirmation-modal {
+  background-color: white;
+  border-radius: 12px;
+  width: 95%;
+  max-width: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 16px 20px;
+  background-color: #7A5C1E;
+  color: white;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-body p {
+  margin: 0;
+  color: #333;
+  line-height: 1.5;
+}
+
+.modal-footer {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #eee;
+}
+
+.cancel-btn {
+  padding: 10px 16px;
+  background-color: #f5f5f5;
+  color: #333;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
   cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  transition: all 0.2s ease;
+  transition: background-color 0.2s;
 }
 
-.slider-thumb::-webkit-slider-thumb:hover {
-  transform: scale(1.1);
+.cancel-btn:hover {
+  background-color: #e5e5e5;
 }
 
-.slider-thumb::-webkit-slider-thumb:active {
-  transform: scale(1.2);
-}
-
-.slider-thumb::-moz-range-thumb {
-  height: 24px;
-  width: 24px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #58091F 0%, #7A0C29 100%);
+.confirm-btn {
+  padding: 10px 16px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
   cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  transition: all 0.2s ease;
+  transition: background-color 0.2s;
+}
+
+.confirm-btn:hover {
+  background-color: #c82333;
 }
 
 /* Add to Cart Button Styles */
@@ -6905,22 +6051,6 @@ ion-toolbar {
 
 .option-button {
   padding: 0.75rem;
-  background: #FFFFFF;
-  border: 2px solid #E8E8E8;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.option-button:hover {
-  border-color: #F0E68D;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .option-icon {
@@ -7009,15 +6139,13 @@ ion-toolbar {
   align-items: center;
   gap: 1rem;
   background: #FFFFFF;
-  border: 2px solid #E8E8E8;
+  border: 1px solid #E8E8E8;
   border-radius: 12px;
   padding: 0.75rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   width: 100%;
   text-align: left;
-  position: relative;
-  overflow: hidden;
 }
 
 .layer-option:active {
@@ -7025,28 +6153,9 @@ ion-toolbar {
 }
 
 .layer-option.selected {
-  border: 3px solid #58091F;
-  background: rgba(240, 230, 141, 0.1);
-  box-shadow: 0 6px 16px rgba(88, 9, 31, 0.2);
-  transform: translateY(-2px) scale(1.02);
-}
-
-.layer-option.selected::after {
-  content: '✓';
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: #58091F;
-  color: white;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: bold;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border-color: #58091F;
+  background: rgba(240, 230, 141, 0.05);
+  box-shadow: 0 2px 8px rgba(88, 9, 31, 0.1);
 }
 
 .layer-preview {
@@ -7087,7 +6196,6 @@ ion-toolbar {
   font-size: 1.1rem;
   font-weight: 600;
   color: #333;
-  transition: all 0.3s ease;
 }
 
 .layer-servings {
@@ -7099,26 +6207,17 @@ ion-toolbar {
   font-size: 1.1rem;
   font-weight: 600;
   color: #28a745;
-  transition: all 0.3s ease;
 }
 
 .layer-option.selected .layer-name {
   color: #58091F;
-  font-weight: 700;
-  font-size: 1.2rem;
-}
-
-.layer-option.selected .layer-price {
-  color: #58091F;
-  font-weight: 700;
 }
 
 /* Hover states only for non-touch devices */
 @media (hover: hover) {
   .layer-option:hover {
     border-color: #F0E68D;
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
   }
 }
 
@@ -7286,44 +6385,24 @@ ion-toolbar {
 .size-option {
   display: block;
   width: 100%;
+
   background: #ffffff;
-  border: 2px solid #e0e0e0;
+  border: 1px solid #e0e0e0;
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
+  transition: all 0.2s ease;
 }
 
 .size-option:hover {
   border-color: #F0E68D;
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .size-option.selected {
-  background: rgba(240, 230, 141, 0.1);
-  border: 3px solid #58091F;
-  box-shadow: 0 6px 16px rgba(88, 9, 31, 0.2);
-  transform: translateY(-2px) scale(1.02);
-}
-
-.size-option.selected::after {
-  content: '✓';
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: #58091F;
-  color: white;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: bold;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  background: #FFFACD;
+  border-color: #F0E68D;
+  box-shadow: 0 2px 8px rgba(240, 230, 141, 0.3);
 }
 
 .size-content {
@@ -7369,12 +6448,6 @@ ion-toolbar {
   font-weight: 600;
   color: #333;
   font-size: 1.1rem;
-  transition: all 0.3s ease;
-}
-
-.size-option.selected .size-name {
-  color: #58091F;
-  font-weight: 700;
 }
 
 .size-dimensions {
@@ -7387,60 +6460,10 @@ ion-toolbar {
   font-weight: 600;
   font-size: 1.2rem;
   margin-top: 0.25rem;
-  transition: all 0.3s ease;
-}
-
-.size-option.selected .size-price {
-  color: #58091F;
-  font-weight: 700;
-  font-size: 1.3rem;
 }
 
 .step-description {
   color: #666;
   margin-bottom: 1rem;
-}
-
-/* Custom slider styling for mobile-friendly icing controls */
-.slider-thumb::-webkit-slider-thumb {
-  appearance: none;
-  height: 20px;
-  width: 20px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #58091F, #7A0C29);
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(88, 9, 31, 0.3);
-  border: 2px solid white;
-  transition: all 0.2s ease;
-}
-
-.slider-thumb::-webkit-slider-thumb:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(88, 9, 31, 0.4);
-}
-
-.slider-thumb::-webkit-slider-thumb:active {
-  transform: scale(0.95);
-}
-
-.slider-thumb::-moz-range-thumb {
-  appearance: none;
-  height: 20px;
-  width: 20px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #58091F, #7A0C29);
-  cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 2px 6px rgba(88, 9, 31, 0.3);
-  transition: all 0.2s ease;
-}
-
-.slider-thumb::-moz-range-thumb:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(88, 9, 31, 0.4);
-}
-
-.slider-thumb::-moz-range-thumb:active {
-  transform: scale(0.95);
 }
 </style> 

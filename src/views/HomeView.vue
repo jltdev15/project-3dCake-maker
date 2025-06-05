@@ -23,6 +23,15 @@
     </div>
 
     <ion-content>
+      <ion-refresher slot="fixed" @ionRefresh="handleRefresh">
+        <ion-refresher-content
+          pulling-icon="chevron-down-circle-outline"
+          pulling-text="Pull to refresh"
+          refreshing-spinner="circles"
+          refreshing-text="Refreshing...">
+        </ion-refresher-content>
+      </ion-refresher>
+
       <div class="content-wrapper">
         <!-- Categories Horizontal Scroll -->
         <div class="categories-section">
@@ -76,7 +85,9 @@ import {
   IonButton,
   IonIcon,
   IonBadge,
-  IonSearchbar
+  IonSearchbar,
+  IonRefresher,
+  IonRefresherContent
 } from '@ionic/vue';
 import {
   notifications,
@@ -158,6 +169,19 @@ const viewCategory = (categoryId) => {
 }
 const viewProduct = (productId) => {
   router.push(`/category/${productId.category}/cake?id=${productId.id}`);
+};
+
+const handleRefresh = async (event) => {
+  try {
+    // Refresh the cake store data
+    await cakeStore.fetchCategories();
+    
+    // Complete the refresh
+    event.target.complete();
+  } catch (error) {
+    console.error('Error refreshing data:', error);
+    event.target.complete();
+  }
 };
 </script>
 
