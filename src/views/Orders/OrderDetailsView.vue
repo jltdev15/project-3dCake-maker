@@ -1,11 +1,75 @@
 <template>
   <ion-page class="order-details-page">
     <ion-header class="ion-no-border">
-      <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-back-button default-href="/orders" class="back-button"></ion-back-button>
-        </ion-buttons>
-        <ion-title class="details-title ion-text-center pr-12" >Order Details</ion-title>
+      <ion-toolbar class="toolbar-custom">
+        <!-- Modern Redesigned Toolbar -->
+        <div class="relative bg-gradient-to-r from-[#F0E68D] via-[#E6D77A] to-[#DCC867] text-gray-800 shadow-xl">
+          <!-- Background Pattern Overlay -->
+          <div class="absolute inset-0 bg-black/5 opacity-20"></div>
+          <div class="absolute inset-0 bg-gradient-to-br from-transparent via-black/5 to-transparent"></div>
+
+          <!-- Main Content -->
+          <div class="relative px-4 py-3 sm:px-6 sm:py-4">
+            <div class="flex items-center justify-between">
+              <!-- Left Side - Back Button -->
+              <div class="flex items-center">
+                <button @click="$router.go(-1)"
+                  class="group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-black/10 backdrop-blur-sm rounded-xl border border-black/20 hover:bg-black/20 active:scale-95 transition-all duration-200 touch-manipulation">
+                  <ion-icon :icon="chevronBackOutline"
+                    class="text-lg sm:text-xl text-gray-800 drop-shadow-sm group-hover:scale-110 transition-transform duration-200"></ion-icon>
+                </button>
+              </div>
+
+              <!-- Center - Title Section -->
+              <div class="flex-1 text-center mx-4">
+                <div class="flex items-center justify-center space-x-2 sm:space-x-3">
+                  <!-- Title Text -->
+                  <div class="text-center">
+                    <h1 class="text-lg sm:text-xl font-bold tracking-wide drop-shadow-sm text-gray-800">
+                      Order Details
+                    </h1>
+                    <p class="text-xs sm:text-sm opacity-70 font-medium tracking-wide mt-0.5 text-gray-700">
+                      {{ order ? `#${order.orderId}` : 'Loading order information' }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Side - Action Buttons -->
+              <div class="flex items-center space-x-2">
+                <!-- Status indicator or action button -->
+                <div v-if="order" 
+                  class="group relative flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-black/10 backdrop-blur-sm rounded-xl border border-black/20">
+                  <ion-icon :icon="order.status === 'pending' ? timeOutline : order.status === 'accepted' ? checkmarkCircleOutline : closeCircleOutline"
+                    class="relative text-lg sm:text-xl text-gray-800 drop-shadow-sm"
+                    :class="{
+                      'text-yellow-600': order.status === 'pending',
+                      'text-green-600': order.status === 'accepted', 
+                      'text-red-600': order.status === 'declined'
+                    }"></ion-icon>
+                </div>
+              </div>
+            </div>
+
+            <!-- Order Info Strip -->
+            <div v-if="order && !isLoading" class="mt-3 pt-3 border-t border-black/20">
+              <div class="flex items-center justify-between text-xs sm:text-sm">
+                <div class="flex items-center space-x-2 text-gray-700/80">
+                  <ion-icon :icon="calendarOutline" class="text-sm"></ion-icon>
+                  <span>{{ formatDate(order.createdAt) }}</span>
+                </div>
+                <div class="flex items-center space-x-2 text-gray-700/80">
+                  <ion-icon :icon="pricetagOutline" class="text-sm"></ion-icon>
+                  <span>{{ isCustomOrder(order) ? 'Custom Order' : 'Standard Order' }}</span>
+                </div>
+                <div class="flex items-center space-x-2 text-gray-700/80">
+                  <ion-icon :icon="cashOutline" class="text-sm"></ion-icon>
+                  <span>{{ order.total ? `₱${order.total.toFixed(2)}` : 'Pending' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </ion-toolbar>
     </ion-header>
 
@@ -79,14 +143,11 @@
                     <ion-icon class="text-2xl" :icon="cashOutline"></ion-icon>
                     <div class="detail-content">
                       <span class="detail-label">Total Amount</span>
-                      <template v-if="order.total">
+                   
                         
-                        <span class="detail-value price">₱{{ order.total.toFixed(2) }}</span>
-                      </template>
-                      <template v-else>
-                        <ion-badge class="pricing-badge">Pending Pricing</ion-badge>
-                        
-                      </template>
+                        <span class="detail-value price">₱{{ order.totalAmount?.toFixed(2) }}</span>
+                
+
                     </div>
                   </div>
                   
@@ -214,7 +275,7 @@
                   </div>
                   <div class="summary-row total">
                     <span>Total</span>
-                    <span>₱{{ order.total?.toFixed(2) || '0.00' }}</span>
+                    <span>₱{{ order.totalAmount?.toFixed(2) || '0.00' }}</span>
                   </div>
                 </div>
               </ion-list>
@@ -240,7 +301,8 @@ import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonButtons,
          IonCardSubtitle, IonList, IonItem, IonThumbnail, IonText } from '@ionic/vue';
 import { calendarOutline, timeOutline, cashOutline, alertCircleOutline, 
          arrowBack, pricetagOutline, cartOutline, locationOutline,
-         chatbubbleOutline, checkmarkCircleOutline, bicycleOutline, checkmarkDoneCircleOutline } from 'ionicons/icons';
+         chatbubbleOutline, checkmarkCircleOutline, bicycleOutline, checkmarkDoneCircleOutline,
+         chevronBackOutline, closeCircleOutline } from 'ionicons/icons';
 import { useRoute, useRouter } from 'vue-router';
 import { useOrderStore } from '../../stores/orderStore';
 import { computed, ref, onMounted, watch } from 'vue';
@@ -451,17 +513,6 @@ const calculateSubtotal = (order: any): number => {
 
 ion-header {
   --background: transparent;
-}
-
-ion-toolbar {
-  --background: #F0E68D;
-  --color: #58091F;
-  --border-width: 0;
-}
-
-.details-title {
-  font-weight: 600;
-  font-size: 1.25rem;
 }
 
 .details-container {

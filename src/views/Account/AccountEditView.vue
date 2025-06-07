@@ -1,17 +1,50 @@
 <template>
   <ion-page class="account-edit-page">
     <ion-header class="ion-no-border">
-      <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-back-button default-href="/account" class="back-button"></ion-back-button>
-        </ion-buttons>
-        <ion-title class="edit-title">Edit Profile</ion-title>
-      </ion-toolbar>
+      <!-- Modern Redesigned Toolbar -->
+      <div class="relative bg-gradient-to-r from-[#F0E68D] via-[#E6D77A] to-[#DCC867] text-gray-800 shadow-xl">
+        <!-- Background Pattern Overlay -->
+        <div class="absolute inset-0 bg-black/5 opacity-20"></div>
+        <div class="absolute inset-0 bg-gradient-to-br from-transparent via-black/5 to-transparent"></div>
+
+        <!-- Main Content -->
+        <div class="relative px-4 py-3 sm:px-6 sm:py-4">
+          <div class="flex items-center justify-between">
+            <!-- Left Side - Back Button -->
+            <div class="flex items-center">
+              <button @click="router.back()" 
+                      class="group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-black/10 backdrop-blur-sm rounded-xl border border-black/20 hover:bg-black/20 active:scale-95 transition-all duration-200 touch-manipulation">
+                <ion-icon :icon="chevronBackOutline" 
+                          class="text-lg sm:text-xl text-gray-800 drop-shadow-sm group-hover:scale-110 transition-transform duration-200"></ion-icon>
+              </button>
+            </div>
+
+            <!-- Center - Title Section -->
+            <div class="flex-1 text-center mx-4">
+              <div class="flex items-center justify-center space-x-2 sm:space-x-3">
+                <div class="text-center">
+                  <h1 class="text-lg sm:text-xl font-bold tracking-wide drop-shadow-sm text-gray-800">
+                    Edit Profile
+                  </h1>
+                  <p class="text-xs sm:text-sm opacity-70 font-medium tracking-wide mt-0.5 text-gray-700">
+                    Update your personal information
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Side - Placeholder for potential actions -->
+            <div class="flex items-center space-x-2 w-10 h-10 sm:w-12 sm:h-12"> <!-- Ensured same width as back button for balance -->
+              <!-- e.g., a refresh or help button if needed -->
+            </div>
+          </div>
+        </div>
+      </div>
     </ion-header>
 
     <ion-content>
       <div class="edit-container">
-        <div class="edit-card">
+        <ion-card class="edit-form-card">
           <div class="form-header">
             <h2 class="form-title">Update Your Information</h2>
             <p class="form-subtitle">Make changes to your profile details</p>
@@ -56,7 +89,7 @@
               Save Changes
             </ion-button>
           </div>
-        </div>
+        </ion-card>
       </div>
     </ion-content>
   </ion-page>
@@ -64,12 +97,12 @@
 
 <script setup lang="ts">  
 // @ts-ignore - These imports are used in the template
-import { IonPage, IonContent, IonBackButton, IonButtons, IonItem, IonLabel, IonInput, IonIcon, IonButton, IonHeader, IonToolbar, IonTitle } from '@ionic/vue';
+import { IonPage, IonContent, IonBackButton, IonButtons, IonItem, IonLabel, IonInput, IonIcon, IonButton, IonHeader, IonToolbar, IonTitle, IonCard } from '@ionic/vue';
 // @ts-ignore - These icons are used in the template
 import { ref } from 'vue';
 import { useAuthStore } from '../../stores/authStore';
 // @ts-ignore - These icons are used in the template
-import { personOutline, mailOutline, saveOutline, callOutline, locationOutline } from 'ionicons/icons';
+import { personOutline, mailOutline, saveOutline, callOutline, locationOutline, chevronBackOutline } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 import { database, ref as dbRef, update } from '../../config/firebase';
 
@@ -113,7 +146,7 @@ const handleSave = async () => {
   --background: linear-gradient(135deg, #FFF7D0 0%, #C8AD7E 100%);
 }
 
-ion-header {
+/* ion-header {
   --background: #FFFFFF;
   position: fixed;
   top: 0;
@@ -138,21 +171,33 @@ ion-toolbar {
   font-weight: 700;
   color: #FFFFFF;
   letter-spacing: 0.5px;
-}
+} */
 
 .edit-container {
   padding: 16px;
-  padding-top: 80px;
+  padding-top: 20px; /* Adjusted from 80px due to new header style */
   max-width: 600px;
   margin: 0 auto;
 }
 
+/* New Edit Form Card Styles */
+.edit-form-card {
+  --background: rgba(255, 255, 255, 0.98);
+  border-radius: 20px; /* Consistent with profile-card */
+  padding: 28px; /* Consistent with profile-card */
+  margin: 0 0 24px 0; /* Margin within the container */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12); /* Consistent with profile-card */
+}
+
+/* Commenting out old .edit-card styles */
+/*
 .edit-card {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 24px;
   padding: 32px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+*/
 
 .form-header {
   text-align: center;
@@ -242,7 +287,7 @@ ion-input {
 }
 
 @media (max-width: 480px) {
-  .edit-card {
+  .edit-form-card {
     padding: 24px;
   }
 

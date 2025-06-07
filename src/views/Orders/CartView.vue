@@ -1,22 +1,77 @@
 <template>
   <ion-page class="cart-page">
     <ion-header class="ion-no-border">
-      <ion-toolbar>
-        <ion-title class="cart-title">Cake Cart</ion-title>
+      <ion-toolbar class="toolbar-custom">
+        <!-- Modern Redesigned Toolbar -->
+        <div class="relative bg-gradient-to-r from-[#F0E68D] via-[#E6D77A] to-[#DCC867] text-gray-800 shadow-xl">
+          <!-- Background Pattern Overlay -->
+          <div class="absolute inset-0 bg-black/5 opacity-20"></div>
+          <div class="absolute inset-0 bg-gradient-to-br from-transparent via-black/5 to-transparent"></div>
+
+          <!-- Main Content -->
+          <div class="relative px-4 py-3 sm:px-6 sm:py-4">
+            <div class="flex items-center justify-between">
+              <!-- Left Side - Back Button -->
+              <div class="flex items-center">
+                <button @click="$router.go(-1)"
+                  class="group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-black/10 backdrop-blur-sm rounded-xl border border-black/20 hover:bg-black/20 active:scale-95 transition-all duration-200 touch-manipulation">
+                  <ion-icon :icon="chevronBackOutline"
+                    class="text-lg sm:text-xl text-gray-800 drop-shadow-sm group-hover:scale-110 transition-transform duration-200"></ion-icon>
+                </button>
+              </div>
+
+              <!-- Center - Title Section -->
+              <div class="flex-1 text-center mx-4">
+                <div class="flex items-center justify-center space-x-2 sm:space-x-3">
+                  <!-- Title Text -->
+                  <div class="text-center">
+                    <h1 class="text-lg sm:text-xl font-bold tracking-wide drop-shadow-sm text-gray-800">
+                      Cake Cart
+                    </h1>
+                    <p class="text-xs sm:text-sm opacity-70 font-medium tracking-wide mt-0.5 text-gray-700">
+                      {{ cartStore.items.length === 0 ? 'Your cart is empty' : `${cartStore.itemCount} items ready` }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Side - Action Buttons -->
+              <div class="flex items-center space-x-2">
+                <!-- Clear Cart Button (when cart has items) -->
+                <button v-if="cartStore.items.length > 0" @click="confirmClearCart"
+                  class="group relative flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-black/10 backdrop-blur-sm rounded-xl border border-black/20 hover:bg-black/20 active:scale-95 transition-all duration-200 touch-manipulation overflow-hidden">
+                  <!-- Button Background Effect -->
+                  <div
+                    class="absolute inset-0 bg-gradient-to-r from-[#F0E68D]/30 to-[#DCC867]/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  </div>
+
+                  <!-- Clear Icon -->
+                  <ion-icon :icon="trashOutline"
+                    class="relative text-lg sm:text-xl text-gray-800 drop-shadow-sm group-hover:scale-110 transition-transform duration-200"></ion-icon>
+                </button>
+                <!-- Placeholder when cart is empty -->
+                <div v-else class="w-10 h-10 sm:w-12 sm:h-12"></div>
+              </div>
+            </div>
+
+
+          </div>
+        </div>
       </ion-toolbar>
     </ion-header>
 
     <ion-content>
-      <div class="cart-container px-2">
+      <div class="cart-container px-2 mt-16">
         <template v-if="cartStore.items.length === 0">
           <div class="empty-state">
             <ion-icon :icon="cartOutline" class="empty-state-icon"></ion-icon>
             <h2>Your cart is empty</h2>
             <p>Start adding some delicious cakes to your cart</p>
-            <ion-button router-link="/home" expand="block" class="action-button">
+            <button @click="$router.push('/home')"
+              class="flex items-center justify-center gap-2 px-6 py-4 md:py-3 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-bold text-lg md:text-base uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[56px] md:min-h-[48px] shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation max-w-[240px] w-full">
               Start Shopping
-              <ion-icon :icon="arrowForward" slot="end"></ion-icon>
-            </ion-button>
+              <ion-icon :icon="arrowForward" class="text-xl"></ion-icon>
+            </button>
           </div>
         </template>
 
@@ -36,20 +91,21 @@
                   <h3 class="item-name">{{ item.name }}</h3>
                   <p v-if="item.size" class="item-size">Size: {{ item.size }}</p>
                   <p v-if="(item as CartItem).isCustomCake" class="item-custom-badge">Custom Design</p>
-                  <p v-if="(item as CartItem)" class="item-price">₱{{ item.unitPrice?.toFixed(2) || '0.00'
+                  <p v-if="(item as CartItem)" class="item-price">₱{{ item.totalPrice?.toFixed(2) || '0.00'
                     }} each</p>
                   
                 </div>
                 <div class="item-controls">
                   <div class="quantity-controls">
-                    <ion-button fill="outline" @click="updateItemQuantity(item.id, item.quantity - 1)"
-                      :disabled="item.quantity <= 1">
-                      <ion-icon :icon="removeOutline"></ion-icon>
-                    </ion-button>
+                    <button @click="updateItemQuantity(item.id, item.quantity - 1)" :disabled="item.quantity <= 1"
+                      class="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <ion-icon :icon="removeOutline" class="text-sm"></ion-icon>
+                    </button>
                     <span class="quantity-value">{{ item.quantity }}</span>
-                    <ion-button fill="outline" @click="updateItemQuantity(item.id, item.quantity + 1)">
-                      <ion-icon :icon="addOutline"></ion-icon>
-                    </ion-button>
+                    <button @click="updateItemQuantity(item.id, item.quantity + 1)"
+                      class="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
+                      <ion-icon :icon="addOutline" class="text-sm"></ion-icon>
+                    </button>
                   </div>
                 </div>
               </ion-item>
@@ -78,10 +134,10 @@
                 </span>
               </div>
             </div>
-            <ion-button expand="block" class="checkout-btn" @click="handleCheckout" :disabled="isCheckingOut">
-              <ion-spinner v-if="isCheckingOut" name="dots"></ion-spinner>
-              <span v-else>Proceed to Checkout</span>
-            </ion-button>
+            <button @click="proceedToCheckout" :disabled="cartStore.items.length === 0"
+              class="flex items-center justify-center gap-2 px-6 py-4 md:py-3 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-bold text-lg md:text-base uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[56px] md:min-h-[48px] shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation w-full disabled:opacity-50 disabled:cursor-not-allowed">
+              <span>Proceed to Checkout</span>
+            </button>
           </div>
         </template>
       </div>
@@ -122,112 +178,15 @@
                 Thank you for your order. We'll process it right away.
               </template>
             </p>
-            <button class="custom-success-button" @click="handleSuccessModalDismiss">
+            <button @click="handleSuccessModalDismiss"
+              class="flex items-center justify-center gap-2 px-6 py-4 md:py-3 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-bold text-lg md:text-base uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[56px] md:min-h-[48px] shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation w-full max-w-[250px]">
               Continue Shopping
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Checkout Modal -->
-      <ion-modal :is-open="showCheckoutModal" @didDismiss="showCheckoutModal = false" class="checkout-modal">
-        <ion-header class="ion-no-border">
-          <ion-toolbar>
-            <ion-title class="font-bold">Checkout</ion-title>
-            <ion-buttons slot="end">
-              <ion-button class="font-bold" @click="showCheckoutModal = false">
-                <ion-icon :icon="closeOutline"></ion-icon>
-              </ion-button>
-            </ion-buttons>
-          </ion-toolbar>
-        </ion-header>
 
-        <ion-content class="ion-padding-horizontal">
-          <div class="checkout-content">
-            <!-- Order Summary Section -->
-            <div class="checkout-section">
-              <h2 class="section-title">Order Summary</h2>
-              <div class="order-items">
-                <div v-for="item in cartStore.items" :key="item.id" class="order-item">
-                  <div class="order-item-image" v-if="item.imageUrl">
-                    <img :src="item.imageUrl" :alt="item.name">
-                  </div>
-                  <div class="order-item-details">
-                    <h3 class="order-item-name">{{ item.name }}</h3>
-                    <p v-if="item.size" class="order-item-size">Size: {{ item.size }}</p>
-                    <p v-if="(item as CartItem).isCustomCake" class="order-item-custom">Custom Design</p>
-                  </div>
-                  <div class="order-item-quantity">
-                    <span class="quantity">x{{ item.quantity }}</span>
-
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Payment Method Section -->
-            <div class="checkout-section">
-              <h2 class="section-title">Payment Method</h2>
-              <div class="payment-options">
-                <ion-radio-group v-model="selectedPaymentMethod">
-                  <ion-item class="payment-option">
-                    <ion-radio value="cod" label-placement="end" justify="start">
-                      <div class="payment-option-content">
-                        <ion-icon :icon="cashOutline" class="payment-icon"></ion-icon>
-                        <div class="payment-details">
-                          <span class="payment-title">Cash on Delivery</span>
-                          <span class="payment-description">Pay when you receive your order</span>
-                        </div>
-                      </div>
-                    </ion-radio>
-                  </ion-item>
-                </ion-radio-group>
-                <p class="text-center">Or</p>
-
-                <div class="w-full p-3 bg-gray-100 rounded-lg">
-                  <div v-if="showCheckoutModal && cartStore.cartTotal > 0" id="paypal-button-container" class="">
-                    <div v-if="!paypalLoaded" class="paypal-loading">
-                      <ion-spinner name="dots"></ion-spinner>
-                      <p>Loading payment options...</p>
-                    </div>
-                  </div>
-                  
-                  <div v-else-if="showCheckoutModal && cartStore.cartTotal <= 0" class="paypal-disabled">
-                    <p>Add items to cart to enable PayPal payment</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Bottom Spacer -->
-            <div class="bottom-spacer"></div>
-          </div>
-
-          <!-- Fixed Bottom Section -->
-          <div class="checkout-bottom-section">
-            <div class="total-section">
-              <div class="total-row">
-                <span>Subtotal</span>
-                <span class="total-amount">
-                
-                  ₱{{ Number(cartStore.cartTotal).toFixed(2) }}
-                </span>
-              </div>
-              <div class="total-row grand-total">
-                <span>Total Amount</span>
-                <span class="grand-total-amount">
-                  ₱{{ Number(cartStore.cartTotal).toFixed(2) }}
-                </span>
-              </div>
-            </div>
-            <ion-button expand="block" class="place-order-btn" @click="placeOrder"
-              :disabled="!selectedPaymentMethod || isPlacingOrder">
-              <ion-spinner v-if="isPlacingOrder" name="dots"></ion-spinner>
-              <span v-else>Place Order</span>
-            </ion-button>
-          </div>
-        </ion-content>
-      </ion-modal>
     </ion-content>
   </ion-page>
 </template>
@@ -238,35 +197,22 @@ import {
   IonPage,
   IonHeader,
   IonToolbar,
-  IonTitle,
   IonContent,
-  IonButton,
-  IonIcon,
-  IonSpinner,
   IonAlert,
-  IonModal,
   IonItem,
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
-  IonRadioGroup,
-  IonRadio,
-  IonButtons
 } from '@ionic/vue';
 // @ts-ignore - These icons are used in the template
-import { cartOutline, addOutline, removeOutline, trashOutline, arrowForward, checkmarkCircle, closeOutline, cashOutline } from 'ionicons/icons';
+import { cartOutline, addOutline, removeOutline, trashOutline, arrowForward, checkmarkCircle, closeOutline, cashOutline, chevronBackOutline, bagOutline, pricetagOutline } from 'ionicons/icons';
 
 import { useCartStore } from '../../stores/cartStore';
-import { onMounted, ref, onUnmounted, computed, watch, nextTick } from 'vue';
+import { onMounted, ref, onUnmounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { toastController } from '@ionic/vue';
-import { useAuthStore } from '../../stores/authStore';
-import { database, ref as dbRef, set, remove, get } from '../../config/firebase';
-import { createPayPalOrder, capturePayPalOrder } from '@/api/paypal';
 
-// PayPal configuration
-const PAYPAL_CLIENT_ID = 'AbnTUyrjf9HNGPd041AS7o7BI1jxhhQVB6pZG6cKJvUCgUciUjH-NHGVE-4fB9OZUTEamm_vdP_p49y2';
-const PAYPAL_SDK_URL = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=PHP&intent=capture&components=buttons&enable-funding=paylater,venmo&disable-funding=paylater,card`;
+
 
 // Define interface for cart items including custom cake properties
 interface CartItem {
@@ -294,31 +240,14 @@ interface CartItem {
   };
 }
 
-// Update the generateOrderId function
-const generateOrderId = async () => {
-  try {
-    const ordersRef = dbRef(database, 'orders');
-    const snapshot = await get(ordersRef);
-    const orderCount = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
-    const nextNumber = orderCount + 1;
-    return `ord${String(nextNumber).padStart(5, '0')}`; // Format: ord00001
-  } catch (error) {
-    console.error('Error generating order ID:', error);
-    throw error;
-  }
-};
+
 
 const router = useRouter();
 const cartStore = useCartStore();
-const authStore = useAuthStore();
-const isCheckingOut = ref(false);
 const showDeleteAlert = ref(false);
 const itemToDelete = ref<string | null>(null);
 const showSuccessModal = ref(false);
-const showCheckoutModal = ref(false);
-const selectedPaymentMethod = ref('');
-const isPlacingOrder = ref(false);
-const paypalLoaded = ref(false);
+
 
 // Add debug logging
 watch(() => cartStore.items, (items) => {
@@ -326,215 +255,18 @@ watch(() => cartStore.items, (items) => {
   console.log('Cart Total:', cartStore.cartTotal);
 }, { immediate: true });
 
-// Helper function to wait for element
-const waitForElement = (selector: string, timeout = 5000): Promise<HTMLElement> => {
-  return new Promise((resolve, reject) => {
-    const startTime = Date.now();
-    
-    const checkElement = () => {
-      const element = document.getElementById(selector);
-      if (element) {
-        resolve(element);
-        return;
-      }
-      
-      if (Date.now() - startTime >= timeout) {
-        reject(new Error(`Element ${selector} not found after ${timeout}ms`));
-        return;
-      }
-      
-      requestAnimationFrame(checkElement);
-    };
-    
-    checkElement();
-  });
-};
 
-// Add PayPal SDK loading function
-const loadPayPalSDK = () => {
-  return new Promise<void>((resolve, reject) => {
-    // Check if PayPal SDK is already loaded
-    // @ts-ignore - PayPal types
-    if (window.paypal) {
-      console.log('PayPal SDK already loaded');
-      // Verify that required components are available
-      // @ts-ignore - PayPal types
-      if (window.paypal.Buttons) {
-        resolve();
-      } else {
-        // If SDK is loaded but buttons component is missing, reload it
-        console.log('PayPal SDK loaded but buttons component missing, reloading...');
-        const existingScript = document.querySelector(`script[src*="paypal.com/sdk/js"]`);
-        if (existingScript) {
-          existingScript.remove();
-        }
-      }
-    }
 
-    // Remove any existing PayPal script
-    const existingScript = document.querySelector(`script[src*="paypal.com/sdk/js"]`);
-    if (existingScript) {
-      existingScript.remove();
-    }
-
-    const script = document.createElement('script');
-    script.src = PAYPAL_SDK_URL;
-    script.async = true;
-    
-    script.onload = () => {
-      console.log('PayPal SDK loaded successfully');
-      // Add a small delay to ensure SDK is fully initialized
-      setTimeout(() => {
-        // @ts-ignore - PayPal types
-        if (window.paypal && window.paypal.Buttons) {
-          console.log('PayPal SDK and buttons component initialized successfully');
-          resolve();
-        } else {
-          console.error('PayPal SDK loaded but buttons component not available');
-          reject(new Error('PayPal buttons component not available'));
-        }
-      }, 500);
-    };
-    
-    script.onerror = (error) => {
-      console.error('Failed to load PayPal SDK:', error);
-      reject(new Error('Failed to load PayPal SDK'));
-    };
-
-    document.head.appendChild(script);
-  });
-};
-
-// Update onMounted to load PayPal SDK
 onMounted(async () => {
   console.log('Component mounted, loading cart items...');
   await cartStore.loadCartItems();
-  try {
-    await loadPayPalSDK();
-    console.log('PayPal SDK loaded during component mount');
-  } catch (error) {
-    console.error('Failed to load PayPal SDK during mount:', error);
-  }
 });
 
 onUnmounted(() => {
   cartStore.cleanup();
-  // Only reset PayPal state if we're actually unloading the component
-  if (!showCheckoutModal.value) {
-    paypalLoaded.value = false;
-  }
 });
 
-// Update the watcher for checkout modal
-watch(showCheckoutModal, async (isOpen) => {
-  if (isOpen) {
-    console.log('Checkout modal opened');
-    paypalLoaded.value = false; // Reset the loaded state
-    
-    try {
-      // Ensure PayPal SDK is loaded
-      await loadPayPalSDK();
-      
-      // Wait for next tick to ensure DOM is updated
-      await nextTick();
-      
-      // Wait for the PayPal container to be available
-      console.log('Waiting for PayPal container...');
-      await waitForElement('paypal-button-container');
-      console.log('PayPal container found, initializing buttons...');
-      
-      // Add a small delay to ensure the container is fully rendered
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      await initializePayPalButtons();
-    } catch (error) {
-      console.error('Failed to initialize PayPal:', error);
-      const toast = await toastController.create({
-        message: 'Failed to initialize payment system. Please try again.',
-        duration: 5000,
-        position: 'top',
-        color: 'danger'
-      });
-      await toast.present();
-    }
-  } else {
-    console.log('Checkout modal closed');
-    // Clear PayPal container when modal is closed
-    const container = document.getElementById('paypal-button-container');
-    if (container) {
-      container.innerHTML = '';
-    }
-    paypalLoaded.value = false;
-  }
-});
 
-const initializePayPalButtons = async () => {
-  try {
-    console.log('Initializing PayPal buttons...');
-    const paypal = window.paypal;
-    
-    if (!paypal) {
-      throw new Error('PayPal SDK not loaded');
-    }
-
-    // Remove any existing buttons
-    const container = document.getElementById('paypal-button-container');
-    if (container) {
-      container.innerHTML = '';
-    }
-
-    // Create PayPal buttons
-    await paypal.Buttons({
-      style: {
-        layout: 'vertical',
-        color: 'blue',
-        shape: 'rect',
-        label: 'pay'
-      },
-      fundingSource: paypal.FUNDING.PAYPAL,
-      createOrder: async () => {
-        try {
-          console.log('Creating PayPal order...');
-          const order = await createPayPalOrder(
-            cartStore.cartTotal.toFixed(2),
-            'PHP',
-            '3D Cake Maker Order'
-          );
-          console.log('PayPal order created:', order);
-          return order.id;
-        } catch (error) {
-          console.error('Error creating PayPal order:', error);
-          throw error;
-        }
-      },
-      onApprove: async (data: any) => {
-        try {
-          console.log('Payment approved:', data);
-          const captureData = await capturePayPalOrder(data.orderID);
-          console.log('Payment captured:', captureData);
-          
-          // Handle successful payment
-          await handleSuccessfulPayment(captureData);
-        } catch (error) {
-          console.error('Error capturing payment:', error);
-          throw error;
-        }
-      },
-      onError: (err: any) => {
-        console.error('PayPal error:', err);
-        alert('An error occurred with PayPal. Please try again.');
-      },
-      onCancel: () => {
-        console.log('Payment cancelled');
-      }
-    }).render('#paypal-button-container');
-
-    console.log('PayPal buttons initialized successfully');
-  } catch (error) {
-    console.error('Error initializing PayPal buttons:', error);
-    alert('Failed to initialize PayPal. Please refresh the page and try again.');
-  }
-};
 
 const updateItemQuantity = async (id: string, newQuantity: number) => {
   if (newQuantity >= 1) {
@@ -555,164 +287,41 @@ const removeItem = () => {
   showDeleteAlert.value = false;
 };
 
+const confirmClearCart = async () => {
+  const toast = await toastController.create({
+    header: 'Clear Cart',
+    message: 'Are you sure you want to remove all items from your cart?',
+    buttons: [
+      {
+        text: 'Cancel',
+        role: 'cancel'
+      },
+      {
+        text: 'Clear All',
+        role: 'destructive',
+        handler: () => {
+          // Clear all items from cart
+          cartStore.items.forEach(item => {
+            cartStore.removeItem(item.id);
+          });
+        }
+      }
+    ],
+    position: 'top'
+  });
+  await toast.present();
+};
+
 const handleSuccessModalDismiss = () => {
   showSuccessModal.value = false;
   router.replace('/');
 };
 
-const handleCheckout = () => {
-  showCheckoutModal.value = true;
+const proceedToCheckout = () => {
+  router.push('/checkout');
 };
 
-const handleSuccessfulPayment = async (captureData: any) => {
-  try {
-    console.log('Processing successful payment:', captureData);
-    
-    const customOrderId = await generateOrderId();
-    
-    // Create order in Firebase
-    const orderRef = dbRef(database, `orders/${customOrderId}`); // Use customOrderId as the path
-    const orderData = {
-      id: customOrderId, // Use customOrderId as the ID
-      orderId: customOrderId,
-      userId: authStore.user?.uid,
-      items: cartStore.items,
-      total: cartStore.cartTotal,
-      status: 'paid',
-      paymentMethod: 'paypal',
-      paymentDetails: {
-        transactionId: captureData.id,
-        status: captureData.status,
-        amount: captureData.purchase_units[0].payments.captures[0].amount.value,
-        currency: captureData.purchase_units[0].payments.captures[0].amount.currency_code,
-        captureTime: captureData.purchase_units[0].payments.captures[0].create_time
-      },
-      createdAt: new Date().toISOString()
-    };
 
-    await set(orderRef, orderData);
-    console.log('Order created in Firebase:', orderData);
-
-    // Save orderId in user's document
-    if (authStore.user?.uid) {
-      const userRef = dbRef(database, `users/${authStore.user.uid}`);
-      const userSnapshot = await get(userRef);
-      const userData = userSnapshot.val() || {};
-      
-      // Initialize orders array if it doesn't exist
-      if (!userData.orders) {
-        userData.orders = [];
-      }
-      
-      // Add new orderId to orders array
-      userData.orders.push(customOrderId);
-      
-      // Update user document
-      await set(userRef, userData);
-      console.log('OrderId saved to user document');
-    }
-
-    // Clear cart in Firebase
-    if (authStore.user?.uid) {
-      const cartRef = dbRef(database, `users/${authStore.user.uid}/cart`);
-      await remove(cartRef);
-    }
-    
-    // Clear local cart state
-    cartStore.$patch({ items: [] });
-
-    // Close checkout modal and show success modal
-    showCheckoutModal.value = false;
-    showSuccessModal.value = true;
-  } catch (error) {
-    console.error('Error processing successful payment:', error);
-    const toast = await toastController.create({
-      message: 'Error processing payment. Please contact support.',
-      duration: 3000,
-      position: 'top',
-      color: 'danger'
-    });
-    await toast.present();
-    throw error;
-  }
-};
-
-const placeOrder = async () => {
-  if (!selectedPaymentMethod.value) return;
-  
-  if (selectedPaymentMethod.value === 'cod') {
-    isPlacingOrder.value = true;
-    try {
-      const customOrderId = await generateOrderId();
-      
-      // Create order in Firebase for COD
-      const orderRef = dbRef(database, `orders/${customOrderId}`); // Use customOrderId as the path
-      const orderData = {
-        id: customOrderId, // Use customOrderId as the ID
-        orderId: customOrderId,
-        userId: authStore.user?.uid,
-        items: cartStore.items,
-        total: cartStore.cartTotal,
-        status: 'pending',
-        paymentMethod: 'cod',
-        paymentDetails: {
-          status: 'pending',
-          amount: cartStore.cartTotal,
-          currency: 'PHP',
-          createdAt: new Date().toISOString()
-        },
-        createdAt: new Date().toISOString()
-      };
-
-      await set(orderRef, orderData);
-      console.log('COD Order created in Firebase:', orderData);
-
-      // Save orderId in user's document
-      if (authStore.user?.uid) {
-        const userRef = dbRef(database, `users/${authStore.user.uid}`);
-        const userSnapshot = await get(userRef);
-        const userData = userSnapshot.val() || {};
-        
-        // Initialize orders array if it doesn't exist
-        if (!userData.orders) {
-          userData.orders = [];
-        }
-        
-        // Add new orderId to orders array
-        userData.orders.push(customOrderId);
-        
-        // Update user document
-        await set(userRef, userData);
-        console.log('OrderId saved to user document');
-      }
-
-      // Clear cart in Firebase
-      if (authStore.user?.uid) {
-        const cartRef = dbRef(database, `users/${authStore.user.uid}/cart`);
-        await remove(cartRef);
-      }
-      
-      // Clear local cart state
-      cartStore.$patch({ items: [] });
-
-      // Close checkout modal and show success modal
-      showCheckoutModal.value = false;
-      showSuccessModal.value = true;
-    } catch (error) {
-      console.error('Error placing COD order:', error);
-      const toast = await toastController.create({
-        message: 'Failed to place order. Please try again.',
-        duration: 3000,
-        position: 'top',
-        color: 'danger'
-      });
-      await toast.present();
-    } finally {
-      isPlacingOrder.value = false;
-    }
-  }
-  // PayPal orders are handled by the PayPal button
-};
 
 const hasCustomItemsOnly = computed(() => {
   return cartStore.items.length > 0 && cartStore.items.every(item => (item as CartItem).isCustomCake);
@@ -734,19 +343,7 @@ ion-header {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-ion-toolbar {
-  --background: #F0E68D;
-  --border-width: 0;
-  padding: 8px 16px;
-}
 
-.cart-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #58091F;
-  letter-spacing: 0.5px;
-  text-align: center;
-}
 
 .empty-state {
   display: flex;
@@ -781,15 +378,7 @@ ion-toolbar {
   max-width: 300px;
 }
 
-.action-button {
-  --background: #58091F;
-  --color: #F0E68D;
-  --border-radius: 8px;
-  --box-shadow: 0 4px 12px rgba(88, 9, 31, 0.3);
-  font-weight: 600;
-  max-width: 240px;
-  width: 100%;
-}
+
 
 .cart-container {
   padding-top: 80px;
@@ -914,30 +503,7 @@ ion-toolbar {
   border-radius: 10px;
 }
 
-.quantity-controls ion-button {
-  --padding-start: 8px;
-  --padding-end: 8px;
-  --height: 32px;
-  --width: 32px;
-  margin: 0;
-  --border-radius: 8px;
-  --border-width: 1.5px;
-  --border-color: #58091F;
-  --color: #58091F;
-  --background: rgba(255, 255, 255, 0.9);
-  --background-hover: rgba(240, 230, 141, 0.1);
-  --background-activated: rgba(240, 230, 141, 0.15);
-}
 
-.quantity-controls ion-button::part(native) {
-  padding: 0;
-  min-width: 32px;
-  min-height: 32px;
-}
-
-.quantity-controls ion-icon {
-  font-size: 18px;
-}
 
 .quantity-value {
   font-size: 1.1rem;
@@ -1003,30 +569,9 @@ ion-toolbar {
   font-size: 1.1rem;
 }
 
-.checkout-btn {
-  --background: #58091F;
-  --background-hover: #8B6B2F;
-  --background-activated: #8B6B2F;
-  --border-radius: 8px;
-  --box-shadow: 0 2px 8px rgba(240, 230, 141, 0.2);
-  height: 44px;
-  font-weight: 600;
-  font-size: 1rem;
-  color: #fff;
-}
 
-.start-shopping-btn {
-  --background: #58091F;
-  --color: #F0E68D;
-  --background-hover: #8B6B2F;
-  --background-activated: #8B6B2F;
-  --border-radius: 12px;
-  --box-shadow: 0 4px 12px rgba(88, 9, 31, 0.2);
-  height: 48px;
-  font-weight: 600;
-  width: 100%;
-  max-width: 240px;
-}
+
+
 
 ion-item-sliding {
   margin-bottom: 12px;
@@ -1235,29 +780,7 @@ ion-item-option ion-icon {
   line-height: 1.5;
 }
 
-.custom-success-button {
-  background: #58091F;
-  color: #FFFFFF;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 24px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  width: 100%;
-  max-width: 250px;
-  height: 48px;
-  box-shadow: 0 2px 8px rgba(240, 230, 141, 0.2);
-}
 
-.custom-success-button:hover {
-  background: #8B6B2F;
-}
-
-.custom-success-button:active {
-  background: #6B4D1A;
-}
 
 @media (max-width: 480px) {
   .success-icon-container {
@@ -1292,7 +815,7 @@ ion-item-option ion-icon {
 }
 
 .checkout-content {
-  padding-top: 32px;
+  padding-top: 64px;
   padding-bottom: 300px; /* Space for fixed bottom section */
   height: 100%;
   overflow-y: auto;
@@ -1493,16 +1016,7 @@ ion-item-option ion-icon {
   font-weight: 600;
 }
 
-.place-order-btn {
-  --background: #58091F;
-  --background-hover: #8B6B2F;
-  --background-activated: #8B6B2F;
-  --border-radius: 12px;
-  height: 56px;
-  font-weight: 600;
-  font-size: 1.1rem;
-  margin: 0;
-}
+
 
 ion-radio::part(container) {
   width: 24px;
@@ -1601,4 +1115,6 @@ ion-radio::part(mark) {
 .bottom-spacer {
   display: none;
 }
+
+/* Custom styles now handled by Tailwind classes */
 </style>

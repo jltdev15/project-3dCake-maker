@@ -1,12 +1,59 @@
 <template>
   <ion-page class="categories-page">
-    <!-- Custom Header -->
-    <div class="custom-header">
-      <ion-button fill="clear" class="back-btn" @click="router.back()">
-        <ion-icon :icon="arrowBack" />
-      </ion-button>
-      <h1 class="page-title pr-8">Category</h1>
-    </div>
+    <ion-header class="ion-no-border">
+      <ion-toolbar class="toolbar-custom">
+        <!-- Modern Redesigned Toolbar -->
+        <div class="relative bg-gradient-to-r from-[#F0E68D] via-[#E6D77A] to-[#DCC867] text-gray-800 shadow-xl">
+          <!-- Background Pattern Overlay -->
+          <div class="absolute inset-0 bg-black/5 opacity-20"></div>
+          <div class="absolute inset-0 bg-gradient-to-br from-transparent via-black/5 to-transparent"></div>
+
+          <!-- Main Content -->
+          <div class="relative px-4 py-3 sm:px-6 sm:py-4">
+            <div class="flex items-center justify-between">
+              <!-- Left Side - Back Button -->
+              <div class="flex items-center">
+                <button @click="router.back()"
+                  class="group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-black/10 backdrop-blur-sm rounded-xl border border-black/20 hover:bg-black/20 active:scale-95 transition-all duration-200 touch-manipulation">
+                  <ion-icon :icon="chevronBackOutline"
+                    class="text-lg sm:text-xl text-gray-800 drop-shadow-sm group-hover:scale-110 transition-transform duration-200"></ion-icon>
+                </button>
+              </div>
+
+              <!-- Center - Title Section -->
+              <div class="flex-1 text-center mx-4">
+                <div class="flex items-center justify-center space-x-2 sm:space-x-3">
+                  <!-- Title Text -->
+                  <div class="text-center">
+                    <h1 class="text-lg sm:text-xl font-bold tracking-wide drop-shadow-sm text-gray-800">
+                      Categories
+                    </h1>
+                    <p class="text-xs sm:text-sm opacity-70 font-medium tracking-wide mt-0.5 text-gray-700">
+                      Choose your favorite category
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Side - Placeholder for balance -->
+              <div class="flex items-center space-x-2">
+                <div class="w-10 h-10 sm:w-12 sm:h-12"></div>
+              </div>
+            </div>
+
+            <!-- Category Stats -->
+            <div class="mt-3 pt-3 border-t border-black/20">
+              <div class="flex items-center justify-center text-xs sm:text-sm">
+                <div class="flex items-center space-x-2 text-gray-700/80">
+                  <ion-icon :icon="gridOutline" class="text-sm"></ion-icon>
+                  <span>{{ categories.length }} Categories Available</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ion-toolbar>
+    </ion-header>
 
     <ion-content>
       <div class="content-wrapper">
@@ -26,8 +73,8 @@
 </template>
 
 <script setup>
-import { IonPage, IonContent, IonButton, IonIcon } from '@ionic/vue';
-import { arrowBack } from 'ionicons/icons';
+import { IonPage, IonContent, IonButton, IonIcon, IonHeader, IonToolbar } from '@ionic/vue';
+import { arrowBack, chevronBackOutline, gridOutline } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 import { useCakeStore } from '@/stores/cakeStore';
 import { storeToRefs } from 'pinia';
@@ -50,34 +97,8 @@ const viewCategory = (categoryId) => {
   min-height: 100vh;
 }
 
-.custom-header {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  background: #F0E68D;
-  padding: 24px 0 12px 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.back-btn {
-  --color: #333;
-  font-size: 18px;
-
-}
-
-.page-title {
-  flex: 1;
-  text-align: center;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #222;
-  margin: 0 40px 0 0;
-}
-
 .content-wrapper {
-
+  padding: 20px 8px 0 8px;
 }
 
 .categories-grid {
@@ -153,9 +174,6 @@ const viewCategory = (categoryId) => {
 }
 
 @media (max-width: 600px) {
-  .custom-header {
-    padding: 16px 0 8px 0;
-  }
   .content-wrapper {
     padding: 20px 8px 0 8px;
   }

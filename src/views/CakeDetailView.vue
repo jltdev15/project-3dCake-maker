@@ -1,11 +1,45 @@
 <template>
   <ion-page class="cake-detail-page">
     <ion-header class="ion-no-border">
-      <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-back-button default-href="/home" class="back-button"></ion-back-button>
-        </ion-buttons>
-        <ion-title class="cake-title ion-text-center pr-12">{{ cake?.name }}</ion-title>
+      <ion-toolbar class="toolbar-custom">
+        <!-- Modern Redesigned Toolbar -->
+        <div class="relative bg-gradient-to-r from-[#F0E68D] via-[#E6D77A] to-[#DCC867] text-gray-800 shadow-xl">
+          <!-- Background Pattern Overlay -->
+          <div class="absolute inset-0 bg-black/5 opacity-20"></div>
+          <div class="absolute inset-0 bg-gradient-to-br from-transparent via-black/5 to-transparent"></div>
+
+          <!-- Main Content -->
+          <div class="relative px-4 py-3 sm:px-6 sm:py-4">
+            <div class="flex items-center justify-between">
+              <!-- Left Side - Back Button -->
+              <div class="flex items-center">
+                <button @click="$router.go(-1)"
+                  class="group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-black/10 backdrop-blur-sm rounded-xl border border-black/20 hover:bg-black/20 active:scale-95 transition-all duration-200 touch-manipulation">
+                  <ion-icon :icon="chevronBackOutline"
+                    class="text-lg sm:text-xl text-gray-800 drop-shadow-sm group-hover:scale-110 transition-transform duration-200"></ion-icon>
+                </button>
+              </div>
+
+              <!-- Center - Title Section -->
+              <div class="flex-1 text-center mx-4">
+                <div class="flex items-center justify-center space-x-2 sm:space-x-3">
+                  <!-- Title Text -->
+                  <div class="text-center">
+                    <h1 class="text-lg sm:text-xl font-bold tracking-wide drop-shadow-sm text-gray-800">
+                      {{ cake?.name || 'Cake Details' }}
+                    </h1>
+                    <p class="text-xs sm:text-sm opacity-70 font-medium tracking-wide mt-0.5 text-gray-700">
+                      {{ cake ? 'View details and add to cart' : 'Loading cake information' }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+
+            </div>
+
+          </div>
+        </div>
       </ion-toolbar>
     </ion-header>
 
@@ -34,18 +68,21 @@
                 </div>
               </div>
               <div class="quantity-selector">
-                <button @click="decreaseQuantity" class="quantity-btn">
-                  <ion-icon :icon="removeOutline"></ion-icon>
-                </button>
-                <span class="quantity-value">{{ quantity }}</span>
-                <button @click="increaseQuantity" class="quantity-btn">
-                  <ion-icon :icon="addOutline"></ion-icon>
-                </button>
+                              <button @click="decreaseQuantity" :disabled="quantity <= 1"
+                class="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                <ion-icon :icon="removeOutline" class="text-lg"></ion-icon>
+              </button>
+              <span class="quantity-value">{{ quantity }}</span>
+              <button @click="increaseQuantity"
+                class="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
+                <ion-icon :icon="addOutline" class="text-lg"></ion-icon>
+              </button>
               </div>
-              <ion-button @click="addToCart" class="add-to-cart-btn" fill="solid">
-                <ion-icon :icon="cartOutline" slot="start"></ion-icon>
+              <button @click="addToCart"
+                class="flex items-center justify-center gap-2 px-6 py-4 md:py-3 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-bold text-lg md:text-base uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[56px] md:min-h-[48px] shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation w-full">
+                <ion-icon :icon="cartOutline" class="text-xl"></ion-icon>
                 Add to Cart
-              </ion-button>
+              </button>
             </div>
           </div>
         </div>
@@ -64,22 +101,14 @@
           <h3>Item Added Successfully!</h3>
           <p>What would you like to do next?</p>
           <div class="modal-buttons">
-            <ion-button 
-              @click="goToCheckout" 
-              expand="block" 
-              class="checkout-btn"
-              :strong="true"
-            >
+            <button @click="goToCheckout"
+              class="flex items-center justify-center gap-2 px-6 py-4 md:py-3 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-bold text-lg md:text-base uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[56px] md:min-h-[48px] shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation w-full mb-3">
               Proceed to Checkout
-            </ion-button>
-            <ion-button 
-              @click="closeSuccessModal" 
-              expand="block" 
-              fill="outline" 
-              class="continue-btn"
-            >
+            </button>
+            <button @click="closeSuccessModal"
+              class="flex items-center justify-center gap-2 px-6 py-4 md:py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold text-lg md:text-base uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[56px] md:min-h-[48px] shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation w-full">
               Continue Shopping
-            </ion-button>
+            </button>
           </div>
         </div>
       </div>
@@ -105,7 +134,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useCakeStore } from '@/stores/cakeStore';
 import { computed, ref } from 'vue';
 // @ts-ignore
-import { cartOutline, checkmarkCircleOutline, addOutline, removeOutline } from 'ionicons/icons';
+import { cartOutline, checkmarkCircleOutline, addOutline, removeOutline, chevronBackOutline, restaurantOutline, pricetagOutline, cashOutline } from 'ionicons/icons';
 import { useCartStore } from '@/stores/cartStore';
 import { toastController } from '@ionic/vue';
 
@@ -232,7 +261,6 @@ ion-header {
 ion-toolbar {
   --background: #F0E68D;
   --border-width: 0;
-  padding: 8px 16px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -400,7 +428,7 @@ ion-toolbar {
   --background: #58091F;
   --background-hover: linear-gradient(135deg, #8B6B2F 0%, #9D7B3F 100%);
   --background-activated: linear-gradient(135deg, #8B6B2F 0%, #9D7B3F 100%);
-  --border-radius: 12px;
+
   --box-shadow: 0 4px 12px rgba(122, 92, 30, 0.2);
   height: 48px;
   font-weight: 600;

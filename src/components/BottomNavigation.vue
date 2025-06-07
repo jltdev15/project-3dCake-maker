@@ -8,11 +8,12 @@
                     <ion-icon :icon="home" />
                     <ion-label>Home</ion-label>
                 </ion-tab-button>
-                <ion-tab-button tab="cart" href="/cart">
+                <ion-tab-button tab="cart" @click="$router.push('/cart')">
                     <div class="cart-button-wrapper">
                         <ion-icon :icon="cart" />
                         <ion-label>Cart</ion-label>
-                        <ion-badge v-if="cartStore.itemCount > 0" class="cart-badge">{{ cartStore.itemCount }}</ion-badge>
+                        <ion-badge v-if="cartStore.itemCount > 0" class="cart-badge">{{ cartStore.itemCount
+                            }}</ion-badge>
                     </div>
                 </ion-tab-button>
                 <ion-tab-button tab="orders" href="/orders">
@@ -21,10 +22,11 @@
                 </ion-tab-button>
 
                 <ion-tab-button tab="messages" href="/messages">
-                    <div class="message-button-wrapper">
-                        <ion-icon :icon="chatbubble" />
-                        <ion-label>Messages</ion-label>
-                        <ion-badge v-if="messageStore.unreadMessagesCount > 0" class="message-badge">{{ messageStore.unreadMessagesCount }}</ion-badge>
+                    <div class=" message-button-wrapper">
+                    <ion-icon :icon="chatbubble" />
+                    <ion-label>Messages</ion-label>
+                    <ion-badge v-if="messageStore.unreadMessagesCount > 0" class="message-badge">{{
+                        messageStore.unreadMessagesCount }}</ion-badge>
                     </div>
                 </ion-tab-button>
 

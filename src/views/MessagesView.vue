@@ -1,27 +1,65 @@
 <template>
-    <ion-page>
+    <ion-page class="messages-page">
         <ion-header class="ion-no-border">
-            <ion-toolbar>
-                <ion-title class="ion-text-center">
-                    <ion-icon :icon="chatbubbleEllipsesOutline" class="title-icon"></ion-icon>
-                    Messages
-                </ion-title>
-            </ion-toolbar>
+            <!-- Modern Redesigned Toolbar -->
+            <div class="relative bg-gradient-to-r from-[#F0E68D] via-[#E6D77A] to-[#DCC867] text-gray-800 shadow-xl">
+                <!-- Background Pattern Overlay -->
+                <div class="absolute inset-0 bg-black/5 opacity-20"></div>
+                <div class="absolute inset-0 bg-gradient-to-br from-transparent via-black/5 to-transparent"></div>
+
+                <!-- Main Content -->
+                <div class="relative px-4 py-3 sm:px-6 sm:py-4">
+                    <div class="flex items-center justify-between">
+                        <!-- Left Side - Placeholder/Menu or Back Button if applicable -->
+                         <div class="flex items-center">
+                             <button @click="$router.back()"
+                                class="group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-black/10 backdrop-blur-sm rounded-xl border border-black/20 hover:bg-black/20 active:scale-95 transition-all duration-200 touch-manipulation">
+                                <ion-icon :icon="chevronBackOutline" 
+                                    class="text-lg sm:text-xl text-gray-800 drop-shadow-sm group-hover:scale-110 transition-transform duration-200"></ion-icon>
+                            </button>
+                        </div>
+
+                        <!-- Center - Title Section -->
+                        <div class="flex-1 text-center mx-4">
+                            <div class="flex items-center justify-center space-x-2 sm:space-x-3">
+                                <ion-icon :icon="chatbubbleEllipsesOutline" class="text-xl sm:text-2xl text-gray-800 drop-shadow-sm"></ion-icon>
+                                <h1 class="text-lg sm:text-xl font-bold tracking-wide drop-shadow-sm text-gray-800">
+                                    Messages
+                                </h1>
+                            </div>
+                        </div>
+
+                        <!-- Right Side - Action Buttons (e.g., New Message) - Placeholder -->
+                        <div class="flex items-center space-x-2">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12"></div> <!-- Placeholder for symmetry -->
+                        </div>
+                    </div>
+                </div>
+            </div>
         </ion-header>
 
-        <ion-content class="ion-padding">
+        <ion-content>
             <div class="messages-container">
                 <!-- Skeleton loader -->
                 <div v-if="isLoading" class="skeleton-container">
-                    <div v-for="n in 3" :key="n" class="message-card skeleton-card">
+                    <div v-for="n in 4" :key="`skel-${n}`" class="message-card skeleton-card">
                         <div class="skeleton-avatar"></div>
                         <div class="skeleton-content">
-                            <div class="skeleton-header">
-                                <div class="skeleton-text skeleton-name"></div>
-                                <div class="skeleton-text skeleton-time"></div>
-                            </div>
-                            <div class="skeleton-text skeleton-message"></div>
+                            <div class="skeleton-line w-3/4 h-5 mb-2"></div>
+                            <div class="skeleton-line w-1/2 h-4"></div>
                         </div>
+                        <div class="skeleton-line w-10 h-4 ml-auto self-start"></div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div v-else-if="!isLoading && adminUsers.length === 0" class="empty-state">
+                     <div class="empty-state-content">
+                        <div class="empty-state-icon">
+                            <ion-icon :icon="chatbubblesOutline"></ion-icon>
+                        </div>
+                        <h2 class="empty-state-title">No Messages</h2>
+                        <p class="empty-state-subtitle">You don't have any messages yet. Admins will appear here when available.</p>
                     </div>
                 </div>
 
@@ -32,24 +70,26 @@
                          @click="openChat(admin)" 
                          class="message-card"
                          :class="{ 'has-unread': admin.unreadCount && admin.unreadCount > 0 }">
+                        
                         <div class="message-avatar">
-                            <img src="/images/logo.webp" alt="admin avatar">
-                            <div class="status-indicator" :class="admin.status"></div>
+                            <img :src="admin.avatar || '/images/logo.webp'" alt="admin avatar">
+                            <div class="status-indicator" :class="getOnlineStatusClass(admin.status)"></div>
                         </div>
                         <div class="message-content">
                             <div class="message-header">
-                                <h3>{{ admin.name }}</h3>
-                                <span class="time">{{ formatLastSeen(admin.lastLogin) }}</span>
+                                <h3 class="font-semibold text-gray-800">{{ admin.name }}</h3>
+                                <span class="time text-xs text-gray-500">{{ formatLastSeen(admin.lastLogin) }}</span>
                             </div>
                             <div class="message-preview">
-                                <p :class="{ 'unread-message': admin.unreadCount && admin.unreadCount > 0 }">
-                                    {{ admin.latestUnreadMessage || admin.lastMessage || '' }}
+                                <p :class="{ 'unread-text': admin.unreadCount && admin.unreadCount > 0, 'text-gray-600': !admin.unreadCount || admin.unreadCount === 0 }" class="text-sm truncate">
+                                    {{ admin.latestUnreadMessage || admin.lastMessage || 'No recent messages' }}
                                 </p>
-                                <ion-badge v-if="admin.unreadCount" color="primary" class="unread-badge">
+                                <ion-badge v-if="admin.unreadCount && admin.unreadCount > 0" class="unread-badge">
                                     {{ admin.unreadCount }}
                                 </ion-badge>
                             </div>
                         </div>
+                        <ion-icon :icon="chevronForwardOutline" class="text-gray-400 ml-2"></ion-icon>
                     </div>
                 </div>
             </div>
@@ -60,100 +100,159 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-// @ts-ignore - These imports are used in the template
+// @ts-ignore
 import {
     IonPage,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
     IonContent,
     IonBadge,
     IonIcon
 } from '@ionic/vue';
-import { chatbubbleEllipsesOutline } from 'ionicons/icons';
-import { database, ref as dbRef, onValue, off } from '../config/firebase';
+// @ts-ignore
+import { chevronBackOutline, chevronForwardOutline, chatbubblesOutline, chatbubbleEllipsesOutline } from 'ionicons/icons';
+import { ref as dbRef, onValue, off } from 'firebase/database';
+import { database } from '../config/firebase';
+import { useAuthStore } from '@/stores/authStore';
 
 interface AdminUser {
     id: string;
     name: string;
     email: string;
-    lastLogin: number;
-    status: string;
+    lastLogin?: number;
+    status?: string;
     unreadCount?: number;
     lastMessage?: string;
     latestUnreadMessage?: string;
     avatar?: string;
 }
 
+interface ConversationData {
+    lastMessage?: string;
+    lastSenderId?: string;
+    unreadCount?: number;
+}
+
 const router = useRouter();
+const authStore = useAuthStore();
 const adminUsers = ref<AdminUser[]>([]);
 const isLoading = ref(true);
 
-const formatLastSeen = (timestamp: number) => {
-    if (!timestamp) return '';
+const formatLastSeen = (timestamp?: number) => {
+    if (!timestamp) return 'Recently';
     const date = new Date(timestamp);
     const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    
-    if (diff < 60000) return 'Just now';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-    return date.toLocaleDateString();
+    const diffSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffSeconds < 60) return 'Just now';
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-const fetchAdminUsers = () => {
+const getOnlineStatusClass = (status?: string) => {
+    if (!status) return 'bg-gray-400';
+    switch (status.toLowerCase()) {
+        case 'online':
+        case 'active':
+            return 'bg-green-500';
+        case 'away':
+            return 'bg-yellow-500';
+        default:
+            return 'bg-gray-400';
+    }
+};
+
+const fetchAdminUsersAndMessages = () => {
     const usersRef = dbRef(database, 'users');
-    console.log(usersRef);
-    
+    const currentUserId = authStore.user?.uid;
+
+    console.log('Fetching admin users...', { currentUserId });
+
+    if (!currentUserId) {
+        isLoading.value = false;
+        console.warn("User not logged in, cannot fetch messages.");
+        adminUsers.value = [];
+        return;
+    }
+
     onValue(usersRef, (snapshot) => {
-        const users = snapshot.val();
-        console.log(users);
-        if (users) {
-            // Filter only admin users based on email and transform the data
-            adminUsers.value = Object.entries(users)
-                .filter(([_, user]: [string, any]) => user.email?.toLowerCase().includes('admin'))
-                .map(([id, user]: [string, any]) => {
-                    // Get latest message data
-                    let lastMessage = '';
-                    let latestUnreadMessage = '';
-                    
-                    // Check if user has message conversations
-                    if (user.messages) {
-                        // Iterate through all conversations to find last messages
-                        Object.entries(user.messages).forEach(([_, convo]: [string, any]) => {
-                            // Only process if it's a conversation object with lastMessage
-                            if (typeof convo === 'object' && convo.lastMessage) {
-                                // Update last message if this is a more recent one
-                                if (!lastMessage || (convo.lastMessageTime && !lastMessage)) {
-                                    lastMessage = convo.lastMessage;
-                                }
-                                
-                                // If there are unread messages, capture this as the latest unread
-                                if (convo.unreadCount && convo.unreadCount > 0) {
-                                    latestUnreadMessage = convo.lastMessage;
+        const usersData = snapshot.val();
+        console.log('Received users data:', usersData);
+
+        if (usersData) {
+            const admins: AdminUser[] = Object.entries(usersData)
+                .filter(([_, adminData]: [string, any]) => {
+                    const isAdmin = adminData.email?.toLowerCase().includes('admin');
+                    console.log('Checking user:', { email: adminData.email, isAdmin });
+                    return isAdmin;
+                })
+                .map(([id, adminData]: [string, any]) => {
+                    console.log('Processing admin user:', { id, adminData });
+                    let unreadCountForCurrentUser = 0;
+                    let lastMessageTextForCurrentUser = 'No recent messages';
+                    let latestUnreadMessageText = '';
+
+                    // Calculate the chatId based on the user IDs (sorted)
+                    const chatId = [currentUserId, (adminData.uid || id)].sort().join('_');
+                    console.log('Calculated chatId:', chatId);
+
+                    // Check for conversation data with the current user using the calculated chatId
+                    if (adminData.messages && adminData.messages[chatId]) {
+                        const convoData = adminData.messages[chatId] as ConversationData;
+                        console.log('Found conversation data:', convoData);
+
+                        if (typeof convoData === 'object' && convoData !== null) {
+                            unreadCountForCurrentUser = convoData.unreadCount || 0;
+                            const rawLastMessage = convoData.lastMessage || '';
+
+                            if (rawLastMessage) {
+                                if (convoData.lastSenderId === (adminData.uid || id)) {
+                                    lastMessageTextForCurrentUser = `Admin: ${rawLastMessage}`;
+                                    if (unreadCountForCurrentUser > 0) {
+                                        latestUnreadMessageText = rawLastMessage;
+                                    }
+                                } else if (convoData.lastSenderId === currentUserId) {
+                                    lastMessageTextForCurrentUser = `You: ${rawLastMessage}`;
+                                } else {
+                                    lastMessageTextForCurrentUser = rawLastMessage;
                                 }
                             }
-                        });
+                        }
                     }
-                    
+
                     return {
-                        id: user.uid || id,
-                        name: user.name,
-                        email: user.email,
-                        lastLogin: user.lastLogin,
-                        status: user.status || 'active',
-                        unreadCount: user.messages?.unreadCount || 0,
-                        lastMessage: lastMessage,
-                        latestUnreadMessage: latestUnreadMessage || lastMessage,
-                        avatar: user.avatar
+                        id: adminData.uid || id,
+                        name: adminData.name || 'Admin User',
+                        email: adminData.email || 'No email',
+                        lastLogin: adminData.lastLogin,
+                        status: adminData.status || 'offline',
+                        avatar: adminData.avatar,
+                        unreadCount: unreadCountForCurrentUser,
+                        lastMessage: lastMessageTextForCurrentUser,
+                        latestUnreadMessage: latestUnreadMessageText
                     };
                 });
+
+            console.log('Processed admin users:', admins);
+            adminUsers.value = admins.sort((a, b) => {
+                const unreadDiff = (b.unreadCount || 0) - (a.unreadCount || 0);
+                if (unreadDiff !== 0) return unreadDiff;
+                if ((b.lastLogin || 0) === (a.lastLogin || 0)) {
+                    return (a.name || '').localeCompare(b.name || '');
+                }
+                return (b.lastLogin || 0) - (a.lastLogin || 0);
+            });
         } else {
+            console.log('No users data found');
             adminUsers.value = [];
         }
         isLoading.value = false;
     }, (error) => {
-        console.error('Error fetching admin users:', error);
+        console.error('Error fetching admin users and messages:', error);
         isLoading.value = false;
     });
 };
@@ -163,72 +262,59 @@ const openChat = (admin: AdminUser) => {
 };
 
 onMounted(() => {
-    fetchAdminUsers();
+    fetchAdminUsersAndMessages();
 });
 
 onUnmounted(() => {
-    // Clean up the real-time listener when component is unmounted
-    const usersRef = dbRef(database, 'users');
-    off(usersRef);
+    const usersRefPath = dbRef(database, 'users');
+    off(usersRefPath);
 });
 </script>
 
 <style scoped>
+.messages-page {
+    --background: var(--ion-color-light);
+}
+
+/* Header styling is handled by Tailwind utility classes */
+
 .messages-container {
-    max-width: 800px;
+    padding: 16px;
+    max-width: 768px;
     margin: 0 auto;
-    padding: 8px;
 }
 
 .message-list {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 
 .message-card {
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 16px;
+    background: #FFFFFF;
+    border-radius: 12px;
     padding: 16px;
     display: flex;
     align-items: center;
     gap: 16px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     position: relative;
-    overflow: hidden;
-}
-
-.message-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, rgba(122, 92, 30, 0.1) 0%, rgba(200, 173, 126, 0.1) 100%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
 }
 
 .message-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-}
-
-.message-card:hover::before {
-    opacity: 1;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
 .message-card.has-unread {
-    background: rgba(255, 255, 255, 0.98);
-    border-left: 4px solid var(--ion-color-primary);
+    background-color: #FFFBEB;
 }
 
 .message-avatar {
-    width: 56px;
-    height: 56px;
+    width: 48px;
+    height: 48px;
     position: relative;
     flex-shrink: 0;
 }
@@ -236,31 +322,22 @@ onUnmounted(() => {
 .message-avatar img {
     width: 100%;
     height: 100%;
-    border-radius: 12px;
+    border-radius: 50%;
     object-fit: cover;
+    border: 2px solid #F0E68D;
 }
 
 .status-indicator {
     position: absolute;
-    bottom: 2px;
-    right: 2px;
+    bottom: 0px;
+    right: 0px;
     width: 12px;
     height: 12px;
     border-radius: 50%;
     border: 2px solid white;
 }
 
-.status-indicator.active {
-    background-color: #4CAF50;
-}
-
-.status-indicator.away {
-    background-color: #FFC107;
-}
-
-.status-indicator.offline {
-    background-color: #9E9E9E;
-}
+/* Online status colors are handled by getOnlineStatusClass with Tailwind */
 
 .message-content {
     flex-grow: 1;
@@ -271,19 +348,11 @@ onUnmounted(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .message-header h3 {
-    font-weight: 600;
-    font-size: 1.1rem;
     margin: 0;
-    color: var(--ion-color-dark);
-}
-
-.time {
-    font-size: 0.8rem;
-    color: var(--ion-color-medium);
 }
 
 .message-preview {
@@ -295,137 +364,135 @@ onUnmounted(() => {
 
 .message-preview p {
     margin: 0;
-    color: var(--ion-color-medium);
-    font-size: 0.9rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex-grow: 1;
 }
 
-.unread-message {
+.unread-text {
     font-weight: 600;
-    color: var(--ion-color-dark);
+    color: #374151;
 }
 
 .unread-badge {
-    --padding-start: 6px;
-    --padding-end: 6px;
-    --padding-top: 4px;
-    --padding-bottom: 4px;
-    font-size: 0.8rem;
-    border-radius: 10px;
-    min-width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-}
-
-ion-toolbar {
-    --background: #7A5C1E;
-    --border-color: transparent;
-}
-
-.title-icon {
-    vertical-align: middle;
-    margin-right: 8px;
-    font-size: 1.2em;
-    color: #FFFFFF;
-}
-
-ion-title {
-    font-weight: 600;
-    font-size: 1.2rem;
+    background-color: #58091F;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 8px;
+    min-width: 18px;
+    height: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #FFFFFF;
+    font-weight: 500;
 }
 
-/* Skeleton loader styles */
+/* Skeleton loader styles, adapted for new card design */
 .skeleton-container {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 
 .skeleton-card {
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 16px;
+    background: #FFFFFF;
+    border-radius: 12px;
     padding: 16px;
     display: flex;
     align-items: center;
     gap: 16px;
-    animation: pulse 1.5s infinite;
+    opacity: 0.7;
 }
 
 .skeleton-avatar {
-    width: 56px;
-    height: 56px;
-    background: var(--ion-color-medium);
-    opacity: 0.2;
-    border-radius: 12px;
+    width: 48px;
+    height: 48px;
+    background-color: #E5E7EB;
+    border-radius: 50%;
     flex-shrink: 0;
 }
 
 .skeleton-content {
     flex-grow: 1;
-    min-width: 0;
 }
 
-.skeleton-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.skeleton-text {
-    height: 16px;
-    background: var(--ion-color-medium);
-    opacity: 0.2;
+.skeleton-line {
+    background-color: #E5E7EB;
     border-radius: 4px;
+    height: 10px;
 }
 
-.skeleton-name {
-    width: 120px;
+/* Empty state styling, consistent with NotificationView */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 150px);
+    text-align: center;
 }
 
-.skeleton-time {
-    width: 60px;
+.empty-state-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px 16px;
 }
 
-.skeleton-message {
-    width: 200px;
+.empty-state-icon {
+  font-size: 48px;
+  color: #58091F;
+  margin-bottom: 24px;
+  background: rgba(240, 230, 141, 0.2);
+  padding: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-@keyframes pulse {
-    0% {
-        opacity: 0.6;
-    }
-    50% {
-        opacity: 0.3;
-    }
-    100% {
-        opacity: 0.6;
-    }
+.empty-state-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #58091F;
 }
+
+.empty-state-subtitle {
+  font-size: 1rem;
+  color: #666;
+  margin: 0 0 24px;
+  max-width: 300px;
+}
+
 
 @media (max-width: 480px) {
     .message-card {
         padding: 12px;
+        gap: 12px;
     }
 
     .message-avatar {
-        width: 48px;
-        height: 48px;
+        width: 40px;
+        height: 40px;
+    }
+    .status-indicator {
+        width: 10px;
+        height: 10px;
+        bottom: -1px;
+        right: -1px;
     }
 
     .message-header h3 {
-        font-size: 1rem;
+        font-size: 0.95rem;
     }
 
     .message-preview p {
-        font-size: 0.8rem;
+        font-size: 0.85rem;
+    }
+    .unread-badge {
+        font-size: 0.65rem;
+        padding: 1px 5px;
     }
 }
 </style> 

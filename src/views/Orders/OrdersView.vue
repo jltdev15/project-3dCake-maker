@@ -1,11 +1,60 @@
 <template>
   <ion-page class="orders-page">
     <ion-header class="ion-no-border">
-      <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-back-button default-href="/home"></ion-back-button>
-        </ion-buttons>
-        <ion-title class="orders-title ion-text-center pr-12">My Orders</ion-title>
+      <ion-toolbar class="toolbar-custom">
+        <!-- Modern Redesigned Toolbar -->
+        <div class="relative bg-gradient-to-r from-[#F0E68D] via-[#E6D77A] to-[#DCC867] text-gray-800 shadow-xl">
+          <!-- Background Pattern Overlay -->
+          <div class="absolute inset-0 bg-black/5 opacity-20"></div>
+          <div class="absolute inset-0 bg-gradient-to-br from-transparent via-black/5 to-transparent"></div>
+
+          <!-- Main Content -->
+          <div class="relative px-4 py-3 sm:px-6 sm:py-4">
+            <div class="flex items-center justify-between">
+              <!-- Left Side - Back Button -->
+              <div class="flex items-center">
+                <button @click="$router.go(-1)"
+                  class="group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-black/10 backdrop-blur-sm rounded-xl border border-black/20 hover:bg-black/20 active:scale-95 transition-all duration-200 touch-manipulation">
+                  <ion-icon :icon="chevronBackOutline"
+                    class="text-lg sm:text-xl text-gray-800 drop-shadow-sm group-hover:scale-110 transition-transform duration-200"></ion-icon>
+                </button>
+              </div>
+
+              <!-- Center - Title Section -->
+              <div class="flex-1 text-center mx-4">
+                <div class="flex items-center justify-center space-x-2 sm:space-x-3">
+                  <!-- Title Text -->
+                  <div class="text-center">
+                    <h1 class="text-lg sm:text-xl font-bold tracking-wide drop-shadow-sm text-gray-800">
+                      My Orders
+                    </h1>
+                    <p class="text-xs sm:text-sm opacity-70 font-medium tracking-wide mt-0.5 text-gray-700">
+                      Track your order history
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Side - Action Buttons -->
+              <div class="flex items-center space-x-2">
+                <!-- Refresh Button -->
+                <button @click="handleRefresh({ target: { complete: () => {} } })"
+                  class="group relative flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-black/10 backdrop-blur-sm rounded-xl border border-black/20 hover:bg-black/20 active:scale-95 transition-all duration-200 touch-manipulation overflow-hidden">
+                  <!-- Button Background Effect -->
+                  <div
+                    class="absolute inset-0 bg-gradient-to-r from-[#F0E68D]/30 to-[#DCC867]/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  </div>
+
+                  <!-- Refresh Icon -->
+                  <ion-icon :icon="refreshOutline"
+                    class="relative text-lg sm:text-xl text-gray-800 drop-shadow-sm group-hover:scale-110 transition-transform duration-200"></ion-icon>
+                </button>
+              </div>
+            </div>
+
+
+          </div>
+        </div>
       </ion-toolbar>
     </ion-header>
 
@@ -67,16 +116,17 @@
           <ion-icon :icon="cartOutline" class="empty-state-icon"></ion-icon>
           <h2>No Orders Yet</h2>
           <p>Start creating your delicious cake masterpiece today!</p>
-          <ion-button router-link="/home" expand="block" class="action-button">
+          <button @click="$router.push('/home')"
+            class="flex items-center justify-center gap-2 px-6 py-4 md:py-3 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-bold text-lg md:text-base uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[56px] md:min-h-[48px] shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation max-w-[240px] w-full">
             Start Shopping
-            <ion-icon :icon="arrowForward" slot="end"></ion-icon>
-          </ion-button>
+            <ion-icon :icon="arrowForward" class="text-xl"></ion-icon>
+          </button>
         </div>
         
         <!-- Orders list -->
         <div v-else class="orders-list">
           <div class="section-header">
-            <h2>Order History</h2>
+ 
             <ion-searchbar
               v-model="searchQuery"
               placeholder="Search orders"
@@ -127,12 +177,10 @@
                   <div class="detail-row">
                     <ion-icon :icon="cashOutline"></ion-icon>
                     <span class="order-total">
-                      <template v-if="order.total">
-                        ₱{{ order.total.toFixed(2) }}
+                      <template v-if="order.totalAmount">
+                        ₱{{ order.totalAmount.toFixed(2) }}
                       </template>
-                      <template v-else>
-                        <ion-badge class="pricing-badge">Waiting Pricing</ion-badge>
-                      </template>
+    
                     </span>
                   </div>
                 </div>
@@ -159,7 +207,8 @@ import
 import { 
   cartOutline, calendarOutline, cashOutline, arrowForward, pricetagOutline,
   timeOutline, chevronForward, searchOutline, listOutline, checkmarkCircleOutline,
-  closeCircleOutline, timeOutline as pendingIcon
+  closeCircleOutline, timeOutline as pendingIcon, chevronBackOutline, refreshOutline,
+  receiptOutline
 } from 'ionicons/icons';
 import { useOrderStore } from '../../stores/orderStore';
 import { useRouter } from 'vue-router';
@@ -184,16 +233,33 @@ interface NonCustomOrder extends BaseOrder {
   }[];
 }
 
+// Define structure for items within a CustomOrder in Firebase (matching orderStore.ts)
+interface CustomOrderItem {
+  cakeId?: string;
+  id?: string;
+  customDetails?: {
+    id?: string;
+    imageUrl?: string;
+    [key: string]: any;
+  };
+  imageUrl?: string;
+  isCustomCake?: boolean;
+  name?: string;
+  quantity?: number;
+  size?: string;
+  totalPrice?: number;
+  unitPrice?: number;
+  [key: string]: any;
+}
+
 interface CustomOrder extends BaseOrder {
   orderType: 'custom';
-  pricingStatus: 'pending' | 'priced' | 'accepted';
+  // pricingStatus: 'pending' | 'priced' | 'accepted'; // Removed
   totalAmount?: number;
   updatedAt: number;
   designUrl?: string;
   imageUrl?: string;
-  items: {
-    needsPricing: boolean;
-  };
+  items: CustomOrderItem[]; // Changed to array of CustomOrderItem
 }
 
 type Order = NonCustomOrder | CustomOrder;
@@ -358,17 +424,6 @@ ion-header {
   --background: transparent;
 }
 
-ion-toolbar {
-  --background: #F0E68D;
-  --color: #58091F;
-  --border-width: 0;
-}
-
-.orders-title {
-  font-weight: 600;
-  font-size: 1.25rem;
-}
-
 .filter-container {
   background: var(--ion-color-light);
   padding: 24px 20px;
@@ -511,12 +566,13 @@ ion-toolbar {
 }
 
 .orders-searchbar {
-  --background: var(--ion-color-light-shade);
+ 
   --border-radius: 8px;
   --box-shadow: none;
   --placeholder-opacity: 0.7;
   margin-bottom: 8px;
   padding: 0;
+  border-bottom: 1px solid var(--ion-color-light-shade);
 }
 
 .orders-list {
@@ -665,16 +721,6 @@ ion-toolbar {
   color: #666;
   margin: 0 0 24px;
   max-width: 300px;
-}
-
-.action-button {
-  --background: #58091F;
-  --color: #F0E68D;
-  --border-radius: 8px;
-  --box-shadow: 0 4px 12px rgba(88, 9, 31, 0.3);
-  font-weight: 600;
-  max-width: 240px;
-  width: 100%;
 }
 
 /* No results state */

@@ -43,12 +43,7 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('../views/Orders/OrdersView.vue'),
         meta: { requiresAuth: true },
       },
-      {
-        path: '/cart',
-        name: 'cart',
-        component: () => import('../views/Orders/CartView.vue'),
-        meta: { requiresAuth: true },
-      },
+
       {
         path: '/notifications',
         name: 'notifications',
@@ -72,6 +67,12 @@ const routes: Array<RouteRecordRaw> = [
     ],
   },
   {
+    path: '/cart',
+    name: 'cart',
+    component: () => import('../views/Orders/CartView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/category/:id',
     name: 'category',
     component: () => import('../views/CategoryView.vue'),
@@ -89,6 +90,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../views/CategoryListView.vue'),
     meta: { requiresAuth: true },
   },
+  
   {
     path: '/chat/:id',
     name: 'chat',
@@ -107,16 +109,17 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../views/Account/AccountEditView.vue'),
     meta: { requiresAuth: true },
   },
-  {
-    path: '/account/message',
-    name: 'accountMessage',
-    component: () => import('../views/Account/AccountMessageView.vue'),
-    meta: { requiresAuth: true },
-  },
+
   {
     path: '/customize',
     name: 'customizeCake',
     component: () => import('../views/CustomizeCakeView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/checkout',
+    name: 'checkout',
+    component: () => import('../views/Orders/CheckoutView.vue'),
     meta: { requiresAuth: true },
   },
 
