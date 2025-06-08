@@ -63,13 +63,13 @@ interface CustomOrder extends BaseOrder {
 type Order = NonCustomOrder | CustomOrder;
 
 // Original PaymentDetails, if needed elsewhere or as part of a richer Order type not fully used by OrdersView
-interface PaymentDetails {
-  amount: number;
-  createdAt: string; // Consider if this should be number too
-  currency: string;
-  status: 'pending' | 'completed' | 'failed';
-  paymentMethod: string;
-}
+// interface PaymentDetails {
+//   amount: number;
+//   createdAt: string; // Consider if this should be number too
+//   currency: string;
+//   status: 'pending' | 'completed' | 'failed';
+//   paymentMethod: string;
+// }
 // If PaymentDetails are part of the Firebase data for an order, 
 // they should be added to BaseOrder, CustomOrder, or NonCustomOrder interfaces if used.
 // For now, it's not in OrdersView.vue's Order type.

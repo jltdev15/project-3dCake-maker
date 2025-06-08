@@ -68,7 +68,14 @@
                 <div v-for="message in messages" :key="message.id" 
                      :class="['message', message.senderId === currentUserId ? 'message-sent' : 'message-received']">
                     <div class="message-content">
-                        {{ message.content }}
+                        <!-- Image message -->
+                        <img v-if="message.imageUrl" 
+                             :src="message.imageUrl" 
+                             class="message-image"
+                             @click="openImage(message.imageUrl)"
+                             alt="Message image" />
+                        <!-- Text message -->
+                        <span v-if="message.content">{{ message.content }}</span>
                     </div>
                     <div class="message-time">
                         {{ formatTime(message.timestamp) }}
@@ -94,6 +101,13 @@
                 </ion-item>
             </ion-toolbar>
         </ion-footer>
+
+        <!-- Image Preview Modal -->
+        <ion-modal :is-open="showImagePreview" @didDismiss="showImagePreview = false">
+            <div class="image-preview">
+                <img :src="selectedImageUrl" alt="Preview" />
+            </div>
+        </ion-modal>
     </ion-page>
 </template>
 
@@ -104,6 +118,7 @@ import { useMessageStore } from '../stores/messageStore';
 import { storeToRefs } from 'pinia';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { IonModal } from '@ionic/vue';
 
 // @ts-ignore
 import {
@@ -182,6 +197,16 @@ const markAsRead = async () => {
             console.error('Error marking messages as read:', error);
         }
     }, 100);
+};
+
+// Add new refs for image preview
+const showImagePreview = ref(false);
+const selectedImageUrl = ref('');
+
+// Add function to handle image click
+const openImage = (imageUrl: string) => {
+    selectedImageUrl.value = imageUrl;
+    showImagePreview.value = true;
 };
 
 onMounted(async () => {
@@ -402,6 +427,39 @@ watch(messages, async (newMessages, oldMessages) => {
 /* Ensure content padding matches input item padding */
 ion-content {
     --padding-bottom: calc(16px + 56px + 8px); /* Bottom padding + footer height + footer padding */
+}
+
+.message-image {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.message-image:hover {
+    transform: scale(1.02);
+}
+
+/* Image Preview Modal */
+ion-modal {
+    --width: 100%;
+    --height: 100%;
+    --background: rgba(0, 0, 0, 0.9);
+}
+
+.image-preview {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
 }
 
 </style> 

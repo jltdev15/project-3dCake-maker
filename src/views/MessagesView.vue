@@ -111,7 +111,7 @@ import {
 import { chevronBackOutline, chevronForwardOutline, chatbubblesOutline, chatbubbleEllipsesOutline } from 'ionicons/icons';
 import { ref as dbRef, onValue, off } from 'firebase/database';
 import { database } from '../config/firebase';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '../stores/authStore';
 
 interface AdminUser {
     id: string;

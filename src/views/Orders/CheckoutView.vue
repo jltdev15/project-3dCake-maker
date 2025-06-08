@@ -39,19 +39,6 @@
               <div class="w-10 h-10 sm:w-12 sm:h-12"></div>
             </div>
 
-            <!-- Order Summary Indicator -->
-            <div class="mt-3 pt-3 border-t border-black/20">
-              <div class="flex items-center justify-between text-xs sm:text-sm">
-                <div class="flex items-center space-x-1 text-gray-700/80">
-                  <ion-icon :icon="cartOutline" class="text-xs"></ion-icon>
-                  <span>{{ cartStore.items.length }} Item{{ cartStore.items.length !== 1 ? 's' : '' }}</span>
-                </div>
-                <div class="flex items-center space-x-1 text-gray-700/80">
-                  <ion-icon :icon="pricetagOutline" class="text-xs"></ion-icon>
-                  <span class="font-bold">₱{{ Number(cartStore.cartTotal).toFixed(2) }}</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </ion-toolbar>
@@ -61,8 +48,8 @@
       <div class="px-2 md:px-3 pt-3 pb-64">
         <!-- Order Summary Section -->
         <div class="mb-4">
-          <h2 class="text-base font-bold text-[#58091F] mb-2">Order Summary</h2>
-          <div class="space-y-1">
+          <p class="text- font-bold text-[#58091F] mb-2">Order Summary</p>
+          <div class="bg-white space-y-1 border-2 border-gray-200 rounded-xl p-1">
             <div v-for="item in cartStore.items" :key="item.id"
               class="flex items-center gap-2 p-2 bg-gray-50 rounded-xl">
               <div class="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0" v-if="item.imageUrl">
@@ -83,35 +70,47 @@
 
         <!-- Payment Method Section -->
         <div class="mb-4">
-          <p class="text-xl font-bold text-[#58091F] mb-2">Payment Method</p>
-          <div class="space-y-2">
+          <p class="text-lg font-bold text-[#58091F] mb-2">Payment Method</p>
+          <div class="space-y-3">
             <!-- Cash on Delivery Option -->
-            <div class="mb-2">
-              <label class="payment-option">
-                <input type="radio" v-model="selectedPaymentMethod" value="cod"
-                  class="absolute opacity-0 pointer-events-none">
-                <div class="flex items-center gap-4 w-full">
+            <label
+              class="relative flex items-center p-4 bg-white border-2 border-gray-200 rounded-xl cursor-pointer hover:border-[#F0E68D] transition-colors group">
+              <input type="radio" v-model="selectedPaymentMethod" value="cod" class="sr-only peer">
+              <div class="flex-1">
+                <span class="block text-lg font-semibold text-[#58091F]">Cash on Delivery</span>
+                <span class="block text-sm text-gray-600">Pay when you receive your order</span>
+              </div>
+              <div
+                class="hidden peer-checked:flex items-center justify-center w-6 h-6 bg-[#58091F] text-white rounded-full">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+            </label>
 
-                  <div class="flex-1">
-                    <span class="block text-xl font-semibold text-[#58091F]">Cash on Delivery</span>
-                    <span class="block text-xs text-gray-600">Pay when you receive your order</span>
-                  </div>
-                </div>
-              </label>
+            <div class="relative">
+              <div class="absolute inset-0 flex items-center">
+                <div class="w-full border-t border-gray-300"></div>
+              </div>
+              <div class="relative flex justify-center">
+                <span class="px-2 bg-gray-100 text-sm text-gray-500">or</span>
+              </div>
             </div>
-            <div class="border-t border-gray-300 my-2 w-2/3 mx-auto"></div>
-            <div class="w-full p-1 bg-gray-100 rounded-xl">
+
+            <!-- PayPal Section -->
+            <div class="bg-white rounded-xl p-4 border-2 border-gray-200">
               <div v-if="cartStore.cartTotal > 0">
-                <div v-if="!paypalLoaded" class="flex flex-col items-center justify-center gap-3 py-8">
+                <div v-if="!paypalLoaded" class="flex flex-col items-center justify-center gap-3 py-6">
                   <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                  <p class="text-center text-gray-600">Loading payment options...</p>
+                  <p class="text-sm text-gray-600">Loading payment options...</p>
                 </div>
-                <div id="paypal-button-container" class="w-full min-h-[60px]"></div>
+                <div v-show="paypalLoaded">
+                  <div id="paypal-button-container" class="w-full min-h-[60px]"></div>
+                  <p class="text-xs text-gray-600">PayPal is a secure and convenient way to pay for your order. </p>
+                </div>
+
               </div>
 
-              <div v-else class="flex items-center justify-center py-8">
-                <p class="text-center text-gray-600">Add items to cart to enable PayPal payment</p>
-              </div>
             </div>
           </div>
         </div>
@@ -120,7 +119,7 @@
       <!-- Fixed Bottom Section -->
       <div class="fixed bottom-0 left-0 right-0 bg-white p-3 shadow-2xl border-t border-gray-200 z-999">
         <div class="max-w-4xl mx-auto">
-          <div class="bg-[#F0E68D] rounded-2xl p-3 mb-3">
+          <div class="rounded-2xl p-3 mb-3">
             <div class="flex justify-between items-center py-0.5 text-sm text-[#58091F]">
               <span>Subtotal</span>
               <span class="font-semibold">₱{{ Number(cartStore.cartTotal).toFixed(2) }}</span>
@@ -132,13 +131,43 @@
             </div>
           </div>
           <button @click="placeOrder" :disabled="!canPlaceOrder || isPlacingOrder"
-            class="flex items-center justify-center gap-2 px-4 py-1 md:py-1 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-bold text-sm md:text-xs uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[40px] md:min-h-[32px] shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation w-full disabled:opacity-50 disabled:cursor-not-allowed">
+            class="flex items-center justify-center gap-2 px-4 py-3 md:py-1 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-bold text-lg md:text-xs uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[40px] md:min-h-[32px] shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation w-full disabled:opacity-50 disabled:cursor-not-allowed">
             <div v-if="isPlacingOrder" class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
             <span v-else>Place Order</span>
           </button>
         </div>
       </div>
     </ion-content>
+
+    <!-- Success Modal -->
+    <ion-modal :is-open="showSuccessModal" :breakpoints="[0, 0.5]" :initial-breakpoint="0.5" class="success-modal">
+      <div class="p-6">
+        <div class="flex flex-col items-center justify-center text-center">
+          <!-- Success Icon -->
+          <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center my-4">
+            <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+
+          <!-- Success Message -->
+          <h2 class="text-2xl font-bold text-gray-900 mb-2">Order Placed Successfully!</h2>
+          <p class="text-gray-600 mb-6">Thank you for your order. We'll process it right away.</p>
+
+          <!-- Action Buttons -->
+          <div class="flex flex-col gap-3 w-full max-w-xs">
+            <button @click="goToOrders"
+              class="h-12 py-3 px-4 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-bold text-lg uppercase tracking-wide rounded-xl hover:shadow-lg transition-all duration-200 touch-manipulation">
+              View My Orders
+            </button>
+            <button @click="goToHome"
+              class="h-12 py-3 px-4  text-[#58091F] font-bold text-lg uppercase tracking-wide rounded-xl hover:shadow-lg transition-all duration-200 touch-manipulation">
+              Go to Home
+            </button>
+          </div>
+        </div>
+      </div>
+    </ion-modal>
   </ion-page>
 </template>
 
@@ -149,14 +178,12 @@ import {
   IonToolbar,
   IonContent,
   IonIcon,
+  IonModal,
   toastController
 } from '@ionic/vue';
 // @ts-ignore - These icons are used in the template
 import { 
   chevronBackOutline, 
-  cartOutline, 
-  pricetagOutline, 
-  cashOutline 
 } from 'ionicons/icons';
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRouter } from 'vue-router';
@@ -177,11 +204,21 @@ const authStore = useAuthStore();
 const selectedPaymentMethod = ref('');
 const isPlacingOrder = ref(false);
 const paypalLoaded = ref(false);
+const showSuccessModal = ref(false);
+
+// Add new ref for PayPal instance
+const paypalInstance = ref<any>(null);
 
 const resetCheckoutState = () => {
   selectedPaymentMethod.value = '';
-  // paypalLoaded.value = false; // Consider if this is needed or handled by navigation/re-init
-  console.log('Checkout state reset');
+  paypalLoaded.value = false;
+  if (paypalInstance.value) {
+    const container = document.getElementById('paypal-button-container');
+    if (container) {
+      container.innerHTML = '';
+    }
+    paypalInstance.value = null;
+  }
 };
 
 // Computed properties
@@ -272,20 +309,8 @@ const placeOrder = async () => {
       console.log('User cart cleared from Firebase for COD order.');
     }
 
-    // Show success message
-    const toast = await toastController.create({
-      message: 'Order placed successfully!',
-      duration: 3000,
-      color: 'success',
-      position: 'top'
-    });
-    await toast.present();
-
-    // Reset local component state
-    resetCheckoutState();
-
-    // Navigate to orders page
-    router.push('/orders');
+    // Show success modal instead of redirecting
+    showSuccessModal.value = true;
 
   } catch (error) {
     console.error('Error placing order:', error);
@@ -325,99 +350,54 @@ const waitForElement = (selector: string, timeout = 5000): Promise<HTMLElement> 
   });
 };
 
-// Add PayPal SDK loading function
+// Modify loadPayPalSDK function
 const loadPayPalSDK = () => {
   return new Promise<void>((resolve, reject) => {
     // @ts-ignore - PayPal types
     if (window.paypal && window.paypal.Buttons) {
-      console.log('PayPal SDK and Buttons component already available. Resolving.');
+      console.log('PayPal SDK already loaded');
       resolve();
       return;
-    }
-
-    console.log('PayPal SDK not fully ready or not loaded. Proceeding with dynamic load/reload attempt.');
-
-    const existingScript = document.querySelector('script[src*="paypal.com/sdk/js"]');
-    if (existingScript) {
-      console.log('Removing existing PayPal SDK script tag before attempting new load.');
-      existingScript.remove();
     }
 
     const script = document.createElement('script');
     script.src = PAYPAL_SDK_URL;
     script.async = true;
-    console.log(`Attempting to dynamically load PayPal SDK from: ${PAYPAL_SDK_URL}`);
 
     script.onload = () => {
-      console.log('PayPal SDK script.onload event triggered.');
-      // Add a small delay to ensure SDK is fully initialized on the window object
       setTimeout(() => {
         // @ts-ignore - PayPal types
         if (window.paypal && window.paypal.Buttons) {
-          console.log('PayPal SDK and Buttons component confirmed available after dynamic load and delay.');
           resolve();
         } else {
-          console.error('PayPal SDK script loaded, but window.paypal or window.paypal.Buttons not available after delay.');
-          reject(new Error('PayPal Buttons component not available after dynamic script load.'));
+          reject(new Error('PayPal SDK not properly initialized'));
         }
-      }, 200); // 200ms delay, can be adjusted
+      }, 200);
     };
     
-    script.onerror = (error) => {
-      console.error('Failed to load PayPal SDK script dynamically (script.onerror):', error);
-      reject(new Error('Failed to load PayPal SDK (script.onerror).'));
-    };
-
+    script.onerror = () => reject(new Error('Failed to load PayPal SDK'));
     document.head.appendChild(script);
-    console.log('Appended new PayPal SDK script to document head.');
   });
 };
 
+// Modify initializePayPalButtons function
 const initializePayPalButtons = async () => {
   try {
-    console.log('Initializing PayPal buttons...');
+    // Cleanup existing buttons if any
+    if (paypalInstance.value) {
+      const container = document.getElementById('paypal-button-container');
+      if (container) {
+        container.innerHTML = '';
+      }
+    }
+
     // @ts-ignore - PayPal types
     const paypal = window.paypal;
-    
     if (!paypal || !paypal.Buttons) {
-      throw new Error('PayPal SDK not loaded or Buttons component missing');
+      throw new Error('PayPal SDK not loaded');
     }
 
-    // Remove any existing buttons
-    const container = document.getElementById('paypal-button-container');
-    if (container) {
-      container.innerHTML = '';
-      
-      // Enhanced Debugging: Log container state
-      const styles = window.getComputedStyle(container);
-      console.log('PayPal Container State before render:', {
-        id: container.id,
-        exists: true,
-        offsetWidth: container.offsetWidth,
-        offsetHeight: container.offsetHeight,
-        clientWidth: container.clientWidth,
-        clientHeight: container.clientHeight,
-        display: styles.display,
-        visibility: styles.visibility,
-        innerHTML: container.innerHTML,
-        // Check parent visibility too, if possible (simplified check)
-        parentVisible: container.parentElement ? window.getComputedStyle(container.parentElement).display !== 'none' : 'N/A'
-      });
-
-      if (container.offsetWidth === 0 || container.offsetHeight === 0) {
-        console.warn('PayPal container has zero dimensions. Buttons may not render correctly or be invisible.');
-      }
-      if (styles.display === 'none' || styles.visibility === 'hidden') {
-        console.warn('PayPal container is not visible (display: none or visibility: hidden). Buttons may not render.');
-      }
-
-    } else {
-      console.error('PayPal button container #paypal-button-container not found in DOM for rendering.');
-      throw new Error('PayPal button container #paypal-button-container not found in DOM for rendering.');
-    }
-
-    // Create PayPal buttons
-    await paypal.Buttons({
+    paypalInstance.value = await paypal.Buttons({
       style: {
         layout: 'vertical',
         color: 'blue',
@@ -427,13 +407,11 @@ const initializePayPalButtons = async () => {
       fundingSource: paypal.FUNDING.PAYPAL,
       createOrder: async () => {
         try {
-          console.log('Creating PayPal order...');
           const order = await createPayPalOrder(
             cartStore.cartTotal.toFixed(2),
             'PHP',
             '3D Cake Maker Order'
           );
-          console.log('PayPal order created:', order);
           return order.id;
         } catch (error) {
           console.error('Error creating PayPal order:', error);
@@ -442,11 +420,7 @@ const initializePayPalButtons = async () => {
       },
       onApprove: async (data: any) => {
         try {
-          console.log('Payment approved:', data);
           const captureData = await capturePayPalOrder(data.orderID);
-          console.log('Payment captured:', captureData);
-          
-          // Handle successful payment
           await handleSuccessfulPayment(captureData);
         } catch (error) {
           console.error('Error capturing payment:', error);
@@ -462,20 +436,17 @@ const initializePayPalButtons = async () => {
           position: 'top'
         });
         await toast.present();
-      },
-      onCancel: () => {
-        console.log('Payment cancelled');
       }
-    }).render('#paypal-button-container');
+    });
 
-    console.log('PayPal buttons initialized successfully');
+    await paypalInstance.value.render('#paypal-button-container');
     paypalLoaded.value = true;
   } catch (error) {
     console.error('Error initializing PayPal buttons:', error);
     paypalLoaded.value = false;
     const toast = await toastController.create({
-      message: 'Failed to initialize PayPal. Please refresh the page and try again.',
-      duration: 5000,
+      message: 'Failed to initialize PayPal. Please refresh the page.',
+      duration: 3000,
       position: 'top',
       color: 'danger'
     });
@@ -530,20 +501,8 @@ const handleSuccessfulPayment = async (captureData: any) => {
       console.log('User cart cleared from Firebase for PayPal order.');
     }
 
-    // Show success message
-    const toast = await toastController.create({
-      message: 'Order placed successfully!',
-      duration: 3000,
-      color: 'success',
-      position: 'top'
-    });
-    await toast.present();
-
-    // Reset local component state
-    resetCheckoutState();
-
-    // Navigate to orders page
-    router.push('/orders');
+    // Show success modal instead of redirecting
+    showSuccessModal.value = true;
 
   } catch (error) {
     console.error('Error processing successful payment:', error);
@@ -557,49 +516,57 @@ const handleSuccessfulPayment = async (captureData: any) => {
   }
 };
 
+// Add navigation functions
+const goToOrders = () => {
+  showSuccessModal.value = false;
+  router.push('/orders');
+};
+
+const goToHome = () => {
+  showSuccessModal.value = false;
+  router.push('/');
+};
+
 // Lifecycle
 onMounted(async () => {
-  // Check if cart is empty, redirect to cart page
   if (cartStore.items.length === 0) {
     router.push('/cart');
     return;
   }
 
-  // Load user data if available
-  if (authStore.user) {
-    // You can pre-fill delivery address and contact from user profile
-    // deliveryAddress.value = authStore.user.address || '';
-    // contactNumber.value = authStore.user.phone || '';
-  }
-
-  // Initialize PayPal
   try {
     await loadPayPalSDK();
-    await nextTick();
-    await waitForElement('paypal-button-container');
-    await new Promise(resolve => setTimeout(resolve, 200));
     await initializePayPalButtons();
   } catch (error) {
-    console.error('Failed to initialize PayPal setup in onMounted:', error);
+    console.error('Failed to initialize PayPal:', error);
     paypalLoaded.value = false;
-    const toast = await toastController.create({
-        message: 'Payment system could not be loaded. Please check connection and refresh.',
-        duration: 5000,
-        color: 'danger',
-        position: 'top'
-    });
-    await toast.present();
   }
 });
 
 onUnmounted(() => {
-  // Cleanup PayPal if needed
+  // Cleanup PayPal instance
+  if (paypalInstance.value) {
+    const container = document.getElementById('paypal-button-container');
+    if (container) {
+      container.innerHTML = '';
+    }
+    paypalInstance.value = null;
+  }
+  paypalLoaded.value = false;
 });
 
-// Watch for cart changes
-watch(() => cartStore.items.length, (newLength) => {
+// Add watch for cart changes
+watch(() => cartStore.items.length, async (newLength) => {
   if (newLength === 0) {
     router.push('/cart');
+  } else {
+    // Reinitialize PayPal when cart has items
+    try {
+      await loadPayPalSDK();
+      await initializePayPalButtons();
+    } catch (error) {
+      console.error('Failed to reinitialize PayPal:', error);
+    }
   }
 });
 </script>
@@ -657,5 +624,10 @@ watch(() => cartStore.items.length, (newLength) => {
   font-size: 14px;
   font-weight: bold;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.success-modal {
+  --border-radius: 16px;
+  --box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 </style> 

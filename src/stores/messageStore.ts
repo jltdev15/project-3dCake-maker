@@ -8,6 +8,8 @@ interface Message {
     senderId: string;
     receiverId: string;
     content: string;
+    type: 'text' | 'image';
+    imageUrl?: string;
     timestamp: number;
     isRead: boolean;
 }
@@ -128,7 +130,7 @@ export const useMessageStore = defineStore('message', () => {
         }
     };
 
-    const sendMessage = async (adminId: string, content: string) => {
+    const sendMessage = async (adminId: string, content: string, type: 'text' | 'image' = 'text', imageUrl?: string) => {
         try {
             const userId = auth.currentUser?.uid;
             if (!userId) throw new Error('User not authenticated');
@@ -139,7 +141,9 @@ export const useMessageStore = defineStore('message', () => {
 
             // Create message data
             const messageData = {
-                content,
+                content: type === 'image' ? 'Image' : content,
+                type,
+                imageUrl: type === 'image' ? imageUrl : undefined,
                 conversationId: chatId,
                 senderId: userId,
                 timestamp,
@@ -154,7 +158,7 @@ export const useMessageStore = defineStore('message', () => {
             // Update user's chat metadata
             const userChatRef = dbRef(database, `users/${userId}/messages/${chatId}`);
             await update(userChatRef, {
-                lastMessage: content,
+                lastMessage: type === 'image' ? '📷 Image' : content,
                 lastMessageTime: formattedTime,
                 unreadCount: 0
             });
@@ -162,7 +166,7 @@ export const useMessageStore = defineStore('message', () => {
             // Update admin's chat metadata
             const adminChatRef = dbRef(database, `users/${adminId}/messages/${chatId}`);
             await update(adminChatRef, {
-                lastMessage: content,
+                lastMessage: type === 'image' ? '📷 Image' : content,
                 lastMessageTime: formattedTime,
                 unreadCount: 1
             });

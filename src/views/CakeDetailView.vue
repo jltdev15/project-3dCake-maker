@@ -136,13 +136,14 @@ import { computed, ref } from 'vue';
 // @ts-ignore
 import { cartOutline, checkmarkCircleOutline, addOutline, removeOutline, chevronBackOutline, restaurantOutline, pricetagOutline, cashOutline } from 'ionicons/icons';
 import { useCartStore } from '@/stores/cartStore';
+import { useAuthStore } from '@/stores/authStore';
 import { toastController } from '@ionic/vue';
 
 const route = useRoute();
 const router = useRouter();
 const cakeStore = useCakeStore();
 const cartStore = useCartStore();
-
+const authStore = useAuthStore();
 const category = computed(() => {
   return cakeStore.getCategoryById(route.params.categoryId as string);
 });
@@ -201,6 +202,7 @@ const addToCart = async () => {
       unitPrice: unitPrice.value,
       totalPrice: totalPrice.value,
       imageUrl: cake.value.imageUrl,
+      customerName: authStore.user?.name,
       isCustomCake: false
     };
 

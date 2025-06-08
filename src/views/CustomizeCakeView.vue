@@ -51,7 +51,7 @@
               <div class="flex items-center space-x-2">
                 <!-- Cart Button -->
                 <button
-                  v-if="selectedFlavor"
+                  v-if="areFlavorsCompleted"
                   @click="showAddToCartModal"
                   class="group relative flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-black/10 backdrop-blur-sm rounded-xl border border-black/20 hover:bg-black/20 active:scale-95 transition-all duration-200 touch-manipulation overflow-hidden"
                 >
@@ -1192,14 +1192,10 @@
                       </div>
                     </div>
 
-                    <!-- Font Style Buttons -->
+                    <!-- Font Style Section -->
                     <div class="space-y-3">
-                      <label class="text-sm font-semibold text-gray-700 block"
-                        >Font Style</label
-                      >
-                      <div
-                        class="text-xs text-gray-500 mb-3 bg-amber-50 border border-amber-200 rounded-lg p-2"
-                      >
+                      <label class="text-sm font-semibold text-gray-700 block">Font Style</label>
+                      <div class="text-xs text-gray-500 mb-3 bg-amber-50 border border-amber-200 rounded-lg p-2">
                         <span class="flex items-center gap-1">
                           <span>✨</span>
                           Choose from authentic cake topper fonts for the perfect look
@@ -1207,7 +1203,7 @@
                       </div>
 
                       <!-- Basic Styles Row -->
-                      <div class="grid grid-cols-3 gap-2">
+                      <div class="grid grid-cols-3 gap-2 z-[-1]">
                         <button
                           @click="updateTopperFontStyle('normal')"
                           :class="[
@@ -1218,7 +1214,7 @@
                               : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 active:scale-95',
                           ]"
                         >
-                          <span class="relative z-10">Normal</span>
+                          <span class="relative">Normal</span>
                           <div
                             v-if="
                               selectedLayerConfig?.topper?.style === 'normal' ||
@@ -1238,7 +1234,7 @@
                               : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 active:scale-95',
                           ]"
                         >
-                          <span class="relative z-10">Bold</span>
+                          <span class="relative">Bold</span>
                           <div
                             v-if="selectedLayerConfig?.topper?.style === 'bold'"
                             class="absolute top-1 right-1 text-white text-xs"
@@ -1255,7 +1251,7 @@
                               : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 active:scale-95',
                           ]"
                         >
-                          <span class="relative z-10">Italic</span>
+                          <span class="relative " >Italic</span>
                           <div
                             v-if="selectedLayerConfig?.topper?.style === 'italic'"
                             class="absolute top-1 right-1 text-white text-xs"
@@ -1276,9 +1272,9 @@
                               : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 active:scale-95',
                           ]"
                         >
-                          <div class="flex flex-col items-center">
+                          <div class="flex flex-col items-center z-[-1]">
                             <span
-                              class="relative z-10 text-lg"
+                              class="relative  text-lg"
                               style="font-family: cursive"
                               >Script</span
                             >
@@ -1301,7 +1297,7 @@
                           ]"
                         >
                           <div class="flex flex-col items-center">
-                            <span class="relative z-10 text-lg">Decorative</span>
+                            <span class="relative  text-lg">Decorative</span>
                             <span class="text-xs opacity-70">Bold & fancy</span>
                           </div>
                           <div
@@ -1326,7 +1322,7 @@
                         >
                           <div class="flex flex-col items-center">
                             <span
-                              class="relative z-10 text-lg"
+                              class="relative  text-lg"
                               style="letter-spacing: 0.5px"
                               >Elegant</span
                             >
@@ -1349,7 +1345,7 @@
                           ]"
                         >
                           <div class="flex flex-col items-center">
-                            <span class="relative z-10 text-lg">Playful</span>
+                            <span class="relative  text-lg">Playful</span>
                             <span class="text-xs opacity-70">Fun & bold</span>
                           </div>
                           <div
@@ -1373,7 +1369,7 @@
                           ]"
                         >
                           <div class="flex flex-col items-center">
-                            <span class="relative z-10 text-lg" style="font-family: serif"
+                            <span class="relative  text-lg" style="font-family: serif"
                               >Classic</span
                             >
                             <span class="text-xs opacity-70"
@@ -3366,7 +3362,20 @@ const getProgressPercentage = computed(() => {
       return 0;
   }
 });
+const areFlavorsCompleted = computed(() => {
+  if (!selectedLayers.value) return false;
 
+  // For single layer, check selectedFlavor
+  if (selectedLayers.value === 1) {
+    return selectedFlavor.value !== null;
+  }
+  // For multi-layer, check if all layers have flavors
+  else {
+    const requiredLayers = selectedLayers.value;
+    const selectedCount = Object.keys(selectedLayerFlavors.value).length;
+    return selectedCount === requiredLayers;
+  }
+});
 // Adjust cake stand to be proportional to the cake
 const createCakeStand = (cakeDiameter = 6) => {
   const standGroup = new THREE.Group();
@@ -5987,7 +5996,7 @@ const closeSuccessModal = () => {
 
 const goToCheckout = () => {
   closeSuccessModal();
-  router.replace("/cart");
+  router.push("/cart");
 };
 const isLoading = ref(false);
 
