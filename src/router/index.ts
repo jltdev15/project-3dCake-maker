@@ -36,14 +36,6 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true },
       },
 
-
-      {
-        path: '/orders',
-        name: 'orders',
-        component: () => import('../views/Orders/OrdersView.vue'),
-        meta: { requiresAuth: true },
-      },
-
       {
         path: '/notifications',
         name: 'notifications',
@@ -56,15 +48,26 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('../views/Account/AccountView.vue'),
         meta: { requiresAuth: true },
       },
+
       {
         path: '/messages',
         name: 'messages',
         component: MessagesView,
         meta: { requiresAuth: true },
       },
-
-
     ],
+  },
+  {
+    path: '/account/edit',
+    name: 'accountEdit',
+    component: () => import('../views/Account/AccountEditView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/notifications',
+    name: 'notifications',
+    component: () => import('@/views/NotificationView.vue'),
+    meta: { requiresAuth: true },
   },
   {
     path: '/cart',
@@ -103,12 +106,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../views/Orders/OrderDetailsView.vue'),
     meta: { requiresAuth: true },
   },
-  {
-    path: '/account/edit',
-    name: 'accountEdit',
-    component: () => import('../views/Account/AccountEditView.vue'),
-    meta: { requiresAuth: true },
-  },
+
 
   {
     path: '/customize',
@@ -120,6 +118,12 @@ const routes: Array<RouteRecordRaw> = [
     path: '/checkout',
     name: 'checkout',
     component: () => import('../views/Orders/CheckoutView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/orders',
+    name: 'orders',
+    component: () => import('../views/Orders/OrdersView.vue'),
     meta: { requiresAuth: true },
   },
 

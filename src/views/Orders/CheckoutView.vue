@@ -131,7 +131,7 @@
             </div>
           </div>
           <button @click="placeOrder" :disabled="!canPlaceOrder || isPlacingOrder"
-            class="flex items-center justify-center gap-2 px-4 py-3 md:py-1 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-bold text-lg md:text-xs uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[40px] md:min-h-[32px] shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation w-full disabled:opacity-50 disabled:cursor-not-allowed">
+            class="flex items-center justify-center gap-2 px-4 py-3 md:py-1 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-bold text-lg md:text-xs uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[60px] md:min-h-[32px] shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation w-full disabled:opacity-50 disabled:cursor-not-allowed">
             <div v-if="isPlacingOrder" class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
             <span v-else>Place Order</span>
           </button>
@@ -152,10 +152,10 @@
 
           <!-- Success Message -->
           <h2 class="text-2xl font-bold text-gray-900 mb-2">Order Placed Successfully!</h2>
-          <p class="text-gray-600 mb-6">Thank you for your order. We'll process it right away.</p>
+          <p class="text-gray-600 mb-6 text-sm">Thank you for your order. We'll process it right away.</p>
 
           <!-- Action Buttons -->
-          <div class="flex flex-col gap-3 w-full max-w-xs">
+          <div class="flex flex-col gap-3 w-full max-w-sm">
             <button @click="goToOrders"
               class="h-12 py-3 px-4 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-bold text-lg uppercase tracking-wide rounded-xl hover:shadow-lg transition-all duration-200 touch-manipulation">
               View My Orders
@@ -209,6 +209,7 @@ const showSuccessModal = ref(false);
 // Add new ref for PayPal instance
 const paypalInstance = ref<any>(null);
 
+// Add resetCheckoutState function after the canPlaceOrder computed property
 const resetCheckoutState = () => {
   selectedPaymentMethod.value = '';
   paypalLoaded.value = false;
@@ -223,8 +224,22 @@ const resetCheckoutState = () => {
 
 // Computed properties
 const canPlaceOrder = computed(() => {
-  return selectedPaymentMethod.value && 
-         cartStore.items.length > 0;
+  const conditions = {
+    hasPaymentMethod: !!selectedPaymentMethod.value,
+    hasItems: cartStore.items.length > 0,
+    hasAddress: !!authStore.user?.address,
+    hasContact: !!authStore.user?.contact
+  };
+  
+  console.log('Place Order Button Conditions:', conditions);
+  console.log('Selected Payment Method:', selectedPaymentMethod.value);
+  console.log('User Address:', authStore.user?.address);
+  console.log('User Contact:', authStore.user?.contact);
+  
+  return conditions.hasPaymentMethod && 
+         conditions.hasItems && 
+         conditions.hasAddress && 
+         conditions.hasContact;
 });
 
 // Methods
@@ -267,19 +282,36 @@ const saveAdminNotification = async (orderId: string, message: string) => {
 };
 
 const placeOrder = async () => {
-  if (!canPlaceOrder.value) return;
-
-  isPlacingOrder.value = true;
+  if (!canPlaceOrder.value || isPlacingOrder.value) return;
   
+  // Validate required user information
+  if (!authStore.user?.address || !authStore.user?.contact) {
+    const toast = await toastController.create({
+      message: 'Please update your address and contact information in your profile before placing an order.',
+      duration: 3000,
+      color: 'warning',
+      position: 'top'
+    });
+    await toast.present();
+    return;
+  }
+  
+  isPlacingOrder.value = true;
   try {
+    // Simulate a 2-second delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
     const orderId = await generateOrderId();
     const orderData = {
       id: orderId,
       userId: authStore.user?.uid,
       customerName: authStore.user?.name,
+      customerAddress: authStore.user.address, // Ensure we use the validated address
+      customerContact: authStore.user.contact, // Ensure we use the validated contact
       items: cartStore.items,
       total: cartStore.cartTotal,
       paymentMethod: selectedPaymentMethod.value,
+      paymentStatus:'unpaid',
       status: 'pending',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -309,6 +341,9 @@ const placeOrder = async () => {
       console.log('User cart cleared from Firebase for COD order.');
     }
 
+    // Reset checkout state
+    resetCheckoutState();
+
     // Show success modal instead of redirecting
     showSuccessModal.value = true;
 
@@ -326,29 +361,29 @@ const placeOrder = async () => {
   }
 };
 
-// Helper function to wait for element
-const waitForElement = (selector: string, timeout = 5000): Promise<HTMLElement> => {
-  return new Promise((resolve, reject) => {
-    const startTime = Date.now();
+// // Helper function to wait for element
+// const waitForElement = (selector: string, timeout = 5000): Promise<HTMLElement> => {
+//   return new Promise((resolve, reject) => {
+//     const startTime = Date.now();
     
-    const checkElement = () => {
-      const element = document.getElementById(selector);
-      if (element) {
-        resolve(element);
-        return;
-      }
+//     const checkElement = () => {
+//       const element = document.getElementById(selector);
+//       if (element) {
+//         resolve(element);
+//         return;
+//       }
       
-      if (Date.now() - startTime >= timeout) {
-        reject(new Error(`Element ${selector} not found after ${timeout}ms`));
-        return;
-      }
+//       if (Date.now() - startTime >= timeout) {
+//         reject(new Error(`Element ${selector} not found after ${timeout}ms`));
+//         return;
+//       }
       
-      requestAnimationFrame(checkElement);
-    };
+//       requestAnimationFrame(checkElement);
+//     };
     
-    checkElement();
-  });
-};
+//     checkElement();
+//   });
+// };
 
 // Modify loadPayPalSDK function
 const loadPayPalSDK = () => {
@@ -439,7 +474,7 @@ const initializePayPalButtons = async () => {
       }
     });
 
-    await paypalInstance.value.render('#paypal-button-container');
+    await paypalInstance.value.render('#paypal-button-container'); 
     paypalLoaded.value = true;
   } catch (error) {
     console.error('Error initializing PayPal buttons:', error);
@@ -456,16 +491,31 @@ const initializePayPalButtons = async () => {
 
 const handleSuccessfulPayment = async (captureData: any) => {
   try {
+    // Validate required user information
+    if (!authStore.user?.address || !authStore.user?.contact) {
+      const toast = await toastController.create({
+        message: 'Please update your address and contact information in your profile before placing an order.',
+        duration: 3000,
+        color: 'warning',
+        position: 'top'
+      });
+      await toast.present();
+      return;
+    }
+
     console.log('Processing successful payment:', captureData);
     
     const orderId = await generateOrderId();
     const orderData = {
       id: orderId,
       userId: authStore.user?.uid,
+      customerName: authStore.user?.name,
+      customerAddress: authStore.user.address, // Use validated address
+      customerContact: authStore.user.contact, // Use validated contact
       items: cartStore.items,
       total: cartStore.cartTotal,
       paymentMethod: 'paypal',
-      status: 'paid',
+      status: 'pending',
       paymentDetails: {
         transactionId: captureData.id,
         status: captureData.status,
@@ -473,6 +523,7 @@ const handleSuccessfulPayment = async (captureData: any) => {
         currency: captureData.purchase_units[0].payments.captures[0].amount.currency_code,
         captureTime: captureData.purchase_units[0].payments.captures[0].create_time
       },
+      paymentStatus:'paid',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -482,7 +533,7 @@ const handleSuccessfulPayment = async (captureData: any) => {
     await set(orderRef, orderData);
 
     // Save admin notification
-    await saveAdminNotification(orderId, `New order ${orderId} (PayPal) has been placed.`);
+    await saveAdminNotification(orderId, `New order ${orderId}  has been placed.`);
 
     // Save order reference to user's data
     if (authStore.user?.uid) {
@@ -500,6 +551,9 @@ const handleSuccessfulPayment = async (captureData: any) => {
       await remove(cartRef); // Use remove() to delete the cart node
       console.log('User cart cleared from Firebase for PayPal order.');
     }
+
+    // Reset checkout state
+    resetCheckoutState();
 
     // Show success modal instead of redirecting
     showSuccessModal.value = true;

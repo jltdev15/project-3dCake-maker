@@ -53,10 +53,30 @@
         </ion-header>
 
         <ion-content>
+            <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)">
+                <ion-refresher-content
+                    pulling-icon="chevron-down-circle-outline"
+                    pulling-text="Pull to refresh"
+                    refreshing-spinner="crescent"
+                    refreshing-text="Refreshing...">
+                </ion-refresher-content>
+            </ion-refresher>
             <div class="notification-container">
                 <div v-if="orderNotification.loading" class="loading-state">
-                    <ion-spinner name="crescent" class="text-[#58091F] w-12 h-12"></ion-spinner>
-                    <p class="text-gray-600 text-lg mt-4">Loading notifications...</p>
+                    <div class="notifications-grid">
+                        <!-- Skeleton cards -->
+                        <div v-for="n in 3" :key="n" class="notification-card w-72 bg-white rounded-xl shadow-md p-4 flex items-start gap-4 animate-pulse">
+                            <div class="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0"></div>
+                            <div class="notification-content flex-1 flex justify-between items-start gap-2">
+                                <div class="notification-message w-full">
+                                    <div class="h-5 bg-gray-200 rounded w-4/5 mb-2"></div>
+                                    <div class="h-4 bg-gray-200 rounded w-11/12 mb-2"></div>
+                                    <div class="h-3.5 bg-gray-200 rounded w-2/5"></div>
+                                </div>
+                                <div class="w-20 h-6 bg-gray-200 rounded flex-shrink-0"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div v-else-if="orderNotification.error" class="error-state">
@@ -100,13 +120,13 @@
                                 <ion-icon :icon="getNotificationIcon(notification.status)" class="notification-status-icon"></ion-icon>
                             </div>
 
-                            <div class="notification-content">
+                            <div class="flex justify-between items-start">
                                 <div class="notification-message">
                                     <h3 class="font-semibold text-gray-800">{{ notification.title || 'Order Update' }}</h3>
-                                    <p class="text-sm text-gray-600">{{ notification.message }}</p>
+                                    <p class="text-xs text-gray-600">{{ notification.message }}</p>
                                     <p class="notification-time text-xs text-gray-500 mt-1">{{ formatDate(notification.timestamp) }}</p>
                                 </div>
-                                <ion-badge :class="['status-badge', notification.status.toLowerCase()]">
+                                <ion-badge class="px-2 py-2" :class="['status-badge', notification.status.toLowerCase()]">
                                     {{ notification.status }}
                                 </ion-badge>
                             </div>
@@ -121,7 +141,7 @@
 
 <script setup>
 import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonButtons, IonBackButton, 
-         IonBadge, IonButton, IonSpinner, IonIcon } from '@ionic/vue';
+         IonBadge, IonButton, IonSpinner, IonIcon, IonRefresher, IonRefresherContent } from '@ionic/vue';
 import { useOrderNotificationStore } from '@/stores/orderNotification';
 import { useAuthStore } from '@/stores/authStore';
 import { onMounted, onUnmounted, computed } from 'vue';
@@ -236,6 +256,20 @@ async function retryLoading() {
         cleanup = orderNotification.listenToOrderNotifications(auth.user);
     }
 }
+
+async function handleRefresh(event) {
+    try {
+        if (auth.user) {
+            if (cleanup) cleanup(); // Clean up previous listener
+            cleanup = orderNotification.listenToOrderNotifications(auth.user);
+        }
+    } catch (error) {
+        console.error('Error refreshing notifications:', error);
+    } finally {
+        // Complete the refresh animation
+        event.target.complete();
+    }
+}
 </script>
 
 <style scoped>
@@ -318,16 +352,17 @@ async function retryLoading() {
 }
 
 .notification-card {
-    background: #FFFFFF;
-    border-radius: 12px; /* Consistent rounding */
+    background: #ffffff;
+    border-radius: 8px; /* Consistent rounding */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Consistent shadow */
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     cursor: pointer;
     display: flex;
-    align-items: flex-start; /* Align items to the top */
-    padding: 16px;
+    align-items:center; /* Align items to the top */
+    padding:12px;
     position: relative; /* For unread indicator */
     overflow: hidden; /* For unread indicator */
+    
 }
 
 .notification-card:hover {
@@ -429,5 +464,11 @@ async function retryLoading() {
         width: 8px;
         height: 8px;
     }
+}
+
+/* Remove all skeleton styles and keep only the loading-state update */
+.loading-state {
+    padding: 16px;
+    min-height: auto;
 }
 </style>

@@ -11,18 +11,21 @@
                 <div class="relative px-4 py-3 sm:px-6 sm:py-4">
                     <div class="flex items-center justify-between">
                         <!-- Left Side - Placeholder/Menu or Back Button if applicable -->
-                         <div class="flex items-center">
+                        <!-- <div class="flex items-center">
                              <button @click="$router.back()"
                                 class="group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-black/10 backdrop-blur-sm rounded-xl border border-black/20 hover:bg-black/20 active:scale-95 transition-all duration-200 touch-manipulation">
                                 <ion-icon :icon="chevronBackOutline" 
                                     class="text-lg sm:text-xl text-gray-800 drop-shadow-sm group-hover:scale-110 transition-transform duration-200"></ion-icon>
                             </button>
+                        </div> -->
+                        <div class="flex items-center space-x-2">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12"></div> <!-- Placeholder for symmetry -->
                         </div>
-
                         <!-- Center - Title Section -->
-                        <div class="flex-1 text-center mx-4">
+                        <div class="flex-1 text-center items-center mx-4">
                             <div class="flex items-center justify-center space-x-2 sm:space-x-3">
-                                <ion-icon :icon="chatbubbleEllipsesOutline" class="text-xl sm:text-2xl text-gray-800 drop-shadow-sm"></ion-icon>
+                                <ion-icon :icon="chatbubbleEllipsesOutline"
+                                    class="text-xl sm:text-2xl text-gray-800 drop-shadow-sm"></ion-icon>
                                 <h1 class="text-lg sm:text-xl font-bold tracking-wide drop-shadow-sm text-gray-800">
                                     Messages
                                 </h1>
@@ -54,23 +57,21 @@
 
                 <!-- Empty State -->
                 <div v-else-if="!isLoading && adminUsers.length === 0" class="empty-state">
-                     <div class="empty-state-content">
+                    <div class="empty-state-content">
                         <div class="empty-state-icon">
                             <ion-icon :icon="chatbubblesOutline"></ion-icon>
                         </div>
                         <h2 class="empty-state-title">No Messages</h2>
-                        <p class="empty-state-subtitle">You don't have any messages yet. Admins will appear here when available.</p>
+                        <p class="empty-state-subtitle">You don't have any messages yet. Admins will appear here when
+                            available.</p>
                     </div>
                 </div>
 
                 <!-- Actual content -->
                 <div v-else class="message-list">
-                    <div v-for="admin in adminUsers" 
-                         :key="admin.id" 
-                         @click="openChat(admin)" 
-                         class="message-card"
-                         :class="{ 'has-unread': admin.unreadCount && admin.unreadCount > 0 }">
-                        
+                    <div v-for="admin in adminUsers" :key="admin.id" @click="openChat(admin)" class="message-card"
+                        :class="{ 'has-unread': admin.unreadCount && admin.unreadCount > 0 }">
+
                         <div class="message-avatar">
                             <img :src="admin.avatar || '/images/logo.webp'" alt="admin avatar">
                             <div class="status-indicator" :class="getOnlineStatusClass(admin.status)"></div>
@@ -81,7 +82,8 @@
                                 <span class="time text-xs text-gray-500">{{ formatLastSeen(admin.lastLogin) }}</span>
                             </div>
                             <div class="message-preview">
-                                <p :class="{ 'unread-text': admin.unreadCount && admin.unreadCount > 0, 'text-gray-600': !admin.unreadCount || admin.unreadCount === 0 }" class="text-sm truncate">
+                                <p :class="{ 'unread-text': admin.unreadCount && admin.unreadCount > 0, 'text-gray-600': !admin.unreadCount || admin.unreadCount === 0 }"
+                                    class="text-sm truncate">
                                     {{ admin.latestUnreadMessage || admin.lastMessage || 'No recent messages' }}
                                 </p>
                                 <ion-badge v-if="admin.unreadCount && admin.unreadCount > 0" class="unread-badge">

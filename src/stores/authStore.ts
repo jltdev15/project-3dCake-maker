@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { auth, database, ref as dbRef, set, get } from '../config/firebase';
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { auth, database, ref as dbRef, set, get, onValue } from '../config/firebase';
+import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { Preferences } from '@capacitor/preferences';
 
 export interface UserData {
@@ -15,8 +15,15 @@ export interface UserData {
   isProfileCompleted: boolean;
 }
 
+// Extend Firebase User type
+interface CustomUser extends User {
+    address?: string | null;
+}
+
 export const useAuthStore = defineStore('auth', () => {
     const user = ref<UserData | null>(null);
+    const isProfileCompleted = ref(false);
+    let profileListener: (() => void) | null = null;
 
     const setUser = async (userData: UserData) => {
         user.value = userData;
@@ -33,24 +40,57 @@ export const useAuthStore = defineStore('auth', () => {
     const logout = async () => {
         await signOut(auth);
         user.value = null;
+        isProfileCompleted.value = false;
+        if (profileListener) {
+            profileListener();
+            profileListener = null;
+        }
         await Preferences.remove({ key: "user" }); // Clear storage
-
     };
 
     const initAuth = async () => {
         onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
-                const userData: UserData = {
-                    uid: firebaseUser.uid,
-                    email: firebaseUser.email,
-                    name: firebaseUser.displayName,
-                    photoUrl: firebaseUser.photoURL,
-                    contact: firebaseUser.phoneNumber,
-                    status: 'active',
-                    address: null,
-                    isProfileCompleted: false
-                };
-                await setUser(userData);
+                try {
+                    // First, get the user's profile data from Firebase
+                    const userProfileRef = dbRef(database, `users/${firebaseUser.uid}`);
+                    const profileSnapshot = await get(userProfileRef);
+                    const profileData = profileSnapshot.exists() ? profileSnapshot.val() : null;
+
+                    const customUser = firebaseUser as CustomUser;
+                    const userData: UserData = {
+                        uid: firebaseUser.uid,
+                        email: firebaseUser.email,
+                        name: profileData?.name || firebaseUser.displayName,
+                        photoUrl: firebaseUser.photoURL,
+                        contact: profileData?.contact || null,
+                        status: 'active',
+                        address: profileData?.address || null,
+                        isProfileCompleted: profileData?.isProfileCompleted || false
+                    };
+                    await setUser(userData);
+                    
+                    // Set up real-time listener for profile updates
+                    profileListener = onValue(userProfileRef, (snapshot) => {
+                        const data = snapshot.val();
+                        if (data) {
+                            isProfileCompleted.value = data.isProfileCompleted || false;
+                            // Update user data with latest profile info
+                            user.value = {
+                                ...userData,
+                                ...data,
+                                isProfileCompleted: data.isProfileCompleted || false
+                            };
+                        }
+                    });
+
+                    // If user profile doesn't exist, create it
+                    if (!profileSnapshot.exists()) {
+                        await registerUser(userData);
+                    }
+                } catch (error) {
+                    console.error('Error initializing auth:', error);
+                }
             } else {
                 await logout();
             }
@@ -95,6 +135,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     user,
+    isProfileCompleted,
     registerUser,
     initAuth,
     loadUser,

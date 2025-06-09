@@ -13,13 +13,15 @@
             <div class="flex items-center justify-between">
               <!-- Left Side - Back Button -->
               <div class="flex items-center">
-                <button @click="$router.go(-1)"
+                <button @click="$router.push('/home')"
                   class="group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-black/10 backdrop-blur-sm rounded-xl border border-black/20 hover:bg-black/20 active:scale-95 transition-all duration-200 touch-manipulation">
                   <ion-icon :icon="chevronBackOutline"
                     class="text-lg sm:text-xl text-gray-800 drop-shadow-sm group-hover:scale-110 transition-transform duration-200"></ion-icon>
                 </button>
               </div>
-
+              <div class="flex items-center space-x-2">
+                <div class="w-10 h-10 sm:w-12 sm:h-12"></div> <!-- Placeholder for symmetry -->
+              </div>
               <!-- Center - Title Section -->
               <div class="flex-1 text-center mx-4">
                 <div class="flex items-center justify-center space-x-2 sm:space-x-3">
@@ -51,8 +53,6 @@
                 </button>
               </div>
             </div>
-
-
           </div>
         </div>
       </ion-toolbar>
@@ -62,30 +62,26 @@
       <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)">
         <ion-refresher-content></ion-refresher-content>
       </ion-refresher>
-      
+
       <!-- Filter controls -->
       <div class="filter-container" v-if="!isLoading && orderStore.orders.length > 0">
         <div class="filter-wrapper">
-          <button 
-            v-for="filter in filters" 
-            :key="filter.value"
-            :class="['filter-button', { active: activeFilter === filter.value }]"
-            @click="activeFilter = filter.value"
-          >
+          <button v-for="filter in filters" :key="filter.value"
+            :class="['filter-button', { active: activeFilter === filter.value }]" @click="activeFilter = filter.value">
             <ion-icon :icon="filter.icon" class="filter-icon"></ion-icon>
             <span>{{ filter.label }}</span>
             <span v-if="filter.count" class="filter-count">{{ filter.count }}</span>
           </button>
         </div>
       </div>
-      
+
       <div class="orders-container">
         <!-- Loading skeleton -->
         <div v-if="isLoading" class="orders-list">
           <div class="section-header">
             <h2>Order History</h2>
           </div>
-          
+
           <div class="orders-list">
             <div v-for="n in 3" :key="n" class="order-card skeleton">
               <div class="order-card-header">
@@ -110,7 +106,7 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Empty state -->
         <div v-else-if="orderStore.orders.length === 0" class="empty-state">
           <ion-icon :icon="cartOutline" class="empty-state-icon"></ion-icon>
@@ -122,17 +118,13 @@
             <ion-icon :icon="arrowForward" class="text-xl"></ion-icon>
           </button>
         </div>
-        
+
         <!-- Orders list -->
         <div v-else class="orders-list">
           <div class="section-header">
- 
-            <ion-searchbar
-              v-model="searchQuery"
-              placeholder="Search orders"
-              animated
-              class="orders-searchbar"
-            ></ion-searchbar>
+
+            <ion-searchbar v-model="searchQuery" placeholder="Search orders" animated
+              class="orders-searchbar"></ion-searchbar>
           </div>
 
           <div v-if="filteredOrders.length === 0" class="no-results">
@@ -141,54 +133,56 @@
           </div>
 
           <div v-else class="orders-list">
-            <ion-card 
-              v-for="order in filteredOrders" 
-              :key="order.orderId" 
-              class="order-card"
-              @click="navigateToOrderDetails(order.orderId)"
-            >
+            <ion-card v-for="order in filteredOrders" :key="order.orderId" class="order-card"
+              @click="navigateToOrderDetails(order.orderId)">
               <div class="order-card-header">
                 <div class="order-info">
-                  <h3>#{{ order.orderId }}</h3>
+                  <p class="text-lg font-bold text-gray-900">#{{ order.orderId }}</p>
                   <span class="order-date">{{ formatDate(order.createdAt) }}</span>
                 </div>
                 <ion-badge :class="['status-badge', order.status.toLowerCase()]">
                   {{ order.status }}
                 </ion-badge>
               </div>
-              
+
               <div class="order-card-content">
                 <div class="order-details">
                   <!-- Add cake image -->
                   <div class="cake-image-container" v-if="getOrderImageUrl(order)">
                     <img :src="getOrderImageUrl(order)" alt="Cake" class="cake-thumbnail">
                   </div>
-                  
-                  <div class="detail-row">
-                    <ion-icon :icon="timeOutline"></ion-icon>
-                    <span>{{ getTimeAgo(order.createdAt) }}</span>
+
+
+                  <div class="flex justify-between">
+                    <div class="detail-row">
+                      <ion-icon :icon="pricetagOutline"></ion-icon>
+                      <span class="order-type">{{ isCustomOrder(order) ? 'Custom Order' : 'Standard Order' }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <ion-icon :icon="timeOutline"></ion-icon>
+                      <span>{{ getTimeAgo(order.createdAt) }}</span>
+                    </div>
                   </div>
-                  
-                  <div class="detail-row">
-                    <ion-icon :icon="pricetagOutline"></ion-icon>
-                    <span class="order-type">{{ isCustomOrder(order) ? 'Custom Order' : 'Standard Order' }}</span>
-                  </div>
-                  
+
+
+
+                </div>
+                <div class="flex justify-between">
                   <div class="detail-row">
                     <ion-icon :icon="cashOutline"></ion-icon>
                     <span class="order-total">
                       <template v-if="order.totalAmount">
                         ₱{{ order.totalAmount.toFixed(2) }}
                       </template>
-    
+
                     </span>
                   </div>
+                  <ion-button fill="clear" class="view-details-btn">
+                    View Details
+                    <ion-icon :icon="chevronForward" slot="end"></ion-icon>
+                  </ion-button>
                 </div>
-                
-                <ion-button fill="clear" class="view-details-btn">
-                  View Details
-                  <ion-icon :icon="chevronForward" slot="end"></ion-icon>
-                </ion-button>
+
               </div>
             </ion-card>
           </div>
@@ -212,7 +206,8 @@ import {
 } from 'ionicons/icons';
 import { useOrderStore } from '../../stores/orderStore';
 import { useRouter } from 'vue-router';
-import { onMounted, onUnmounted, ref, computed } from 'vue';
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue';
+import { useAuthStore } from '../../stores/authStore';
 
 // Type definitions
 interface BaseOrder {
@@ -265,16 +260,28 @@ interface CustomOrder extends BaseOrder {
 type Order = NonCustomOrder | CustomOrder;
 
 const orderStore = useOrderStore();
+const authStore = useAuthStore();
 const router = useRouter();
 const isLoading = ref(true);
 const searchQuery = ref('');
 const activeFilter = ref('all');
 
-// Load orders on component mount
+// Load orders on component mount and set up real-time updates
 onMounted(async () => {
-  await loadOrders();
+  if (authStore.user?.uid) {
+    await loadOrders();
+  } else {
+    // Watch for user authentication
+    const unwatch = watch(() => authStore.user, async (newUser) => {
+      if (newUser?.uid) {
+        await loadOrders();
+        unwatch(); // Stop watching once user is authenticated
+      }
+    });
+  }
 });
 
+// Clean up real-time listener when component is unmounted
 onUnmounted(() => {
   orderStore.cleanup();
 });

@@ -106,7 +106,7 @@
               Proceed to Checkout
             </button>
             <button @click="closeSuccessModal"
-              class="flex items-center justify-center gap-2 px-6 py-4 md:py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold text-lg md:text-base uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[56px] md:min-h-[48px] shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation w-full">
+              class="flex items-center justify-center gap-2 px-6 py-4 md:py-3 bg-gradient-to-r  text-gray-500 font-bold text-lg md:text-base uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[56px] md:min-h-[48px]  transition-all duration-200 touch-manipulation w-full">
               Continue Shopping
             </button>
           </div>

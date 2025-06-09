@@ -1,7 +1,7 @@
 <template>
   <ion-page class="home-page">
     <!-- Custom Header -->
-    <div class="custom-header">
+    <div class="custom-header" :class="{ 'pointer-events-none opacity-50': shouldShowModal }">
       <div class="header-top">
         <div class="px-3">
           <span class="location-text">
@@ -18,11 +18,17 @@
         </div>
       </div>
       <div class="search-bar-wrapper">
-        <ion-searchbar placeholder="Search" class="custom-searchbar" />
+        <ion-searchbar 
+          v-model="searchQuery" 
+          placeholder="Search cakes..." 
+          class="custom-searchbar"
+          @ionInput="handleSearch"
+          @ionClear="clearSearch"
+        />
       </div>
     </div>
 
-    <ion-content>
+    <ion-content :class="{ 'pointer-events-none opacity-50': shouldShowModal }">
       <ion-refresher slot="fixed" @ionRefresh="handleRefresh">
         <ion-refresher-content
           pulling-icon="chevron-down-circle-outline"
@@ -33,48 +39,134 @@
       </ion-refresher>
 
       <div class="content-wrapper">
-        <!-- Categories Horizontal Scroll -->
+        <!-- Search Results Section -->
+        <div v-if="searchQuery && searchResults.length > 0" class="search-results-section">
+          <div class="section-header-row">
+            <h2 class="section-title">Search Results</h2>
+          </div>
+          <div class="featured-products-grid">
+            <div v-for="product in searchResults" :key="product.id" class="product-card"
+              @click="viewProduct(product)">
+              <div class="product-img-wrapper">
+                <img :src="product.imageUrl" :alt="product.name" class="product-img" />
+              </div>
+              <div class="product-info">
+                <div class="product-name">{{ product.name }}</div>
+                <div class="product-price">₱{{ product.price }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- No Results Message -->
+        <div v-if="searchQuery && searchResults.length === 0" class="no-results">
+          <p>No cakes found matching "{{ searchQuery }}"</p>
+        </div>
+
+        <!-- Categories Section with Skeleton -->
         <div class="categories-section">
           <div class="section-header-row">
             <h2 class="section-title">Categories</h2>
             <span class="see-all" @click="goToCategories">See All</span>
           </div>
           <div class="categories-scroll">
-            <div v-for="category in categories" :key="category.id" class="category-circle"
-              @click="viewCategory(category.name)">
-              <div class="circle-img">
-                <img :src="category.imageUrl" :alt="category.name" />
+            <template v-if="isLoading">
+              <div v-for="n in 6" :key="n" class="category-circle">
+                <div class="circle-img skeleton-circle">
+                  <div class="skeleton-image"></div>
+                </div>
+                <div class="skeleton-text"></div>
               </div>
-              <span class="circle-label">{{ category.name.charAt(0).toUpperCase() + category.name.slice(1) }}</span>
-            </div>
+            </template>
+            <template v-else>
+              <div v-for="category in categories" :key="category.id" class="category-circle"
+                @click="viewCategory(category.name)">
+                <div class="circle-img">
+                  <img :src="category.imageUrl" :alt="category.name" />
+                </div>
+                <span class="circle-label">{{ category.name.charAt(0).toUpperCase() + category.name.slice(1) }}</span>
+              </div>
+            </template>
           </div>
         </div>
 
-        <!-- Featured Products -->
+        <!-- Featured Products with Skeleton -->
         <div class="featured-products-section">
           <div class="section-header-row">
             <h2 class="section-title">Featured Products</h2>
 
           </div>
           <div class="featured-products-grid">
-            <div v-for="product in featuredProducts" :key="product?.id" class="product-card"
-              @click="viewProduct(product)">
-              <div class="product-img-wrapper">
-                <img :src="product?.imageUrl" :alt="product?.name" class="product-img" />
-                <!-- <ion-button fill="clear" class="favorite-btn" @click.stop>
-                  <ion-icon :icon="heartOutline" />
-                </ion-button> -->
+            <template v-if="isLoading">
+              <div v-for="n in 4" :key="n" class="product-card skeleton-card">
+                <div class="product-img-wrapper">
+                  <div class="skeleton-image"></div>
+                </div>
+                <div class="product-info">
+                  <div class="skeleton-text" style="width: 80%; height: 20px; margin-bottom: 8px;"></div>
+                  <div class="skeleton-text" style="width: 40%; height: 16px;"></div>
+                </div>
               </div>
-              <div class="product-info">
+            </template>
+            <template v-else>
+              <div v-for="product in featuredProducts" :key="product?.id" class="product-card"
+                @click="viewProduct(product)">
+                <div class="product-img-wrapper">
+                  <img :src="product?.imageUrl" :alt="product?.name" class="product-img" />
+                  <!-- <ion-button fill="clear" class="favorite-btn" @click.stop>
+                    <ion-icon :icon="heartOutline" />
+                  </ion-button> -->
+                </div>
+                <div class="product-info">
 
-                <div class="product-name">{{ product?.name }}</div>
-                <div class="product-price">₱{{ product?.price }}</div>
+                  <div class="product-name">{{ product?.name }}</div>
+                  <div class="product-price">₱{{ product?.price }}</div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </ion-content>
+
+    <!-- Profile Completion Modal -->
+    <Teleport to="body">
+      <div 
+        v-if="shouldShowModal" 
+        class="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] animate-fadeIn"
+      >
+        <div class="w-[90%] max-w-[400px] animate-slideIn relative z-[10000]">
+          <div class="bg-white rounded-2xl p-6 shadow-lg">
+            <div class="text-center mb-5">
+              <h2 class="text-2xl font-semibold text-[#58091F] font-['Outfit']">Complete Your Profile</h2>
+            </div>
+            <div class="text-center">
+              <ion-icon 
+                :icon="personCircleOutline" 
+                class="text-6xl text-[#F0E68D] mb-4" 
+                aria-hidden="true"
+              ></ion-icon>
+              <p class="text-gray-600 text-base leading-relaxed mb-6 font-['Inter']">
+                To continue using the app, please complete your profile information first.
+              </p>
+              <div class="flex flex-col gap-3">
+                <button 
+                  ref="completeButton"
+                  type="button"
+                  class="w-full h-12 bg-[#58091F] text-white rounded-lg font-semibold font-['Inter'] 
+                         transition-colors duration-200 hover:bg-[#7A0C29] active:bg-[#7A0C29]
+                         focus:outline-none focus:ring-2 focus:ring-[#58091F] focus:ring-opacity-50
+                         cursor-pointer select-none"
+                  @click.stop="goToEditProfile"
+                >
+                  Complete Profile
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </ion-content>
+    </Teleport>
   </ion-page>
 </template>
 
@@ -97,23 +189,30 @@ import {
   optionsOutline,
   chevronForward,
   heartOutline,
-  star
+  star,
+  personCircleOutline
 } from 'ionicons/icons';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useCakeStore } from '@/stores/cakeStore';
 import { storeToRefs } from 'pinia';
 import { useOrderNotificationStore } from '@/stores/orderNotification';
 import { useAuthStore } from '@/stores/authStore';
-import { onMounted, onUnmounted, watch, ref, computed } from 'vue';
+import { onMounted, onUnmounted, watch, ref, computed, nextTick } from 'vue';
+import { Teleport } from 'vue';
 
 const router = useRouter();
+const route = useRoute();
 const cakeStore = useCakeStore();
 const { categories, getAllCakes } = storeToRefs(cakeStore);
 const orderNotification = useOrderNotificationStore();
 const auth = useAuthStore();
+const isLoading = ref(true);
+const showModal = ref(false);
+const authLoading = ref(true);
 let cleanup;
 
 watch(() => auth.user, (newUser) => {
+  authLoading.value = false;
   if (newUser) {
     if (cleanup) {
       cleanup();
@@ -171,8 +270,18 @@ const viewProduct = (productId) => {
   router.push(`/category/${productId.category}/cake?id=${productId.id}`);
 };
 
+// Add onMounted hook to handle initial loading
+onMounted(async () => {
+  try {
+    await cakeStore.fetchCategories();
+  } finally {
+    isLoading.value = false;
+  }
+});
+
 const handleRefresh = async (event) => {
   try {
+    isLoading.value = true;
     // Refresh the cake store data
     await cakeStore.fetchCategories();
     
@@ -181,8 +290,71 @@ const handleRefresh = async (event) => {
   } catch (error) {
     console.error('Error refreshing data:', error);
     event.target.complete();
+  } finally {
+    isLoading.value = false;
   }
 };
+
+// Search functionality
+const searchQuery = ref('');
+const searchResults = ref([]);
+
+const handleSearch = (event) => {
+  const query = event.target.value.toLowerCase().trim();
+  if (!query) {
+    searchResults.value = [];
+    return;
+  }
+
+  // Search through all categories and their cakes with proper null checks
+  const results = categories.value
+    ?.filter(category => category && category.cakes) // Ensure category and cakes exist
+    .flatMap(category => 
+      (category.cakes || []) // Provide empty array as fallback
+        .filter(cake => 
+          cake && // Ensure cake exists
+          (
+            (cake.name?.toLowerCase() || '').includes(query) || 
+            (category.name?.toLowerCase() || '').includes(query)
+          )
+        )
+        .map(cake => ({
+          id: cake.id,
+          name: cake.name,
+          imageUrl: cake.imageUrl,
+          price: typeof cake.price === 'number' ? cake.price : cake.price?.min || 0,
+          category: category.name
+        }))
+    ) || []; // Provide empty array as fallback for undefined categories
+
+  searchResults.value = results;
+};
+
+const clearSearch = () => {
+  searchQuery.value = '';
+  searchResults.value = [];
+};
+
+// Computed property to determine if modal should be shown
+const shouldShowModal = computed(() => {
+  return !authLoading.value &&
+         !auth.isProfileCompleted && 
+         auth.user !== null && 
+         route.path !== '/account/edit';
+});
+
+// Watch for route changes to prevent navigation if profile is incomplete
+watch(() => route.path, (newPath) => {
+  if (!auth.isProfileCompleted && auth.user !== null && newPath !== '/account/edit') {
+    router.push('/');
+  }
+}, { immediate: true });
+
+const goToEditProfile = () => {
+  router.push('/account/edit');
+};
+
+const completeButton = ref(null);
 </script>
 
 <style scoped>
@@ -586,5 +758,143 @@ const handleRefresh = async (event) => {
     grid-template-columns: repeat(2, 1fr);
     padding: 0 12px;
   }
+}
+
+/* Skeleton Loading Styles */
+.skeleton-circle {
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.skeleton-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 8px rgba(139, 92, 47, 0.10);
+  overflow: hidden;
+}
+
+.skeleton-image {
+  width: 100%;
+  height: 100%;
+  background: #f0f0f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-text {
+  background: #f0f0f0;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-image::after,
+.skeleton-text::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.5) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Specific skeleton styles */
+.category-circle .skeleton-image {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+}
+
+.category-circle .skeleton-text {
+  width: 60px;
+  height: 16px;
+  margin-top: 8px;
+}
+
+.product-card .skeleton-image {
+  width: 100%;
+  height: 120px;
+}
+
+/* Adjust skeleton colors to match theme */
+.skeleton-image,
+.skeleton-text {
+  background: #fff3e0;
+}
+
+.skeleton-image::after,
+.skeleton-text::after {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.4) 20%,
+    rgba(255, 255, 255, 0.8) 60%,
+    rgba(255, 255, 255, 0)
+  );
+}
+
+.search-results-section {
+  margin-top: 16px;
+}
+
+.no-results {
+  text-align: center;
+  padding: 32px 20px;
+  color: #8B5C2F;
+  font-size: 1.1rem;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Add these animations to your existing styles */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Add this new style */
+.pointer-events-none {
+  pointer-events: none;
+  user-select: none;
 }
 </style>

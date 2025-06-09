@@ -2889,7 +2889,7 @@
       </div>
 
       <!-- Success Modal -->
-      <div
+      <!-- <div
         v-if="isSuccessModalOpen"
         class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[9999] animate-in fade-in duration-300"
         @click="closeSuccessModal"
@@ -2929,14 +2929,42 @@
               </button>
               <button
                 @click="closeSuccessModal"
-                class="flex items-center justify-center gap-2 px-6 py-4 md:py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold text-lg md:text-base uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[56px] md:min-h-[48px] shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation w-full"
+                class="flex items-center justify-center gap-2 px-6 py-4 md:py-3  text-gray-900 font-bold text-lg md:text-base uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[56px] md:min-h-[48px]  hover:shadow-xl transition-all duration-200 touch-manipulation w-full"
               >
                 Continue Shopping
               </button>
             </div>
           </div>
         </div>
+      </div> -->
+          <ion-modal :is-open="isSuccessModalOpen" :breakpoints="[0, 0.5]" :initial-breakpoint="0.5" class="success-modal">
+      <div class="p-6">
+        <div class="flex flex-col items-center justify-center text-center">
+          <!-- Success Icon -->
+          <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center my-4">
+            <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+
+          <!-- Success Message -->
+          <h2 class="text-2xl font-bold text-gray-900 mb-2">Order Placed Successfully!</h2>
+          <p class="text-gray-600 mb-6 text-sm">Thank you for your order. We'll process it right away.</p>
+
+          <!-- Action Buttons -->
+          <div class="flex flex-col gap-3 w-full max-w-sm">
+            <button @click="goToCheckout"
+              class="h-12 py-3 px-4 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-bold text-lg uppercase tracking-wide rounded-xl hover:shadow-lg transition-all duration-200 touch-manipulation">
+              View My Cart
+            </button>
+            <button @click="closeSuccessModal"
+              class="h-12 py-3 px-4  text-[#58091F] font-bold text-lg uppercase tracking-wide rounded-xl hover:shadow-lg transition-all duration-200 touch-manipulation">
+              Continue Shopping
+            </button>
+          </div>
+        </div>
       </div>
+    </ion-modal>
     </ion-content>
   </ion-page>
 </template>

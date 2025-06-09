@@ -232,6 +232,19 @@ export const useCakeStore = defineStore('cake', () => {
   })
 
   // Actions
+  async function fetchCategories() {
+    loading.value = true
+    try {
+      // For now, we're using sample data
+      // In the future, this could fetch from an API
+      categories.value = sampleCategories
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to fetch categories'
+    } finally {
+      loading.value = false
+    }
+  }
+
   function addCategory(category: Omit<Category, 'id' | 'cakes'>) {
     const newCategory: Category = {
       ...category,
@@ -300,6 +313,7 @@ export const useCakeStore = defineStore('cake', () => {
     getAllCategories,
     getAllCakes,
     // Actions
+    fetchCategories,
     addCategory,
     addCake,
     updateCategory,

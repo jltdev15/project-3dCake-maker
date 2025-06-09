@@ -32,23 +32,38 @@ interface NonCustomOrder extends BaseOrder {
   items: NonCustomOrderItems[];
 }
 
-// Define structure for items within a CustomOrder in Firebase
+// Update interfaces to match the actual data structure
+interface Topping {
+  name: string;
+  count: number;
+  totalPrice: number;
+  unitPrice: number;
+}
+
+interface DesignData {
+  flavor?: string;
+  layers?: number;
+  message?: string;
+  toppings: Topping[];
+}
+
+interface CustomDetails {
+  baseCakePrice: number;
+  designData: DesignData;
+}
+
 interface CustomOrderItem {
-  cakeId?: string;
+  cakeId: string;
   id?: string;
-  customDetails?: { // Based on your Firebase data example
-    id?: string;
-    imageUrl?: string;
-    [key: string]: any; // To allow other custom details
-  };
-  imageUrl?: string; // Assuming image might be on the item level too
-  isCustomCake?: boolean;
-  name?: string;
-  quantity?: number;
-  size?: string; // Added based on your example
+  customDetails: CustomDetails;
+  imageUrl?: string;
+  isCustomCake: boolean;
+  name: string;
+  quantity: number;
+  size?: string;
   totalPrice?: number;
   unitPrice?: number;
-  [key: string]: any; // To allow other potential fields on custom order items
+  totalToppingsCost?: number;
 }
 
 interface CustomOrder extends BaseOrder {
@@ -74,10 +89,61 @@ type Order = NonCustomOrder | CustomOrder;
 // they should be added to BaseOrder, CustomOrder, or NonCustomOrder interfaces if used.
 // For now, it's not in OrdersView.vue's Order type.
 
+// Add new interface for topping list
+interface OrderTopping {
+  name: string;
+  count: number;
+  totalPrice: number;
+  unitPrice: number;
+}
+
 export const useOrderStore = defineStore('order', () => {
   const orders = ref<Order[]>([])
   const authStore = useAuthStore()
   let unsubscribe: (() => void) | null = null
+
+  // Add new method to get toppings list
+  function getOrderToppings(orderId: string): OrderTopping[] {
+    console.log('Getting toppings for order:', orderId);
+    console.log('Current orders:', orders.value);
+    
+    const order = orders.value.find(o => o.orderId === orderId);
+    console.log('Found order:', order);
+    
+    if (!order) {
+      console.log('No order found with ID:', orderId);
+      return [];
+    }
+
+    const toppings: OrderTopping[] = [];
+    
+    // Process each item in the order
+    order.items.forEach((item, index) => {
+      console.log(`Processing item ${index}:`, {
+        name: item.name,
+        isCustomCake: item.isCustomCake,
+        hasCustomDetails: !!item.customDetails,
+        hasDesignData: !!item.customDetails?.designData,
+        toppings: item.customDetails?.designData?.toppings
+      });
+      
+      if (item.isCustomCake && item.customDetails?.toppings) {
+        // Add toppings from this item to our list
+        item.customDetails.toppings.forEach((topping: Topping) => {
+          console.log('Adding topping:', topping);
+          toppings.push({
+            name: topping.name,
+            count: topping.count || 1,
+            totalPrice: topping.totalPrice || 0,
+            unitPrice: topping.unitPrice || 0
+          });
+        });
+      }
+    });
+
+    console.log('Final toppings array:', toppings);
+    return toppings;
+  }
 
   const loadOrders = () => {
     console.log('Loading orders...')
@@ -161,28 +227,45 @@ export const useOrderStore = defineStore('order', () => {
 
                     if (isOrderCustom) {
                         // Logic for CustomOrder
-                        // Assuming firebaseItems for custom orders is also an array
                         let customItemsArray: CustomOrderItem[] = [];
                         if (Array.isArray(firebaseItems)) {
-                             customItemsArray = firebaseItems.map((item: any) => ({
-                                cakeId: item.cakeId,
-                                id: item.id,
-                                customDetails: item.customDetails, // Map customDetails object
-                                imageUrl: item.imageUrl, // Map item-level imageUrl
-                                isCustomCake: item.isCustomCake,
-                                name: item.name,
-                                quantity: item.quantity,
-                                size: item.size, // Map size
-                                totalPrice: item.totalPrice,
-                                unitPrice: item.unitPrice,
-                                // Spread any other properties from the firebase item
-                                ...Object.keys(item).reduce((acc: { [key: string]: any }, key) => {
-                                  if (!['cakeId', 'id', 'customDetails', 'imageUrl', 'isCustomCake', 'name', 'quantity', 'size', 'totalPrice', 'unitPrice'].includes(key)) {
-                                    acc[key] = item[key];
-                                  }
-                                  return acc;
-                                }, {}),
-                            }));
+                            console.log('Raw firebase items:', JSON.stringify(firebaseItems, null, 2)); // Detailed logging
+                            customItemsArray = firebaseItems.map((item: any) => {
+                                console.log('Processing item:', {
+                                    name: item.name,
+                                    customDetails: item.customDetails,
+                                    toppings: item.customDetails?.designData?.toppings
+                                });
+                                
+                                // Ensure customDetails is properly structured
+                                const customDetails = {
+                                    baseCakePrice: item.customDetails?.baseCakePrice || 0,
+                                    designData: {
+                                        flavor: item.customDetails?.designData?.flavor,
+                                        layers: item.customDetails?.designData?.layers || 1,
+                                        message: item.customDetails?.designData?.message || '',
+                                        toppings: Array.isArray(item.customDetails?.designData?.toppings) 
+                                            ? item.customDetails.designData.toppings 
+                                            : []
+                                    }
+                                };
+                                
+                                console.log('Transformed customDetails:', customDetails); // Log transformed data
+                                
+                                return {
+                                    cakeId: item.cakeId,
+                                    id: item.id,
+                                    customDetails: customDetails,
+                                    imageUrl: item.imageUrl,
+                                    isCustomCake: item.isCustomCake,
+                                    name: item.name,
+                                    quantity: item.quantity,
+                                    size: item.size,
+                                    totalPrice: item.totalPrice,
+                                    unitPrice: item.unitPrice,
+                                    totalToppingsCost: item.totalToppingsCost || 0
+                                };
+                            });
                         }
                         
                         transformedOrder = {
@@ -191,15 +274,15 @@ export const useOrderStore = defineStore('order', () => {
                             totalAmount: totalAmount, 
                             designUrl: rawOrderData.designUrl, 
                             imageUrl: rawOrderData.imageUrl,   
-                            items: customItemsArray, // Assign the mapped array
-                        } as CustomOrder; // Type assertion
+                            items: customItemsArray,
+                        } as CustomOrder;
                     } else {
                         // Logic for NonCustomOrder
                         transformedOrder = {
                             ...baseData,
                             orderType: 'non-custom',
                             totalAmount: totalAmount,
-                            items: firebaseItems.map((item: any) => ({ // Map Firebase items to NonCustomOrderItems
+                            items: firebaseItems.map((item: any) => ({
                                 cakeId: item.cakeId,
                                 id: item.id,
                                 imageUrl: item.imageUrl,
@@ -208,8 +291,10 @@ export const useOrderStore = defineStore('order', () => {
                                 totalPrice: item.totalPrice,
                                 unitPrice: item.unitPrice,
                                 isCustomCake: item.isCustomCake,
+                                customDetails: item.customDetails, // Include customDetails for non-custom items too
+                                totalToppingsCost: item.totalToppingsCost || 0,
                             })),
-                        } as NonCustomOrder; // Type assertion
+                        } as NonCustomOrder;
                     }
                     console.log(`Transformed order ${orderId}:`, transformedOrder);
                     return transformedOrder;
@@ -278,6 +363,7 @@ export const useOrderStore = defineStore('order', () => {
   return {
     orders,
     loadOrders,
-    cleanup
+    cleanup,
+    getOrderToppings
   }
 }) 

@@ -38,33 +38,15 @@
               <!-- Right Side - Action Buttons -->
               <div class="flex items-center space-x-2">
                 <!-- Status indicator or action button -->
-                <div v-if="order" 
+                <div v-if="order"
                   class="group relative flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-black/10 backdrop-blur-sm rounded-xl border border-black/20">
-                  <ion-icon :icon="order.status === 'pending' ? timeOutline : order.status === 'accepted' ? checkmarkCircleOutline : closeCircleOutline"
-                    class="relative text-lg sm:text-xl text-gray-800 drop-shadow-sm"
-                    :class="{
+                  <ion-icon
+                    :icon="order.status === 'pending' ? timeOutline : order.status === 'accepted' ? checkmarkCircleOutline : closeCircleOutline"
+                    class="relative text-lg sm:text-xl text-gray-800 drop-shadow-sm" :class="{
                       'text-yellow-600': order.status === 'pending',
                       'text-green-600': order.status === 'accepted', 
                       'text-red-600': order.status === 'declined'
                     }"></ion-icon>
-                </div>
-              </div>
-            </div>
-
-            <!-- Order Info Strip -->
-            <div v-if="order && !isLoading" class="mt-3 pt-3 border-t border-black/20">
-              <div class="flex items-center justify-between text-xs sm:text-sm">
-                <div class="flex items-center space-x-2 text-gray-700/80">
-                  <ion-icon :icon="calendarOutline" class="text-sm"></ion-icon>
-                  <span>{{ formatDate(order.createdAt) }}</span>
-                </div>
-                <div class="flex items-center space-x-2 text-gray-700/80">
-                  <ion-icon :icon="pricetagOutline" class="text-sm"></ion-icon>
-                  <span>{{ isCustomOrder(order) ? 'Custom Order' : 'Standard Order' }}</span>
-                </div>
-                <div class="flex items-center space-x-2 text-gray-700/80">
-                  <ion-icon :icon="cashOutline" class="text-sm"></ion-icon>
-                  <span>{{ order.total ? `₱${order.total.toFixed(2)}` : 'Pending' }}</span>
                 </div>
               </div>
             </div>
@@ -75,9 +57,81 @@
 
     <ion-content>
       <!-- Loading State -->
-      <div v-if="isLoading" class="loading-state">
-        <ion-spinner name="crescent" color="primary"></ion-spinner>
-        <p>Loading order details...</p>
+      <div v-if="isLoading" class="skeleton-loading">
+        <!-- Skeleton Header -->
+        <div class="skeleton-header">
+          <div class="skeleton-toolbar">
+            <div class="skeleton-back-button"></div>
+            <div class="skeleton-title">
+              <div class="skeleton-title-text"></div>
+              <div class="skeleton-subtitle"></div>
+            </div>
+            <div class="skeleton-status"></div>
+          </div>
+          <div class="skeleton-info-strip">
+            <div class="skeleton-info-item"></div>
+            <div class="skeleton-info-item"></div>
+            <div class="skeleton-info-item"></div>
+          </div>
+        </div>
+
+        <!-- Skeleton Order Summary -->
+        <div class="skeleton-card">
+          <div class="skeleton-card-header">
+            <div class="skeleton-order-id"></div>
+            <div class="skeleton-badge"></div>
+          </div>
+          <div class="skeleton-card-content">
+            <div class="skeleton-detail-item">
+              <div class="skeleton-icon"></div>
+              <div class="skeleton-detail-content">
+                <div class="skeleton-label"></div>
+                <div class="skeleton-value"></div>
+              </div>
+            </div>
+            <div class="skeleton-detail-item">
+              <div class="skeleton-icon"></div>
+              <div class="skeleton-detail-content">
+                <div class="skeleton-label"></div>
+                <div class="skeleton-value"></div>
+              </div>
+            </div>
+            <div class="skeleton-detail-item">
+              <div class="skeleton-icon"></div>
+              <div class="skeleton-detail-content">
+                <div class="skeleton-label"></div>
+                <div class="skeleton-value"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Skeleton Order Items -->
+        <div class="skeleton-section">
+          <div class="skeleton-section-title"></div>
+          <div class="skeleton-card">
+            <div class="skeleton-item">
+              <div class="skeleton-item-image"></div>
+              <div class="skeleton-item-content">
+                <div class="skeleton-item-title"></div>
+                <div class="skeleton-item-details">
+                  <div class="skeleton-badge"></div>
+                  <div class="skeleton-badge"></div>
+                </div>
+              </div>
+            </div>
+            <div class="skeleton-item">
+              <div class="skeleton-item-image"></div>
+              <div class="skeleton-item-content">
+                <div class="skeleton-item-title"></div>
+                <div class="skeleton-item-details">
+                  <div class="skeleton-badge"></div>
+                  <div class="skeleton-badge"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Error State - Only show when orders have been loaded -->
@@ -109,7 +163,7 @@
                 </ion-badge>
               </div>
             </ion-card-header>
-            
+
             <ion-card-content>
               <div class="order-summary-content">
                 <!-- Order Type -->
@@ -118,7 +172,7 @@
                     <ion-label class="px-1">{{ !isCustomOrder(order) ? 'Custom Cake' : 'Standard Cake' }}</ion-label>
                   </ion-chip>
                 </div> -->
-                
+
                 <!-- Order Details List -->
                 <div class="details-list">
                   <!-- Date and Time -->
@@ -129,7 +183,7 @@
                       <span class="detail-value">{{ formatDate(order.createdAt) }}</span>
                     </div>
                   </div>
-                  
+
                   <div class="flex items-center flex-row gap-2">
                     <ion-icon class="text-2xl" :icon="timeOutline"></ion-icon>
                     <div class="detail-content">
@@ -137,20 +191,20 @@
                       <span class="detail-value">{{ formatTime(order.createdAt) }}</span>
                     </div>
                   </div>
-                  
+
                   <!-- Order Cost -->
                   <div class="flex items-center flex-row gap-2">
                     <ion-icon class="text-2xl" :icon="cashOutline"></ion-icon>
                     <div class="detail-content">
                       <span class="detail-label">Total Amount</span>
-                   
-                        
-                        <span class="detail-value price">₱{{ order.totalAmount?.toFixed(2) }}</span>
-                
+
+
+                      <span class="detail-value price">₱{{ order.totalAmount?.toFixed(2) }}</span>
+
 
                     </div>
                   </div>
-                  
+
                   <!-- Order Status -->
                   <!-- <div class="detail-item">
                     <ion-icon :icon="checkmarkCircleOutline"></ion-icon>
@@ -171,7 +225,7 @@
         <!-- Standard Order Items Section -->
         <section v-if="order.items && order.items.length > 0" class="order-section">
           <h3 class="section-title">Order Items</h3>
-          
+
           <ion-card class="details-card">
             <ion-card-content>
               <!-- Empty state for no items -->
@@ -179,103 +233,60 @@
                 <ion-icon :icon="cartOutline" class="empty-icon"></ion-icon>
                 <p>No items in this order</p>
               </div>
-              
+
               <!-- Items list -->
               <ion-list v-else class="item-list">
                 <ion-item v-for="(item, index) in order.items" :key="index" class="order-item" lines="none">
-                  <div class="item-container">
+                  <div class="flex flex-row w-full">
                     <ion-thumbnail slot="start" class="item-image">
                       <img :src="getItemImage(item)" :alt="item.name" />
                     </ion-thumbnail>
-                    
-                    <div class="item-details">
+                    <div class="flex flex-col w-full">
                       <h3 class="item-name">{{ item.name || 'Unnamed Item' }}</h3>
-                      
                       <div class="item-info">
-                        <!-- Custom cake details -->
-                        <div v-if="item.isCustomCake && item.customDetails" class="custom-cake-details">
-                     
-                          <div class="item-meta">
-                            <ion-badge v-if="item.size" class="size-badge">
-                              Size: {{ item.size }}
-                            </ion-badge>
-                            
-                            <ion-badge v-if="item.customDetails.layers" class="layers-badge">
-                              Layers: {{ item.customDetails.layers }}
-                            </ion-badge>
-                            
-                            <ion-badge v-if="item.customDetails.flavor?.name" class="flavor-badge">
-                              Flavor: {{ item.customDetails.flavor.name }}
-                            </ion-badge>
-                        </div>
-                          
-                          <div v-if="item.customDetails.message" class="cake-message">
-                            <span class="message-label">Message:</span>
-                            <span class="message-text">"{{ item.customDetails.message }}"</span>
-                          </div>
-                          
-                          <div v-if="item.customDetails.designData" class="design-details">
-                            <div v-if="item.customDetails.designData.toppings && item.customDetails.designData.toppings.length" class="toppings-list">
-                              <span class="toppings-label">Toppings:</span>
-                              <div class="topping-items">
-                                <ion-badge 
-                                  v-for="(topping, idx) in item.customDetails.designData.toppings" 
-                                  :key="idx" 
-                                  class="topping-badge"
-                                >
-                                  {{ topping.name }}
-                                </ion-badge>
-                              </div>
-                            </div>
-                            
-                            <div v-if="item.customDetails.designData.decorations && item.customDetails.designData.decorations.length" class="decorations-list">
-                              <span class="decorations-label">Decorations:</span>
-                              <div class="decoration-items">
-                                <ion-badge 
-                                  v-for="(decoration, idx) in item.customDetails.designData.decorations" 
-                                  :key="idx" 
-                                  class="decoration-badge"
-                                >
-                                  {{ decoration.name }}
-                                </ion-badge>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <!-- Standard cake details -->
-                        <div v-else class="item-meta">
-                          <ion-badge v-if="item.size" class="size-badge">
-                            Size: {{ item.size }}
-                          </ion-badge>
-                          
-                          <ion-badge v-if="item.flavor" class="flavor-badge">
-                            Flavor: {{ item.flavor }}
-                          </ion-badge>
-                          
-                          <ion-badge v-if="item.occasion" class="occasion-badge">
-                            {{ item.occasion }}
-                          </ion-badge>
-                        </div>
-                        
                         <div class="item-quantity">
                           <span class="quantity-label">Quantity:</span>
                           <span class="quantity-value">{{ item.quantity || 0 }}</span>
+                        </div>
+                        
+                        <!-- Custom Cake Details -->
+                        <div v-if="item.isCustomCake" class="custom-cake-details">
+                          <div v-if="item.customDetails?.toppings?.length > 0" class="toppings-list">
+                            <div v-for="(topping, index) in item.customDetails.toppings" 
+                                 :key="index" 
+                                 class="topping-item">
+                              <span class="topping-name">{{ topping.name }}</span>
+                              <span class="topping-price">₱{{ topping.totalPrice.toFixed(2) }}</span>
+                            </div>
+                          </div>
+                          <div v-else class="no-toppings">
+                            <p>No toppings found</p>
+                          </div>
+                          <div class="toppings-total">
+                            <span>Total Toppings:</span>
+                            <span class="price">₱{{ item.totalToppingsCost?.toFixed(2) || '0.00' }}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </ion-item>
-                
+
                 <!-- Order summary (subtotal, shipping, total) -->
                 <div class="order-summary">
                   <div class="summary-row">
                     <span>Subtotal</span>
                     <span>₱{{ calculateSubtotal(order).toFixed(2) }}</span>
                   </div>
+                  
+                  <div v-if="calculateToppingsCost(order) > 0" class="summary-row">
+                    <span>Additional Toppings</span>
+                    <span>₱{{ calculateToppingsCost(order).toFixed(2) }}</span>
+                  </div>
+                  
                   <div class="summary-row total">
                     <span>Total</span>
-                    <span>₱{{ order.totalAmount?.toFixed(2) || '0.00' }}</span>
+                    <span>₱{{ (calculateSubtotal(order) + calculateToppingsCost(order)).toFixed(2) }}</span>
                   </div>
                 </div>
               </ion-list>
@@ -283,7 +294,7 @@
           </ion-card>
         </section>
       </div>
-      
+
       <!-- Extended Loading State - Show when not loading but orders might not be loaded yet -->
       <div v-else class="loading-state">
         <ion-spinner name="crescent" color="primary"></ion-spinner>
@@ -359,10 +370,12 @@ interface NonCustomOrder extends BaseOrder {
 }
 
 const route = useRoute();
-
+const router = useRouter();
 const orderStore = useOrderStore();
+
 const isLoading = ref(true);
 const hasLoadedOrders = ref(false);
+const currentOrder = ref<Order | null>(null);
 
 // Type guard for custom order
 const isCustomOrder = (order: any): order is CustomOrder => {
@@ -374,35 +387,45 @@ const isNonCustomOrder = (order: any): order is NonCustomOrder => {
   return order?.hasRegularItems === true;
 };
 
-const order = computed(() => {
-  const orderId = route.params.id as string;
-  console.log(`Looking for order ${orderId}`);
-  
-  const foundOrder = orderStore.orders.find(o => o.orderId === orderId);
-  console.log('Found order:', foundOrder);
-  return foundOrder;
-});
-
-// Reset loading state when route params change
-watch(() => route.params.id, () => {
-  isLoading.value = true;
-  loadOrderData();
-});
-
-// Function to load order data
+// Update loadOrderData to store the current order
 const loadOrderData = async () => {
   try {
+    console.log('Loading order data...');
     await orderStore.loadOrders();
-    console.log('All orders:', orderStore.orders);
+    console.log('Orders loaded:', JSON.stringify(orderStore.orders, null, 2));
     
     // Check if the current order was found
     const orderId = route.params.id as string;
-    const currentOrder = orderStore.orders.find(o => o.orderId === orderId);
+    currentOrder.value = orderStore.orders.find(o => o.orderId === orderId) || null;
+    console.log('Current order found:', JSON.stringify(currentOrder.value, null, 2));
     
     // If orders array exists but current order not found, try one more time
-    if (orderStore.orders.length > 0 && !currentOrder) {
+    if (orderStore.orders.length > 0 && !currentOrder.value) {
       console.log('Order not found in initial load, retrying...');
       await orderStore.loadOrders();
+      currentOrder.value = orderStore.orders.find(o => o.orderId === orderId) || null;
+      console.log('Current order after retry:', JSON.stringify(currentOrder.value, null, 2));
+    }
+    
+    // Log detailed item information
+    if (currentOrder.value?.items) {
+      console.log('Order items details:');
+      currentOrder.value.items.forEach((item, index) => {
+        console.log(`Item ${index} full structure:`, JSON.stringify(item, null, 2));
+        if (item.isCustomCake) {
+          console.log(`Custom cake item ${index} details:`, {
+            name: item.name,
+            isCustomCake: item.isCustomCake,
+            totalToppingsCost: item.totalToppingsCost,
+            hasCustomDetails: !!item.customDetails,
+            customDetailsKeys: item.customDetails ? Object.keys(item.customDetails) : [],
+            hasDesignData: !!item.customDetails?.designData,
+            designDataKeys: item.customDetails?.designData ? Object.keys(item.customDetails.designData) : [],
+            toppings: item.customDetails?.designData?.toppings,
+            rawItem: item
+          });
+        }
+      });
     }
     
     hasLoadedOrders.value = true;
@@ -410,7 +433,6 @@ const loadOrderData = async () => {
     console.error('Error loading orders:', error);
     hasLoadedOrders.value = true;
   } finally {
-    // Add a small delay to ensure loading state is visible
     setTimeout(() => {
       isLoading.value = false;
     }, 500);
@@ -499,10 +521,92 @@ const calculateSubtotal = (order: any): number => {
   }, 0);
 };
 
+// Calculate toppings cost directly from the item's totalToppingsCost
+const calculateToppingsCost = (order: any): number => {
+  if (!order?.items || !Array.isArray(order.items)) {
+    return 0;
+  }
+  
+  return order.items.reduce((total: number, item: any) => {
+    if (item.isCustomCake === true) {
+      const toppingsCost = 
+        typeof item.totalToppingsCost === 'number' ? item.totalToppingsCost :
+        typeof item.customDetails?.totalToppingsCost === 'number' ? item.customDetails.totalToppingsCost :
+        0;
+      return total + toppingsCost;
+    }
+    return total;
+  }, 0);
+};
+
 // Helper function to estimate delivery date (3-5 business days from order date)
 
 
 // Computed properties for conditional rendering
+
+// Add computed property for available toppings
+// const availableToppings = computed(() => orderStore.toppings);
+
+// Add helper function to get topping details
+// const getToppingDetails = (toppingName: string) => {
+const getToppingDetails = (toppingName: string) => {
+  return availableToppings.value.find(t => t.name === toppingName);
+};
+
+// Update the template to use currentOrder instead of order computed
+const order = computed(() => currentOrder.value);
+
+// Update orderToppings computed to use currentOrder
+const orderToppings = computed(() => {
+  try {
+    if (!currentOrder.value) {
+      console.log('No current order available');
+      return [];
+    }
+
+    console.log('Processing orderToppings for order:', currentOrder.value.orderId);
+    
+    const toppings: OrderTopping[] = [];
+    
+    // Process each item in the order
+    currentOrder.value.items.forEach((item, index) => {
+      console.log(`Processing item ${index} for toppings:`, {
+        name: item.name,
+        isCustomCake: item.isCustomCake,
+        hasCustomDetails: !!item.customDetails,
+        customDetailsStructure: item.customDetails ? {
+          keys: Object.keys(item.customDetails),
+          toppings: item.customDetails.toppings
+        } : null
+      });
+      
+      if (item.isCustomCake && item.customDetails?.toppings) {
+        console.log(`Found toppings for item ${index}:`, item.customDetails.toppings);
+        item.customDetails.toppings.forEach((topping: Topping) => {
+          console.log('Processing topping:', topping);
+          toppings.push({
+            name: topping.name,
+            count: topping.count || 1,
+            totalPrice: topping.totalPrice || 0,
+            unitPrice: topping.unitPrice || 0
+          });
+        });
+      } else {
+        console.log(`No toppings found for item ${index}. Reason:`, {
+          isCustomCake: item.isCustomCake,
+          hasCustomDetails: !!item.customDetails,
+          hasToppings: !!item.customDetails?.toppings
+        });
+      }
+    });
+
+    console.log('Final toppings array:', toppings);
+    return toppings;
+  } catch (error) {
+    console.error('Error getting order toppings:', error);
+    return [];
+  }
+});
 
 </script>
 
@@ -664,17 +768,13 @@ ion-card-content {
   --color: #b37e00;
 }
 
-.status-badge.processing {
-  --background: rgba(56, 128, 255, 0.2);
-  --color: #0040a0;
-}
 
-.status-badge.completed {
+.status-badge.accepted {
   --background: rgba(45, 211, 111, 0.2);
   --color: #157539;
 }
 
-.status-badge.cancelled {
+.status-badge.declined {
   --background: rgba(235, 68, 90, 0.2);
   --color: #a01a30;
 }
@@ -1117,72 +1217,296 @@ ion-card-subtitle {
   }
 }
 
-/* Custom cake details */
+/* Simplified Custom Cake Details Styles */
 .custom-cake-details {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
-  background-color: rgba(240, 230, 141, 0.1);
-
-  border-radius: 8px;
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(240, 230, 141, 0.1);
+  border-radius: 6px;
 }
 
-.cake-message {
-  margin-top: 4px;
-  font-style: italic;
-}
-
-.message-label {
-  font-weight: 600;
-  color: var(--ion-color-medium);
-  margin-right: 6px;
-}
-
-.message-text {
-  color: #58091F;
-}
-
-.design-details {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.toppings-list,
-.decorations-list {
+.toppings-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.toppings-label,
-.decorations-label {
-  font-weight: 600;
-  color: var(--ion-color-medium);
-}
-
-.topping-items,
-.decoration-items {
+.topping-item {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.topping-badge,
-.decoration-badge {
-  --background: rgba(240, 230, 141, 0.3);
-  --color: #58091F;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.layers-badge {
-  --background: rgba(240, 230, 141, 0.2);
-  --color: #58091F;
-  font-size: 0.8rem;
-  font-weight: 500;
+  justify-content: space-between;
+  align-items: center;
   padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.topping-name {
+  font-weight: 500;
+  color: var(--ion-color-dark);
+}
+
+.topping-price {
+  font-weight: 600;
+  color: #58091F;
+}
+
+.toppings-total {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(var(--ion-color-medium-rgb), 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.toppings-total .price {
+  color: #58091F;
+}
+
+/* Skeleton Loading Styles */
+.skeleton-loading {
+  padding: 12px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.skeleton-header {
+  background: linear-gradient(to right, #F0E68D, #E6D77A, #DCC867);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.skeleton-toolbar {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.skeleton-back-button {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-title {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-title-text {
+  width: 60%;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 6px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-subtitle {
+  width: 40%;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-status {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-info-strip {
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.skeleton-info-item {
+  width: 80px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.skeleton-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.skeleton-order-id {
+  width: 40%;
+  height: 24px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-badge {
+  width: 80px;
+  height: 24px;
+  background: #f0f0f0;
+  border-radius: 12px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-detail-item {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.skeleton-icon {
+  width: 24px;
+  height: 24px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-detail-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-label {
+  width: 30%;
+  height: 16px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-value {
+  width: 60%;
+  height: 20px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-section {
+  margin-bottom: 24px;
+}
+
+.skeleton-section-title {
+  width: 30%;
+  height: 24px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-item {
+  display: flex;
+  gap: 16px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #f8f8f8;
+  border-radius: 12px;
+}
+
+.skeleton-item-image {
+  width: 100px;
+  height: 100px;
+  background: #f0f0f0;
+  border-radius: 8px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-item-title {
+  width: 70%;
+  height: 20px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeleton-item-details {
+  display: flex;
+  gap: 8px;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+@media (max-width: 480px) {
+  .skeleton-item {
+    flex-direction: column;
+  }
+  
+  .skeleton-item-image {
+    width: 100%;
+    height: 150px;
+  }
+  
+  .skeleton-info-strip {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .skeleton-info-item {
+    width: 100%;
+  }
+}
+
+.debug-info {
+  margin-top: 8px;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.debug-info p {
+  margin: 2px 0;
+}
+
+.no-toppings {
+  padding: 8px;
+  text-align: center;
+  color: var(--ion-color-medium);
+  font-style: italic;
+  font-size: 0.9rem;
 }
 </style> 

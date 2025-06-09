@@ -13,7 +13,7 @@
             <div class="flex items-center justify-between">
               <!-- Left Side - Back Button -->
               <div class="flex items-center">
-                <button @click="$router.go(-1)"
+                <button @click="$router.push('/home')"
                   class="group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-black/10 backdrop-blur-sm rounded-xl border border-black/20 hover:bg-black/20 active:scale-95 transition-all duration-200 touch-manipulation">
                   <ion-icon :icon="chevronBackOutline"
                     class="text-lg sm:text-xl text-gray-800 drop-shadow-sm group-hover:scale-110 transition-transform duration-200"></ion-icon>
@@ -62,7 +62,35 @@
 
     <ion-content>
       <div class="cart-container px-2 mt-16">
-        <template v-if="cartStore.items.length === 0">
+        <!-- Add loading state -->
+        <template v-if="isLoading">
+          <!-- Skeleton loading for cart items -->
+          <div class="cart-items">
+            <div v-for="n in 3" :key="n" class="cart-item-skeleton">
+              <div class="skeleton-image"></div>
+              <div class="skeleton-content">
+                <div class="skeleton-title"></div>
+                <div class="skeleton-text"></div>
+                <div class="skeleton-badge"></div>
+              </div>
+              <div class="skeleton-controls">
+                <div class="skeleton-quantity"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Skeleton loading for cart summary -->
+          <div class="cart-summary-skeleton">
+            <div class="skeleton-summary-header"></div>
+            <div class="skeleton-summary-content">
+              <div class="skeleton-summary-item"></div>
+              <div class="skeleton-summary-item"></div>
+            </div>
+            <div class="skeleton-button"></div>
+          </div>
+        </template>
+
+        <template v-else-if="cartStore.items.length === 0">
           <div class="empty-state">
             <ion-icon :icon="cartOutline" class="empty-state-icon"></ion-icon>
             <h2>Your cart is empty</h2>
@@ -91,7 +119,7 @@
                   <h3 class="item-name">{{ item.name }}</h3>
                   <p v-if="item.size" class="item-size">Size: {{ item.size }}</p>
                   <p v-if="(item as CartItem).isCustomCake" class="item-custom-badge">Custom Design</p>
-                  <p v-if="(item as CartItem)" class="item-price">₱{{ item.totalPrice?.toFixed(2) || '0.00'
+                  <p v-if="(item as CartItem)" class="item-price">₱{{ item.unitPrice?.toFixed(2) || '0.00'
                     }} each</p>
                   
                 </div>
@@ -248,6 +276,8 @@ const showDeleteAlert = ref(false);
 const itemToDelete = ref<string | null>(null);
 const showSuccessModal = ref(false);
 
+// Add loading state
+const isLoading = ref(true);
 
 // Add debug logging
 watch(() => cartStore.items, (items) => {
@@ -259,7 +289,14 @@ watch(() => cartStore.items, (items) => {
 
 onMounted(async () => {
   console.log('Component mounted, loading cart items...');
-  await cartStore.loadCartItems();
+  try {
+    await cartStore.loadCartItems();
+  } finally {
+    // Add a small delay to ensure smooth transition
+    setTimeout(() => {
+      isLoading.value = false;
+    }, 500);
+  }
 });
 
 onUnmounted(() => {
@@ -1117,4 +1154,118 @@ ion-radio::part(mark) {
 }
 
 /* Custom styles now handled by Tailwind classes */
+
+/* Skeleton Loading Styles */
+.cart-item-skeleton {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  gap: 12px;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+.skeleton-image {
+  width: 70px;
+  height: 70px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.skeleton-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-title {
+  height: 20px;
+  width: 70%;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.skeleton-text {
+  height: 16px;
+  width: 50%;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.skeleton-badge {
+  height: 24px;
+  width: 100px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.skeleton-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.skeleton-quantity {
+  height: 32px;
+  width: 100px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.cart-summary-skeleton {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px 16px 0 0;
+  padding: 16px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+.skeleton-summary-header {
+  height: 24px;
+  width: 40%;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.skeleton-summary-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.skeleton-summary-item {
+  height: 20px;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.skeleton-button {
+  height: 48px;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
 </style>
