@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { auth, database, ref as dbRef, set, get, onValue } from '../config/firebase';
-import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { Preferences } from '@capacitor/preferences';
 
 export interface UserData {
@@ -16,9 +16,7 @@ export interface UserData {
 }
 
 // Extend Firebase User type
-interface CustomUser extends User {
-    address?: string | null;
-}
+
 
 export const useAuthStore = defineStore('auth', () => {
     const user = ref<UserData | null>(null);
@@ -57,7 +55,7 @@ export const useAuthStore = defineStore('auth', () => {
                     const profileSnapshot = await get(userProfileRef);
                     const profileData = profileSnapshot.exists() ? profileSnapshot.val() : null;
 
-                    const customUser = firebaseUser as CustomUser;
+                    // const customUser = firebaseUser as CustomUser;
                     const userData: UserData = {
                         uid: firebaseUser.uid,
                         email: firebaseUser.email,

@@ -28,9 +28,6 @@
                     <h1 class="text-lg sm:text-xl font-bold tracking-wide drop-shadow-sm text-gray-800">
                       Order Details
                     </h1>
-                    <p class="text-xs sm:text-sm opacity-70 font-medium tracking-wide mt-0.5 text-gray-700">
-                      {{ order ? `#${order.orderId}` : 'Loading order information' }}
-                    </p>
                   </div>
                 </div>
               </div>
@@ -153,71 +150,20 @@
           <ion-card class="order-summary-card">
             <!-- Order Header with ID and Status -->
             <ion-card-header>
-              <div class="order-header-content">
+              <div class="flex flex-row justify-between items-start">
                 <div class="order-id-container">
                   <h2 class="order-id">Order #{{ order.orderId }}</h2>
-                  <p class="order-date">Placed on {{ formatDate(order.createdAt) }}</p>
+                  <p class="order-date">Placed on {{ formatDate(order.createdAt) }} at {{ formatTime(order.createdAt) }}</p>
+            
                 </div>
-                <ion-badge :class="['status-badge', order.status.toLowerCase()]">
-                  {{ order.status }}
-                </ion-badge>
+                <div>
+                  <ion-badge :class="['status-badge', order.status.toLowerCase()]">
+                    {{ order.status }}
+                  </ion-badge>
+                </div>
+
               </div>
             </ion-card-header>
-
-            <ion-card-content>
-              <div class="order-summary-content">
-                <!-- Order Type -->
-                <!-- <div class="order-type-container">
-                  <ion-chip :class="{'custom-chip': isCustomOrder(order), 'standard-chip': !isCustomOrder(order)}">
-                    <ion-label class="px-1">{{ !isCustomOrder(order) ? 'Custom Cake' : 'Standard Cake' }}</ion-label>
-                  </ion-chip>
-                </div> -->
-
-                <!-- Order Details List -->
-                <div class="details-list">
-                  <!-- Date and Time -->
-                  <div class="flex items-center flex-row gap-2">
-                    <ion-icon class="text-2xl" :icon="calendarOutline"></ion-icon>
-                    <div class="detail-content">
-                      <span class="detail-label">Order Date</span>
-                      <span class="detail-value">{{ formatDate(order.createdAt) }}</span>
-                    </div>
-                  </div>
-
-                  <div class="flex items-center flex-row gap-2">
-                    <ion-icon class="text-2xl" :icon="timeOutline"></ion-icon>
-                    <div class="detail-content">
-                      <span class="detail-label">Order Time</span>
-                      <span class="detail-value">{{ formatTime(order.createdAt) }}</span>
-                    </div>
-                  </div>
-
-                  <!-- Order Cost -->
-                  <div class="flex items-center flex-row gap-2">
-                    <ion-icon class="text-2xl" :icon="cashOutline"></ion-icon>
-                    <div class="detail-content">
-                      <span class="detail-label">Total Amount</span>
-
-
-                      <span class="detail-value price">₱{{ order.totalAmount?.toFixed(2) }}</span>
-
-
-                    </div>
-                  </div>
-
-                  <!-- Order Status -->
-                  <!-- <div class="detail-item">
-                    <ion-icon :icon="checkmarkCircleOutline"></ion-icon>
-                    <div class="detail-content">
-                      <span class="detail-label">Status</span>
-                      <span class="detail-value status-text" :class="order.status.toLowerCase()">
-                        {{ order.status }}
-                      </span>
-                    </div>
-                  </div> -->
-                </div>
-              </div>
-            </ion-card-content>
           </ion-card>
         </section>
 
@@ -235,61 +181,39 @@
               </div>
 
               <!-- Items list -->
-              <ion-list v-else class="item-list">
-                <ion-item v-for="(item, index) in order.items" :key="index" class="order-item" lines="none">
-                  <div class="flex flex-row w-full">
-                    <ion-thumbnail slot="start" class="item-image">
-                      <img :src="getItemImage(item)" :alt="item.name" />
-                    </ion-thumbnail>
+              <div v-else class="flex flex-col gap-3">
+                <div v-for="(item, index) in order.items" :key="index"
+                  class="flex flex-col w-full rounded-lg bg-[rgba(var(--ion-color-light-rgb),0.5)]">
+                  <div class="flex gap-3 w-full p-3">
+                    <div class="w-20 h-20 rounded-lg overflow-hidden">
+                      <img :src="getItemImage(item)" :alt="item.name" class="w-full h-full object-cover" />
+                    </div>
                     <div class="flex flex-col w-full">
-                      <h3 class="item-name">{{ item.name || 'Unnamed Item' }}</h3>
-                      <div class="item-info">
-                        <div class="item-quantity">
-                          <span class="quantity-label">Quantity:</span>
-                          <span class="quantity-value">{{ item.quantity || 0 }}</span>
-                        </div>
-                        
-                        <!-- Custom Cake Details -->
-                        <div v-if="item.isCustomCake" class="custom-cake-details">
-                          <div v-if="item.customDetails?.toppings?.length > 0" class="toppings-list">
-                            <div v-for="(topping, index) in item.customDetails.toppings" 
-                                 :key="index" 
-                                 class="topping-item">
-                              <span class="topping-name">{{ topping.name }}</span>
-                              <span class="topping-price">₱{{ topping.totalPrice.toFixed(2) }}</span>
-                            </div>
-                          </div>
-                          <div v-else class="no-toppings">
-                            <p>No toppings found</p>
-                          </div>
-                          <div class="toppings-total">
-                            <span>Total Toppings:</span>
-                            <span class="price">₱{{ item.totalToppingsCost?.toFixed(2) || '0.00' }}</span>
-                          </div>
+                      <p class="text-[#58091F] font-semibold text-base mb-1">{{ item.name || 'Unnamed Item' }}</p>
+                      <div class="flex flex-col gap-2">
+                        <div class="flex items-center gap-2">
+                          <span class="text-gray-500 text-sm">Quantity:</span>
+                          <span class="font-semibold text-[#58091F] text-base">{{ item.quantity || 0 }}</span>
                         </div>
                       </div>
                     </div>
                   </div>
-                </ion-item>
+                </div>
 
                 <!-- Order summary (subtotal, shipping, total) -->
-                <div class="order-summary">
-                  <div class="summary-row">
+                <div class="mt-4 p-4 border-t border-gray-200">
+                  <div class="flex justify-between items-center py-2 text-gray-600">
                     <span>Subtotal</span>
                     <span>₱{{ calculateSubtotal(order).toFixed(2) }}</span>
                   </div>
-                  
-                  <div v-if="calculateToppingsCost(order) > 0" class="summary-row">
-                    <span>Additional Toppings</span>
-                    <span>₱{{ calculateToppingsCost(order).toFixed(2) }}</span>
-                  </div>
-                  
-                  <div class="summary-row total">
+
+                  <div
+                    class="flex justify-between items-center py-2 mt-2 pt-2 border-t border-dashed border-gray-200 font-semibold text-[#58091F]">
                     <span>Total</span>
-                    <span>₱{{ (calculateSubtotal(order) + calculateToppingsCost(order)).toFixed(2) }}</span>
+                    <span>₱{{ order.totalAmount?.toFixed(2) }}</span>
                   </div>
                 </div>
-              </ion-list>
+              </div>
             </ion-card-content>
           </ion-card>
         </section>
@@ -328,10 +252,6 @@ interface BaseOrder {
   createdAt: number;
   notes?: string;
   phone?: string;
-  shippingAddress?: ShippingAddress;
-  shippingCost?: number;
-  hasCustomItems?: boolean;
-  hasRegularItems?: boolean;
 }
 
 interface ShippingAddress {
@@ -350,24 +270,7 @@ interface OrderItem {
   imageUrl?: string;
 }
 
-interface CustomOrder extends BaseOrder {
-  hasCustomItems: true;
-  hasRegularItems: false;
-  pricingStatus: 'pending' | 'priced' | 'accepted';
-  totalAmount?: number;
-  updatedAt: number;
-  items: {
-    needsPricing: boolean;
-  };
-}
 
-interface NonCustomOrder extends BaseOrder {
-  hasCustomItems: false;
-  hasRegularItems: true;
-  type: 'non-custom';
-  totalAmount: number;
-  items: OrderItem[];
-}
 
 const route = useRoute();
 const router = useRouter();
@@ -377,55 +280,21 @@ const isLoading = ref(true);
 const hasLoadedOrders = ref(false);
 const currentOrder = ref<Order | null>(null);
 
-// Type guard for custom order
-const isCustomOrder = (order: any): order is CustomOrder => {
-  return order?.isCustomCake === true;
-};
 
-// Type guard for non-custom order
-const isNonCustomOrder = (order: any): order is NonCustomOrder => {
-  return order?.hasRegularItems === true;
-};
 
 // Update loadOrderData to store the current order
 const loadOrderData = async () => {
   try {
-    console.log('Loading order data...');
     await orderStore.loadOrders();
-    console.log('Orders loaded:', JSON.stringify(orderStore.orders, null, 2));
     
     // Check if the current order was found
     const orderId = route.params.id as string;
     currentOrder.value = orderStore.orders.find(o => o.orderId === orderId) || null;
-    console.log('Current order found:', JSON.stringify(currentOrder.value, null, 2));
     
     // If orders array exists but current order not found, try one more time
     if (orderStore.orders.length > 0 && !currentOrder.value) {
-      console.log('Order not found in initial load, retrying...');
       await orderStore.loadOrders();
       currentOrder.value = orderStore.orders.find(o => o.orderId === orderId) || null;
-      console.log('Current order after retry:', JSON.stringify(currentOrder.value, null, 2));
-    }
-    
-    // Log detailed item information
-    if (currentOrder.value?.items) {
-      console.log('Order items details:');
-      currentOrder.value.items.forEach((item, index) => {
-        console.log(`Item ${index} full structure:`, JSON.stringify(item, null, 2));
-        if (item.isCustomCake) {
-          console.log(`Custom cake item ${index} details:`, {
-            name: item.name,
-            isCustomCake: item.isCustomCake,
-            totalToppingsCost: item.totalToppingsCost,
-            hasCustomDetails: !!item.customDetails,
-            customDetailsKeys: item.customDetails ? Object.keys(item.customDetails) : [],
-            hasDesignData: !!item.customDetails?.designData,
-            designDataKeys: item.customDetails?.designData ? Object.keys(item.customDetails.designData) : [],
-            toppings: item.customDetails?.designData?.toppings,
-            rawItem: item
-          });
-        }
-      });
     }
     
     hasLoadedOrders.value = true;
@@ -521,92 +390,8 @@ const calculateSubtotal = (order: any): number => {
   }, 0);
 };
 
-// Calculate toppings cost directly from the item's totalToppingsCost
-const calculateToppingsCost = (order: any): number => {
-  if (!order?.items || !Array.isArray(order.items)) {
-    return 0;
-  }
-  
-  return order.items.reduce((total: number, item: any) => {
-    if (item.isCustomCake === true) {
-      const toppingsCost = 
-        typeof item.totalToppingsCost === 'number' ? item.totalToppingsCost :
-        typeof item.customDetails?.totalToppingsCost === 'number' ? item.customDetails.totalToppingsCost :
-        0;
-      return total + toppingsCost;
-    }
-    return total;
-  }, 0);
-};
-
-// Helper function to estimate delivery date (3-5 business days from order date)
-
-
-// Computed properties for conditional rendering
-
-// Add computed property for available toppings
-// const availableToppings = computed(() => orderStore.toppings);
-
-// Add helper function to get topping details
-// const getToppingDetails = (toppingName: string) => {
-const getToppingDetails = (toppingName: string) => {
-  return availableToppings.value.find(t => t.name === toppingName);
-};
-
 // Update the template to use currentOrder instead of order computed
 const order = computed(() => currentOrder.value);
-
-// Update orderToppings computed to use currentOrder
-const orderToppings = computed(() => {
-  try {
-    if (!currentOrder.value) {
-      console.log('No current order available');
-      return [];
-    }
-
-    console.log('Processing orderToppings for order:', currentOrder.value.orderId);
-    
-    const toppings: OrderTopping[] = [];
-    
-    // Process each item in the order
-    currentOrder.value.items.forEach((item, index) => {
-      console.log(`Processing item ${index} for toppings:`, {
-        name: item.name,
-        isCustomCake: item.isCustomCake,
-        hasCustomDetails: !!item.customDetails,
-        customDetailsStructure: item.customDetails ? {
-          keys: Object.keys(item.customDetails),
-          toppings: item.customDetails.toppings
-        } : null
-      });
-      
-      if (item.isCustomCake && item.customDetails?.toppings) {
-        console.log(`Found toppings for item ${index}:`, item.customDetails.toppings);
-        item.customDetails.toppings.forEach((topping: Topping) => {
-          console.log('Processing topping:', topping);
-          toppings.push({
-            name: topping.name,
-            count: topping.count || 1,
-            totalPrice: topping.totalPrice || 0,
-            unitPrice: topping.unitPrice || 0
-          });
-        });
-      } else {
-        console.log(`No toppings found for item ${index}. Reason:`, {
-          isCustomCake: item.isCustomCake,
-          hasCustomDetails: !!item.customDetails,
-          hasToppings: !!item.customDetails?.toppings
-        });
-      }
-    });
-
-    console.log('Final toppings array:', toppings);
-    return toppings;
-  } catch (error) {
-    console.error('Error getting order toppings:', error);
-    return [];
-  }
-});
 
 </script>
 
@@ -642,8 +427,8 @@ ion-header {
 /* Order Summary Card */
 .order-summary-card {
   margin: 0 0 16px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.08);
   overflow: hidden;
 }
 
@@ -655,12 +440,7 @@ ion-card-content {
   padding: 8px 16px 20px;
 }
 
-.order-header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 4px 0;
-}
+
 
 .order-summary-content {
   padding: 12px 0;
@@ -1226,44 +1006,23 @@ ion-card-subtitle {
 }
 
 .toppings-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: none;
 }
 
 .topping-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 4px;
-  font-size: 0.9rem;
+  display: none;
 }
 
 .topping-name {
-  font-weight: 500;
-  color: var(--ion-color-dark);
+  display: none;
 }
 
 .topping-price {
-  font-weight: 600;
-  color: #58091F;
+  display: none;
 }
 
 .toppings-total {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px dashed rgba(var(--ion-color-medium-rgb), 0.2);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.toppings-total .price {
-  color: #58091F;
+  display: none;
 }
 
 /* Skeleton Loading Styles */

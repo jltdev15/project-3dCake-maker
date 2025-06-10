@@ -452,7 +452,7 @@ ion-input {
   --background: #58091F;
   --background-hover: #7a0c2a;
   --background-activated: #7a0c2a;
-  --border-radius: 12px;
+
   --box-shadow: 0 4px 12px rgba(88, 9, 31, 0.2);
   height: 56px;
   font-weight: 600;
