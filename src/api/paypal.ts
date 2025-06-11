@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // PayPal Sandbox Configuration
-const PAYPAL_CLIENT_ID = 'AbnTUyrjf9HNGPd041AS7o7BI1jxhhQVB6pZG6cKJvUCgUciUjH-NHGVE-4fB9OZUTEamm_vdP_p49y2';
+const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
 const PAYPAL_CLIENT_SECRET = import.meta.env.VITE_PAYPAL_CLIENT_SECRET;
 const PAYPAL_API_URL = 'https://api-m.sandbox.paypal.com';
 

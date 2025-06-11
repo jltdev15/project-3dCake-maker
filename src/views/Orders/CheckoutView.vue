@@ -193,8 +193,8 @@ import { database, ref as dbRef, set, get, remove } from '../../config/firebase'
 import { createPayPalOrder, capturePayPalOrder } from '@/api/paypal';
 
 // PayPal configuration
-const PAYPAL_CLIENT_ID = 'AbnTUyrjf9HNGPd041AS7o7BI1jxhhQVB6pZG6cKJvUCgUciUjH-NHGVE-4fB9OZUTEamm_vdP_p49y2';
-const PAYPAL_SDK_URL = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=PHP&intent=capture&components=buttons&enable-funding=paylater,venmo&disable-funding=paylater,card`;
+const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+const PAYPAL_SDK_URL = `https://www.sandbox.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=PHP&intent=capture&components=buttons&enable-funding=paylater,venmo&disable-funding=paylater,card`;
 
 const router = useRouter();
 const cartStore = useCartStore();
@@ -361,33 +361,16 @@ const placeOrder = async () => {
   }
 };
 
-// // Helper function to wait for element
-// const waitForElement = (selector: string, timeout = 5000): Promise<HTMLElement> => {
-//   return new Promise((resolve, reject) => {
-//     const startTime = Date.now();
-    
-//     const checkElement = () => {
-//       const element = document.getElementById(selector);
-//       if (element) {
-//         resolve(element);
-//         return;
-//       }
-      
-//       if (Date.now() - startTime >= timeout) {
-//         reject(new Error(`Element ${selector} not found after ${timeout}ms`));
-//         return;
-//       }
-      
-//       requestAnimationFrame(checkElement);
-//     };
-    
-//     checkElement();
-//   });
-// };
-
 // Modify loadPayPalSDK function
 const loadPayPalSDK = () => {
   return new Promise<void>((resolve, reject) => {
+    // Check if PayPal client ID is available
+    if (!PAYPAL_CLIENT_ID) {
+      console.error('PayPal client ID is missing. Please check your .env file.');
+      reject(new Error('PayPal client ID is not configured'));
+      return;
+    }
+
     // @ts-ignore - PayPal types
     if (window.paypal && window.paypal.Buttons) {
       console.log('PayPal SDK already loaded');
@@ -395,22 +378,35 @@ const loadPayPalSDK = () => {
       return;
     }
 
+    // Remove any existing PayPal script
+    const existingScript = document.querySelector('script[src*="paypal.com/sdk/js"]');
+    if (existingScript) {
+      existingScript.remove();
+    }
+
     const script = document.createElement('script');
     script.src = PAYPAL_SDK_URL;
     script.async = true;
 
     script.onload = () => {
+      // Add a small delay to ensure SDK is fully initialized
       setTimeout(() => {
         // @ts-ignore - PayPal types
         if (window.paypal && window.paypal.Buttons) {
+          console.log('PayPal SDK loaded successfully');
           resolve();
         } else {
+          console.error('PayPal SDK loaded but not properly initialized');
           reject(new Error('PayPal SDK not properly initialized'));
         }
-      }, 200);
+      }, 500); // Increased timeout for better reliability
     };
     
-    script.onerror = () => reject(new Error('Failed to load PayPal SDK'));
+    script.onerror = (error) => {
+      console.error('Failed to load PayPal SDK:', error);
+      reject(new Error('Failed to load PayPal SDK. Please check your internet connection.'));
+    };
+
     document.head.appendChild(script);
   });
 };
@@ -424,13 +420,21 @@ const initializePayPalButtons = async () => {
       if (container) {
         container.innerHTML = '';
       }
+      paypalInstance.value = null;
     }
+
+    // Ensure PayPal SDK is loaded
+    await loadPayPalSDK();
 
     // @ts-ignore - PayPal types
     const paypal = window.paypal;
     if (!paypal || !paypal.Buttons) {
+      console.error('PayPal SDK not loaded or Buttons not available');
       throw new Error('PayPal SDK not loaded');
     }
+
+    // Set loading state
+    paypalLoaded.value = false;
 
     paypalInstance.value = await paypal.Buttons({
       style: {
@@ -442,6 +446,9 @@ const initializePayPalButtons = async () => {
       fundingSource: paypal.FUNDING.PAYPAL,
       createOrder: async () => {
         try {
+          if (!cartStore.cartTotal || cartStore.cartTotal <= 0) {
+            throw new Error('Invalid cart total');
+          }
           const order = await createPayPalOrder(
             cartStore.cartTotal.toFixed(2),
             'PHP',
@@ -465,27 +472,55 @@ const initializePayPalButtons = async () => {
       onError: async (err: any) => {
         console.error('PayPal error:', err);
         const toast = await toastController.create({
-          message: 'An error occurred with PayPal. Please try again.',
+          message: `Payment error: ${err.message || 'Please try again'}`,
           duration: 3000,
           color: 'danger',
+          position: 'top'
+        });
+        await toast.present();
+      },
+      onCancel: async () => {
+        const toast = await toastController.create({
+          message: 'Payment cancelled',
+          duration: 2000,
+          color: 'warning',
           position: 'top'
         });
         await toast.present();
       }
     });
 
-    await paypalInstance.value.render('#paypal-button-container'); 
+    // Render buttons
+    const container = document.getElementById('paypal-button-container');
+    if (!container) {
+      throw new Error('PayPal button container not found');
+    }
+
+    await paypalInstance.value.render('#paypal-button-container');
     paypalLoaded.value = true;
+  
   } catch (error) {
     console.error('Error initializing PayPal buttons:', error);
     paypalLoaded.value = false;
-    const toast = await toastController.create({
-      message: 'Failed to initialize PayPal. Please refresh the page.',
-      duration: 3000,
-      position: 'top',
-      color: 'danger'
-    });
-    await toast.present();
+    
+    // let errorMessage = 'Failed to initialize PayPal. ';
+    // if (error instanceof Error) {
+    //   if (error.message.includes('client ID')) {
+    //     errorMessage += 'Please check your PayPal configuration.';
+    //   } else if (error.message.includes('internet connection')) {
+    //     errorMessage += 'Please check your internet connection.';
+    //   } else {
+    //     errorMessage += 'Please refresh the page.';
+    //   }
+    // }
+
+    // const toast = await toastController.create({
+    //   message: errorMessage,
+    //   duration: 3000,
+    //   position: 'top',
+    //   color: 'danger'
+    // });
+    // await toast.present();
   }
 };
 
@@ -570,13 +605,13 @@ const handleSuccessfulPayment = async (captureData: any) => {
   }
 };
 
-// Add navigation functions
-const goToOrders = () => {
+// Add navigation functions with proper type definitions
+const goToOrders = (): void => {
   showSuccessModal.value = false;
   router.push('/orders');
 };
 
-const goToHome = () => {
+const goToHome = (): void => {
   showSuccessModal.value = false;
   router.push('/');
 };
@@ -589,11 +624,24 @@ onMounted(async () => {
   }
 
   try {
+    // Reset state
+    resetCheckoutState();
+    
+    // Initialize PayPal
     await loadPayPalSDK();
     await initializePayPalButtons();
   } catch (error) {
     console.error('Failed to initialize PayPal:', error);
     paypalLoaded.value = false;
+    
+    // Show error toast
+    const toast = await toastController.create({
+      message: 'Failed to initialize payment system. Please refresh the page.',
+      duration: 3000,
+      position: 'top',
+      color: 'danger'
+    });
+    await toast.present();
   }
 });
 

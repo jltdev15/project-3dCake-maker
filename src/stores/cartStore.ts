@@ -61,6 +61,23 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
+  const checkUserProfileCompletion = async () => {
+    if (!authStore.user?.uid) return false
+
+    try {
+      const userRef = dbRef(database, `users/${authStore.user.uid}`)
+      const snapshot = await get(userRef)
+      if (snapshot.exists()) {
+        const userData = snapshot.val()
+        return userData.isProfileCompleted === true
+      }
+      return false
+    } catch (error) {
+      console.error('Error checking user profile completion:', error)
+      return false
+    }
+  }
+
   const setupUserStatusListener = () => {
     if (!authStore.user?.uid) return
 
@@ -127,6 +144,32 @@ export const useCartStore = defineStore('cart', () => {
     if (!authStore.user?.uid || items.value.length === 0) return null
 
     try {
+      // Check if user profile is completed
+      const isProfileCompleted = await checkUserProfileCompletion()
+      if (!isProfileCompleted) {
+        const toast = await toastController.create({
+          message: 'Please complete your profile before checking out.',
+          duration: 3000,
+          position: 'top',
+          color: 'warning'
+        })
+        await toast.present()
+        return null
+      }
+
+      // Check if user is active
+      const isUserActive = await checkUserStatus()
+      if (!isUserActive) {
+        const toast = await toastController.create({
+          message: 'Your account is not active. Please contact support.',
+          duration: 3000,
+          position: 'top',
+          color: 'danger'
+        })
+        await toast.present()
+        return null
+      }
+
       const orderId = await generateOrderId()
       const order: Order = {
         orderId,
@@ -297,6 +340,7 @@ export const useCartStore = defineStore('cart', () => {
     checkout,
     cleanup,
     checkUserStatus,
+    checkUserProfileCompletion,
     generateOrderId
   }
 }) 

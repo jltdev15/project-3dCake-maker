@@ -33,13 +33,6 @@ interface NonCustomOrder extends BaseOrder {
 }
 
 // Update interfaces to match the actual data structure
-interface Topping {
-  name: string;
-  count: number;
-  totalPrice: number;
-  unitPrice: number;
-}
-
 interface DesignData {
   flavor?: string;
   layers?: number;

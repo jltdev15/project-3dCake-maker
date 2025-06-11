@@ -121,7 +121,7 @@
                   <p v-if="(item as CartItem).isCustomCake" class="item-custom-badge">Custom Design</p>
                   <p v-if="(item as CartItem)" class="item-price">₱{{ item.unitPrice?.toFixed(2) || '0.00'
                     }} each</p>
-                  
+
                 </div>
                 <div class="item-controls">
                   <div class="quantity-controls">
@@ -214,6 +214,54 @@
         </div>
       </div>
 
+      <!-- Profile Completion Modal -->
+      <div v-if="showProfileModal" class="fixed inset-0 flex items-center justify-center z-9999">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showProfileModal = false"></div>
+        <div class="relative w-[90%] max-w-[400px] bg-white rounded-3xl shadow-2xl overflow-hidden animate-modal-pop">
+          <div class="flex flex-col items-center justify-center p-8 text-center">
+            <div class="flex items-center justify-center w-20 h-20 rounded-full bg-[#F0E68D]/20 mb-6">
+              <ion-icon :icon="personCircleOutline" class="text-5xl text-[#8B6B2F]"></ion-icon>
+            </div>
+            <h2 class="text-2xl font-bold text-[#58091F] mb-4">Profile Incomplete</h2>
+            <p class="text-gray-600 mb-8 leading-relaxed">
+              Please complete your profile information before proceeding to checkout.
+            </p>
+            <div class="flex flex-col gap-3 w-full">
+              <button @click="() => { showProfileModal = false; router.push('/account/edit'); }"
+                class="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200 min-h-[48px]">
+                Complete Profile
+              </button>
+              <button @click="showProfileModal = false"
+                class="flex-1 px-6 py-3 rounded-xl  text-gray-600 font-semibold hover:bg-black/10 active:bg-black/15 transition-all duration-200 min-h-[48px]">
+                Not now
+              </button>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error Modal -->
+      <div v-if="showErrorModal" class="fixed inset-0 flex items-center justify-center z-50">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showErrorModal = false"></div>
+        <div class="relative w-[90%] max-w-[400px] bg-white rounded-3xl shadow-2xl overflow-hidden animate-modal-pop">
+          <div class="flex flex-col items-center justify-center p-8 text-center">
+            <div class="flex items-center justify-center w-20 h-20 rounded-full bg-red-100/50 mb-6">
+              <ion-icon :icon="alertCircleOutline" class="text-5xl text-[#7a1e1e]"></ion-icon>
+            </div>
+            <h2 class="text-2xl font-bold text-[#58091F] mb-4">Error</h2>
+            <p class="text-gray-600 mb-8 leading-relaxed">
+              {{ errorMessage }}
+            </p>
+            <div class="w-full">
+              <button @click="showErrorModal = false"
+                class="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200 min-h-[48px]">
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
     </ion-content>
   </ion-page>
@@ -233,7 +281,7 @@ import {
   IonItemOption,
 } from '@ionic/vue';
 // @ts-ignore - These icons are used in the template
-import { cartOutline, addOutline, removeOutline, trashOutline, arrowForward, checkmarkCircle, closeOutline, cashOutline, chevronBackOutline, bagOutline, pricetagOutline } from 'ionicons/icons';
+import { cartOutline, addOutline, removeOutline, trashOutline, arrowForward, checkmarkCircle, closeOutline, cashOutline, chevronBackOutline, bagOutline, pricetagOutline, personCircleOutline, alertCircleOutline } from 'ionicons/icons';
 
 import { useCartStore } from '../../stores/cartStore';
 import { onMounted, ref, onUnmounted, computed, watch } from 'vue';
@@ -275,6 +323,9 @@ const cartStore = useCartStore();
 const showDeleteAlert = ref(false);
 const itemToDelete = ref<string | null>(null);
 const showSuccessModal = ref(false);
+const showProfileModal = ref(false);
+const showErrorModal = ref(false);
+const errorMessage = ref('');
 
 // Add loading state
 const isLoading = ref(true);
@@ -354,8 +405,22 @@ const handleSuccessModalDismiss = () => {
   router.replace('/');
 };
 
-const proceedToCheckout = () => {
-  router.push('/checkout');
+const proceedToCheckout = async () => {
+  try {
+    // Check if user profile is completed
+    const isProfileCompleted = await cartStore.checkUserProfileCompletion();
+    if (!isProfileCompleted) {
+      showProfileModal.value = true;
+      return;
+    }
+
+    // If profile is completed, proceed to checkout
+    router.push('/checkout');
+  } catch (error) {
+    console.error('Error checking profile completion:', error);
+    errorMessage.value = 'An unexpected error occurred. Please try again.';
+    showErrorModal.value = true;
+  }
 };
 
 
@@ -1267,5 +1332,309 @@ ion-radio::part(mark) {
   100% {
     opacity: 0.6;
   }
+}
+
+/* Custom Toast Styles */
+:global(.custom-toast) {
+  --background: rgba(255, 255, 255, 0.98);
+  --border-radius: 16px;
+  --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  --min-width: 320px;
+  --max-width: 90%;
+  --min-height: 64px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 16px;
+  --padding-bottom: 16px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+:global(.custom-toast::part(header)) {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #58091F;
+  margin-bottom: 4px;
+  padding: 0;
+}
+
+:global(.custom-toast::part(message)) {
+  font-size: 0.95rem;
+  color: #666;
+  padding: 0;
+  margin: 0;
+  line-height: 1.4;
+}
+
+:global(.custom-toast::part(button)) {
+  --color: #58091F;
+  font-weight: 500;
+  text-transform: none;
+  font-size: 0.95rem;
+  margin: 0 4px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 8px;
+  --padding-bottom: 8px;
+  --border-radius: 8px;
+  min-height: 36px;
+}
+
+:global(.custom-toast::part(button[role="confirm"])) {
+  --background: rgba(88, 9, 31, 0.1);
+  --background-hover: rgba(88, 9, 31, 0.15);
+  --background-activated: rgba(88, 9, 31, 0.2);
+}
+
+:global(.custom-toast::part(button[role="cancel"])) {
+  --background: rgba(0, 0, 0, 0.05);
+  --background-hover: rgba(0, 0, 0, 0.1);
+  --background-activated: rgba(0, 0, 0, 0.15);
+  --color: #666;
+}
+
+:global(.custom-toast::part(icon)) {
+  font-size: 24px;
+  margin-right: 12px;
+  color: #58091F;
+}
+
+:global(.warning-toast) {
+  --background: linear-gradient(135deg, #FFF7D0 0%, #F0E68D 100%);
+  border: 1px solid rgba(240, 230, 141, 0.5);
+}
+
+:global(.warning-toast::part(icon)) {
+  color: #8B6B2F;
+}
+
+:global(.error-toast) {
+  --background: linear-gradient(135deg, #FFE5E5 0%, #FFD6D6 100%);
+  border: 1px solid rgba(255, 214, 214, 0.5);
+}
+
+:global(.error-toast::part(icon)) {
+  color: #7a1e1e;
+}
+
+@media (max-width: 480px) {
+  :global(.custom-toast) {
+    --min-width: 280px;
+    --padding-start: 12px;
+    --padding-end: 12px;
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+  }
+
+  :global(.custom-toast::part(header)) {
+    font-size: 1rem;
+  }
+
+  :global(.custom-toast::part(message)) {
+    font-size: 0.9rem;
+  }
+
+  :global(.custom-toast::part(button)) {
+    font-size: 0.9rem;
+    --padding-start: 12px;
+    --padding-end: 12px;
+  }
+
+  :global(.custom-toast::part(icon)) {
+    font-size: 20px;
+    margin-right: 8px;
+  }
+}
+
+/* Custom Modal Styles */
+.custom-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  position: relative;
+  width: 90%;
+  max-width: 400px;
+  background: #FFFFFF;
+  border-radius: 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  z-index: 1001;
+  animation: modal-pop-in 0.3s ease-out forwards;
+}
+
+@keyframes modal-pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.modal-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin-bottom: 24px;
+}
+
+.modal-icon {
+  font-size: 48px;
+}
+
+.modal-icon.warning {
+  color: #8B6B2F;
+  background: rgba(240, 230, 141, 0.2);
+}
+
+.modal-icon.error {
+  color: #7a1e1e;
+  background: rgba(255, 214, 214, 0.2);
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #58091F;
+  margin: 0 0 16px 0;
+}
+
+.modal-message {
+  color: #666;
+  margin: 0 0 32px 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.modal-button {
+  flex: 1;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  min-height: 48px;
+}
+
+.modal-button.confirm-button {
+  background: linear-gradient(to right, #58091F, #7A0C29);
+  color: white;
+  box-shadow: 0 4px 12px rgba(88, 9, 31, 0.2);
+}
+
+.modal-button.confirm-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(88, 9, 31, 0.25);
+}
+
+.modal-button.confirm-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(88, 9, 31, 0.2);
+}
+
+.modal-button.cancel-button {
+  background: rgba(0, 0, 0, 0.05);
+  color: #666;
+}
+
+.modal-button.cancel-button:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.modal-button.cancel-button:active {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 480px) {
+  .modal-content {
+    width: 95%;
+    max-width: 320px;
+  }
+
+  .modal-body {
+    padding: 24px 20px;
+  }
+
+  .modal-icon-container {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 20px;
+  }
+
+  .modal-icon {
+    font-size: 36px;
+  }
+
+  .modal-title {
+    font-size: 1.25rem;
+    margin-bottom: 12px;
+  }
+
+  .modal-message {
+    font-size: 0.95rem;
+    margin-bottom: 24px;
+  }
+
+  .modal-button {
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    min-height: 44px;
+  }
+}
+
+@keyframes modal-pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-modal-pop {
+  animation: modal-pop-in 0.3s ease-out forwards;
 }
 </style>

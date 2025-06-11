@@ -1,7 +1,7 @@
 <template>
   <ion-page class="home-page">
     <!-- Custom Header -->
-    <div class="custom-header" :class="{ 'pointer-events-none opacity-50': shouldShowModal }">
+    <div class="custom-header">
       <div class="header-top">
         <div class="px-3">
           <span class="location-text">
@@ -28,7 +28,7 @@
       </div>
     </div>
 
-    <ion-content :class="{ 'pointer-events-none opacity-50': shouldShowModal }">
+    <ion-content>
       <ion-refresher slot="fixed" @ionRefresh="handleRefresh">
         <ion-refresher-content
           pulling-icon="chevron-down-circle-outline"
@@ -128,45 +128,6 @@
         </div>
       </div>
     </ion-content>
-
-    <!-- Profile Completion Modal -->
-    <Teleport to="body">
-      <div 
-        v-if="shouldShowModal" 
-        class="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] animate-fadeIn"
-      >
-        <div class="w-[90%] max-w-[400px] animate-slideIn relative z-[10000]">
-          <div class="bg-white rounded-2xl p-6 shadow-lg">
-            <div class="text-center mb-5">
-              <h2 class="text-2xl font-semibold text-[#58091F] font-['Outfit']">Complete Your Profile</h2>
-            </div>
-            <div class="text-center">
-              <ion-icon 
-                :icon="personCircleOutline" 
-                class="text-6xl text-[#F0E68D] mb-4" 
-                aria-hidden="true"
-              ></ion-icon>
-              <p class="text-gray-600 text-base leading-relaxed mb-6 font-['Inter']">
-                To continue using the app, please complete your profile information first.
-              </p>
-              <div class="flex flex-col gap-3">
-                <button 
-                  ref="completeButton"
-                  type="button"
-                  class="w-full h-12 bg-[#58091F] text-white rounded-lg font-semibold font-['Inter'] 
-                         transition-colors duration-200 hover:bg-[#7A0C29] active:bg-[#7A0C29]
-                         focus:outline-none focus:ring-2 focus:ring-[#58091F] focus:ring-opacity-50
-                         cursor-pointer select-none"
-                  @click.stop="goToEditProfile"
-                >
-                  Complete Profile
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Teleport>
   </ion-page>
 </template>
 
@@ -189,16 +150,14 @@ import {
   optionsOutline,
   chevronForward,
   heartOutline,
-  star,
-  personCircleOutline
+  star
 } from 'ionicons/icons';
 import { useRouter, useRoute } from 'vue-router';
 import { useCakeStore } from '@/stores/cakeStore';
 import { storeToRefs } from 'pinia';
 import { useOrderNotificationStore } from '@/stores/orderNotification';
 import { useAuthStore } from '@/stores/authStore';
-import { onMounted, onUnmounted, watch, ref, computed, nextTick } from 'vue';
-import { Teleport } from 'vue';
+import { onMounted, onUnmounted, watch, ref, computed } from 'vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -207,12 +166,9 @@ const { categories, getAllCakes } = storeToRefs(cakeStore);
 const orderNotification = useOrderNotificationStore();
 const auth = useAuthStore();
 const isLoading = ref(true);
-const showModal = ref(false);
-const authLoading = ref(true);
 let cleanup;
 
 watch(() => auth.user, (newUser) => {
-  authLoading.value = false;
   if (newUser) {
     if (cleanup) {
       cleanup();
@@ -334,27 +290,6 @@ const clearSearch = () => {
   searchQuery.value = '';
   searchResults.value = [];
 };
-
-// Computed property to determine if modal should be shown
-const shouldShowModal = computed(() => {
-  return !authLoading.value &&
-         !auth.isProfileCompleted && 
-         auth.user !== null && 
-         route.path !== '/account/edit';
-});
-
-// Watch for route changes to prevent navigation if profile is incomplete
-watch(() => route.path, (newPath) => {
-  if (!auth.isProfileCompleted && auth.user !== null && newPath !== '/account/edit') {
-    router.push('/');
-  }
-}, { immediate: true });
-
-const goToEditProfile = () => {
-  router.push('/account/edit');
-};
-
-const completeButton = ref(null);
 </script>
 
 <style scoped>
@@ -861,40 +796,5 @@ const completeButton = ref(null);
   color: #8B5C2F;
   font-size: 1.1rem;
   font-family: 'Inter', sans-serif;
-}
-
-/* Add these animations to your existing styles */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out;
-}
-
-.animate-slideIn {
-  animation: slideIn 0.3s ease-out;
-}
-
-/* Add this new style */
-.pointer-events-none {
-  pointer-events: none;
-  user-select: none;
 }
 </style>
