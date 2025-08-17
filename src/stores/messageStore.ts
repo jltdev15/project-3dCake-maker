@@ -140,15 +140,19 @@ export const useMessageStore = defineStore('message', () => {
             const formattedTime = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             // Create message data
-            const messageData = {
+            const messageData: any = {
                 content: type === 'image' ? 'Image' : content,
                 type,
-                imageUrl: type === 'image' ? imageUrl : undefined,
                 conversationId: chatId,
                 senderId: userId,
                 timestamp,
                 isRead: false
             };
+
+            // Only add imageUrl if it's an image message and URL is provided
+            if (type === 'image' && imageUrl) {
+                messageData.imageUrl = imageUrl;
+            }
 
             // Save message under the conversation ID in messages node
             const conversationRef = dbRef(database, `messages/${chatId}`);

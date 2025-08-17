@@ -95,10 +95,23 @@
                         @keyup.enter="sendMessage"
                         class="message-input"
                     ></ion-input>
+                    
+                    <!-- Image attachment button -->
+                    <ion-button slot="end" fill="clear" @click="openImagePicker" class="attachment-button" title="Attach Image">
+                        <ion-icon :icon="imageOutline" class="attachment-icon"></ion-icon>
+                    </ion-button>
+                    
                     <ion-button slot="end" fill="clear" @click="sendMessage" class="send-button">
                         <ion-icon :icon="send" class="send-icon"></ion-icon>
                     </ion-button>
                 </ion-item>
+                
+                <!-- Image upload info -->
+                <div class="image-upload-info">
+                    <ion-text color="medium" class="text-xs">
+                        📷 Click the attachment button to send images. Large images will be compressed.
+                    </ion-text>
+                </div>
             </ion-toolbar>
         </ion-footer>
 
@@ -106,6 +119,9 @@
         <ion-modal :is-open="showImagePreview" @didDismiss="showImagePreview = false">
             <div class="image-preview">
                 <img :src="selectedImageUrl" alt="Preview" />
+                <ion-button fill="clear" @click="showImagePreview = false" class="close-preview-btn">
+                    <ion-icon :icon="closeOutline"></ion-icon>
+                </ion-button>
             </div>
         </ion-modal>
     </ion-page>
@@ -118,7 +134,7 @@ import { useMessageStore } from '../stores/messageStore';
 import { storeToRefs } from 'pinia';
 import { auth } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { IonModal } from '@ionic/vue';
+import { IonModal, toastController } from '@ionic/vue';
 
 // @ts-ignore
 import {
@@ -135,7 +151,7 @@ import {
     IonText
 } from '@ionic/vue';
 // @ts-ignore
-import { send, chevronBackOutline, chatbubblesOutline } from 'ionicons/icons';
+import { send, chevronBackOutline, chatbubblesOutline, imageOutline, closeOutline } from 'ionicons/icons';
 
 const route = useRoute();
 const messageStore = useMessageStore();
@@ -143,6 +159,13 @@ const { messages, loading, error } = storeToRefs(messageStore);
 const newMessage = ref('');
 const contentRef = ref();
 const messagesEndRef = ref();
+
+// Toast function
+const showToast = async (options: any) => {
+    const toast = await toastController.create(options);
+    await toast.present();
+    return toast;
+};
 
 const adminId = computed(() => route.params.id as string);
 
@@ -207,6 +230,132 @@ const selectedImageUrl = ref('');
 const openImage = (imageUrl: string) => {
     selectedImageUrl.value = imageUrl;
     showImagePreview.value = true;
+};
+
+// Add function to handle image attachment
+const openImagePicker = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = false;
+    
+    input.onchange = async (event) => {
+        const target = event.target as HTMLInputElement;
+        const file = target.files?.[0];
+        
+        if (file) {
+            try {
+                // Show loading state
+                const loadingToast = await showToast({
+                    message: 'Uploading image...',
+                    duration: 2000,
+                    position: 'bottom'
+                });
+                
+                let imageUrl: string;
+                
+                try {
+                    // Try Firebase Storage first
+                    imageUrl = await uploadImageToStorage(file);
+                } catch (storageError: any) {
+                    // If Firebase Storage fails due to permissions, fall back to base64
+                    if (storageError.code === 'storage/unauthorized') {
+                        await showToast({
+                            message: 'Using fallback method for image...',
+                            duration: 1500,
+                            position: 'bottom'
+                        });
+                        imageUrl = await convertImageToBase64(file);
+                    } else {
+                        throw storageError; // Re-throw other storage errors
+                    }
+                }
+                
+                // Send image message
+                await messageStore.sendMessage(adminId.value, '', 'image', imageUrl);
+                
+                // Dismiss loading toast
+                loadingToast.dismiss();
+                
+                // Show success message
+                await showToast({
+                    message: 'Image sent successfully!',
+                    duration: 2000,
+                    position: 'bottom',
+                    color: 'success'
+                });
+                
+            } catch (error: any) {
+                console.error('Error sending image:', error);
+                
+                let errorMessage = 'Failed to send image. Please try again.';
+                
+                // Provide more specific error messages
+                if (error.message) {
+                    errorMessage = error.message;
+                } else if (error.code === 'storage/unauthorized') {
+                    errorMessage = 'Permission denied. Please contact support.';
+                } else if (error.code === 'storage/quota-exceeded') {
+                    errorMessage = 'Storage quota exceeded. Please try again later.';
+                }
+                
+                await showToast({
+                    message: errorMessage,
+                    duration: 4000,
+                    position: 'bottom',
+                    color: 'danger'
+                });
+            }
+        }
+    };
+    
+    input.click();
+};
+
+// Function to upload image to Firebase Storage
+const uploadImageToStorage = async (file: File): Promise<string> => {
+    try {
+        const { getStorage, ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+        const storage = getStorage();
+        
+        const timestamp = Date.now();
+        const fileName = `messages/${timestamp}_${file.name}`;
+        const storageRef = ref(storage, fileName);
+        
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        
+        return downloadURL;
+    } catch (error: any) {
+        console.error('Storage upload error:', error);
+        
+        // Handle specific Firebase Storage errors
+        if (error.code === 'storage/unauthorized') {
+            throw new Error('Permission denied. Please check your Firebase Storage rules.');
+        } else if (error.code === 'storage/quota-exceeded') {
+            throw new Error('Storage quota exceeded. Please try again later.');
+        } else if (error.code === 'storage/unauthenticated') {
+            throw new Error('Please log in to upload images.');
+        } else {
+            throw new Error('Failed to upload image. Please try again.');
+        }
+    }
+};
+
+// Fallback function to convert image to base64 (for when storage is not available)
+const convertImageToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            if (typeof reader.result === 'string') {
+                resolve(reader.result);
+            } else {
+                reject(new Error('Failed to convert image to base64'));
+            }
+        };
+        reader.onerror = () => reject(new Error('Failed to read image file'));
+        reader.readAsDataURL(file);
+    });
 };
 
 onMounted(async () => {
@@ -419,6 +568,18 @@ watch(messages, async (newMessages, oldMessages) => {
     --ripple-color: rgba(0, 0, 0, 0.1); /* Subtle ripple */
 }
 
+.attachment-button {
+    --padding-start: 12px;
+    --padding-end: 12px;
+    --ripple-color: rgba(0, 0, 0, 0.1);
+    margin-right: 8px;
+}
+
+.attachment-icon {
+    font-size: 1.2rem;
+    color: #58091F;
+}
+
 .send-icon {
     font-size: 1.5rem;
     color: #58091F; /* Primary brand color */
@@ -435,10 +596,12 @@ ion-content {
     border-radius: 12px;
     cursor: pointer;
     transition: transform 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .message-image:hover {
     transform: scale(1.02);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 /* Image Preview Modal */
@@ -460,6 +623,24 @@ ion-modal {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
+}
+
+.close-preview-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    --color: white;
+    --background: rgba(0, 0, 0, 0.5);
+    --border-radius: 50%;
+    --padding-start: 12px;
+    --padding-end: 12px;
+}
+
+.image-upload-info {
+    text-align: center;
+    padding: 8px 16px;
+    background: rgba(88, 9, 31, 0.05);
+    border-top: 1px solid rgba(88, 9, 31, 0.1);
 }
 
 </style> 
