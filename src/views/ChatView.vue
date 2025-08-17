@@ -107,11 +107,11 @@
                 </ion-item>
                 
                 <!-- Image upload info -->
-                <div class="image-upload-info">
+                <!-- <div class="image-upload-info">
                     <ion-text color="medium" class="text-xs">
                         📷 Click the attachment button to send images. Large images will be compressed.
                     </ion-text>
-                </div>
+                </div> -->
             </ion-toolbar>
         </ion-footer>
 
