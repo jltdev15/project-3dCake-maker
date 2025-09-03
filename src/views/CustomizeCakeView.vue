@@ -848,7 +848,7 @@
         <canvas id="cakeCanvas"></canvas>
         <div class="controls-panel">
           <div class="sticky top-0 z-10">
-            <div
+            <!-- <div
               class="bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white px-3 sm:px-4 py-3 sm:py-4 shadow-lg"
             >
               <div class="flex items-center justify-center space-x-3">
@@ -873,7 +873,7 @@
                   ></ion-icon>
                 </div>
               </div>
-            </div>
+            </div> -->
             <div
               class="flex gap-3 sm:gap-2 p-2 sm:p-4 overflow-x-auto bg-gradient-to-r from-gray-50 to-gray-100 shadow-lg border-b border-gray-200"
               ref="tabsContainer"
@@ -899,7 +899,7 @@
                 <span class="text-xs sm:text-sm font-medium leading-tight">Actions</span>
               </button>
               <button
-                v-if="fa"
+                v-if="false"
                 :class="[
                   'tab-button min-w-0 flex-shrink-0 flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 py-3 sm:py-2 rounded-xl transition-all duration-300 touch-manipulation',
                   activeTab === 'tab-layer-editor'
@@ -925,7 +925,7 @@
                 :class="[
                   'tab-button min-w-0 flex-shrink-0 flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 py-3 sm:py-2 rounded-xl transition-all duration-300 touch-manipulation',
                   activeTab === 'tab-topper'
-                    ? 'bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white shadow-lg transform scale-105 border-2 border-white'
+                    ? 'bg-gradient-to-r from-[#F0E68D] via-[#E6D77A] to-[#DCC867]  shadow-lg transform scale-105 border-2 border-white'
                     : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-[#58091F] shadow-sm border border-gray-200 hover:shadow-md',
                 ]"
                 data-tab="tab-topper"
@@ -935,7 +935,7 @@
                   :icon="icons.flameOutline"
                   :class="[
                     'text-lg sm:text-base mb-1 sm:mb-0 sm:mr-2',
-                    activeTab === 'tab-topper' ? 'text-white' : 'text-gray-500',
+                    activeTab === 'tab-topper' ? 'text-gray-500' : 'text-gray-500',
                   ]"
                 ></ion-icon>
                 <span class="text-xs sm:text-sm font-medium leading-tight text-center"
@@ -947,7 +947,7 @@
                 :class="[
                   'tab-button min-w-0 flex-shrink-0 flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 py-3 sm:py-2 rounded-xl transition-all duration-300 touch-manipulation',
                   activeTab === 'tab-icing'
-                    ? 'bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white shadow-lg transform scale-105 border-2 border-white'
+                    ? 'bg-gradient-to-r from-[#F0E68D] via-[#E6D77A] to-[#DCC867]  shadow-lg transform scale-105 border-2 border-white'
                     : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-[#58091F] shadow-sm border border-gray-200 hover:shadow-md',
                 ]"
                 data-tab="tab-icing"
@@ -957,7 +957,7 @@
                   :icon="icons.iceCreamOutline"
                   :class="[
                     'text-lg sm:text-base mb-1 sm:mb-0 sm:mr-2',
-                    activeTab === 'tab-icing' ? 'text-white' : 'text-gray-500',
+                    activeTab === 'tab-icing' ? 'text-gray-500' : 'text-gray-500',
                   ]"
                 ></ion-icon>
                 <span class="text-xs sm:text-sm font-medium leading-tight">Icing</span>
@@ -966,7 +966,7 @@
                 :class="[
                   'tab-button min-w-0 flex-shrink-0 flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 py-3 sm:py-2 rounded-xl transition-all duration-300 touch-manipulation',
                   activeTab === 'tab-toppings'
-                    ? 'bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white shadow-lg transform scale-105 border-2 border-white'
+                    ? 'bg-gradient-to-r from-[#F0E68D] via-[#E6D77A] to-[#DCC867]  shadow-lg transform scale-105 border-2 border-white'
                     : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-[#58091F] shadow-sm border border-gray-200 hover:shadow-md',
                 ]"
                 data-tab="tab-toppings"
@@ -976,7 +976,7 @@
                   :icon="icons.sparklesOutline"
                   :class="[
                     'text-lg sm:text-base mb-1 sm:mb-0 sm:mr-2',
-                    activeTab === 'tab-toppings' ? 'text-white' : 'text-gray-500',
+                    activeTab === 'tab-toppings' ? 'text-gray-500' : 'text-gray-500',
                   ]"
                 ></ion-icon>
                 <span class="text-xs sm:text-sm font-medium leading-tight">Toppings</span>
@@ -986,7 +986,7 @@
                 :class="[
                   'tab-button min-w-0 flex-shrink-0 flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 py-3 sm:py-2 rounded-xl transition-all duration-300 touch-manipulation',
                   activeTab === 'tab-greeting'
-                    ? 'bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white shadow-lg transform scale-105 border-2 border-white'
+                    ? 'bg-gradient-to-r from-[#F0E68D] via-[#E6D77A] to-[#DCC867] text-white shadow-lg transform scale-105 border-2 border-white'
                     : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-[#58091F] shadow-sm border border-gray-200 hover:shadow-md',
                 ]"
                 data-tab="tab-greeting"
@@ -996,7 +996,7 @@
                   :icon="icons.chatbubbleOutline"
                   :class="[
                     'text-lg sm:text-base mb-1 sm:mb-0 sm:mr-2',
-                    activeTab === 'tab-greeting' ? 'text-white' : 'text-gray-500',
+                    activeTab === 'tab-greeting' ? 'text-gray-500' : 'text-gray-500',
                   ]"
                 ></ion-icon>
                 <span class="text-xs sm:text-sm font-medium leading-tight">Greeting</span>
@@ -2970,7 +2970,7 @@
 </template>
 
 <script setup>
-import { IonPage, IonHeader, IonToolbar, IonContent, IonIcon } from "@ionic/vue";
+import { IonPage, IonHeader, IonToolbar, IonContent, IonIcon, IonModal } from "@ionic/vue";
 import {
   cubeOutline,
   settingsOutline,
@@ -7090,7 +7090,7 @@ const currentLayerNumber = computed(() => {
 
 .tab-button {
   padding: 0.75rem 1.25rem;
-  border: 1px solid #7a5c1e;
+
   border-radius: 8px;
   color: #333;
   background-color: #f8f9fa;
@@ -7110,7 +7110,7 @@ const currentLayerNumber = computed(() => {
 
 .tab-button.active {
   background-color: #7a5c1e;
-  color: #ffffff;
+
   border-color: #7a5c1e;
   font-weight: bold;
 }
@@ -8494,7 +8494,7 @@ ion-toolbar {
 
 .tab-button.active {
   background-color: #7a5c1e;
-  color: #ffffff;
+
   border-color: #7a5c1e;
   font-weight: bold;
 }

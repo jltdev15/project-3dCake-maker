@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { database, auth } from '../config/firebase';
-import { ref as dbRef, push, set, onValue, update, get } from 'firebase/database';
+import { ref as dbRef, push, set, onValue, update, get, off } from 'firebase/database';
 
 interface Message {
     id: string;
@@ -28,20 +28,27 @@ export const useMessageStore = defineStore('message', () => {
     const loading = ref(false);
     const error = ref<string | null>(null);
     const unreadMessagesCount = ref(0);
+    let userListener: any = null;
+    let adminUsersListener: any = null;
 
     // Computed property to check if there are any unread messages
     const hasNewMessages = computed(() => {
         return unreadMessagesCount.value > 0;
     });
 
-    // Check for unread messages for the current user
+    // Check for unread messages for the current user with real-time updates
     const checkUnreadMessages = async () => {
         try {
             const userId = auth.currentUser?.uid;
             if (!userId) return;
 
+            // Remove existing listener if any
+            if (userListener) {
+                off(userListener);
+            }
+
             const userRef = dbRef(database, `users/${userId}`);
-            onValue(userRef, (snapshot) => {
+            userListener = onValue(userRef, (snapshot) => {
                 const userData = snapshot.val();
                 if (userData) {
                     // Check if user has a top-level unreadCount
@@ -69,6 +76,59 @@ export const useMessageStore = defineStore('message', () => {
             unreadMessagesCount.value = 0;
         }
     };
+
+    // Listen for new messages from admin users
+    const listenForNewMessages = async () => {
+        try {
+            const userId = auth.currentUser?.uid;
+            if (!userId) return;
+
+            // Remove existing listener if any
+            if (adminUsersListener) {
+                off(adminUsersListener);
+            }
+
+            const usersRef = dbRef(database, 'users');
+            adminUsersListener = onValue(usersRef, (snapshot) => {
+                const usersData = snapshot.val();
+                if (usersData) {
+                    let totalUnread = 0;
+                    
+                    // Check all admin users for unread messages to current user
+                    Object.entries(usersData).forEach(([adminId, adminData]: [string, any]) => {
+                        const isAdmin = adminData.email?.toLowerCase().includes('admin');
+                        if (isAdmin && adminData.messages) {
+                            const chatId = [userId, (adminData.uid || adminId)].sort().join('_');
+                            const convoData = adminData.messages[chatId];
+                            if (convoData && convoData.unreadCount) {
+                                totalUnread += convoData.unreadCount;
+                            }
+                        }
+                    });
+                    
+                    unreadMessagesCount.value = totalUnread;
+                } else {
+                    unreadMessagesCount.value = 0;
+                }
+            });
+        } catch (err) {
+            console.error('Error listening for new messages:', err);
+        }
+    };
+
+    // Clean up listeners
+    const cleanupListeners = () => {
+        if (userListener) {
+            off(userListener);
+            userListener = null;
+        }
+        if (adminUsersListener) {
+            off(adminUsersListener);
+            adminUsersListener = null;
+        }
+    };
+
+
 
     const fetchAdminUsers = async () => {
         loading.value = true;
@@ -233,6 +293,8 @@ export const useMessageStore = defineStore('message', () => {
         unreadMessagesCount,
         hasNewMessages,
         checkUnreadMessages,
+        listenForNewMessages,
+        cleanupListeners,
         fetchAdminUsers,
         fetchMessages,
         sendMessage,

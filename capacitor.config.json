@@ -14,7 +14,7 @@
       "forceCodeForRefreshToken": true
     },
      "android": {
-      "fullscreen": false
+      "fullscreen": true
     }
   }
 } 

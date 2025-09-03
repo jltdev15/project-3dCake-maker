@@ -25,8 +25,8 @@
                     <div class=" message-button-wrapper">
                     <ion-icon :icon="chatbubble" />
                     <ion-label>Messages</ion-label>
-                    <ion-badge v-if="messageStore.unreadMessagesCount > 0" class="message-badge">{{
-                        messageStore.unreadMessagesCount }}</ion-badge>
+                    <ion-badge v-if="unreadMessagesCount > 0" class="message-badge" :title="`${unreadMessagesCount} unread messages`">{{
+                        unreadMessagesCount }}</ion-badge>
                     </div>
                 </ion-tab-button>
 
@@ -44,7 +44,7 @@
 <script setup lang="ts">
 import { useCartStore } from '../stores/cartStore';
 import { useMessageStore } from '../stores/messageStore';
-import { onMounted } from 'vue';
+import { onMounted, onUnmounted, computed } from 'vue';
 // @ts-ignore - These imports are used in the template
 import {
     IonPage,
@@ -63,9 +63,19 @@ import { home, receipt, cart, person, chatbubble } from "ionicons/icons";
 const cartStore = useCartStore();
 const messageStore = useMessageStore();
 
+// Computed property for unread messages count
+const unreadMessagesCount = computed(() => messageStore.unreadMessagesCount);
+
 onMounted(() => {
     // Initialize message store to check for unread messages
     messageStore.checkUnreadMessages();
+    // Also listen for new messages from admin users
+    messageStore.listenForNewMessages();
+});
+
+onUnmounted(() => {
+    // Clean up listeners when component is unmounted
+    messageStore.cleanupListeners();
 });
 </script>
 
@@ -158,6 +168,7 @@ ion-label {
     justify-content: center;
     padding: 0 6px;
     box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+    z-index: 1000;
 }
 
 .message-badge {
@@ -166,6 +177,8 @@ ion-label {
     right: -8px;
     top: -4px;
     padding: 0 6px;
+    z-index: 1000;
+    position: absolute;
 }
 
 ion-tabs {
