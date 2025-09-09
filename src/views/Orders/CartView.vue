@@ -104,14 +104,41 @@
         </template>
 
         <template v-else>
-          <!-- <div class="cart-header">
-            <h2 class="cart-items-title">Cart Items</h2>
-            <p class="cart-items-subtitle">{{ cartStore.itemCount }} items in your cart</p>
-          </div> -->
+          <!-- Cart Header with Select All -->
+          <div class="cart-header">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    :checked="isAllSelected" 
+                    @change="toggleSelectAll"
+                    class="w-5 h-5 text-[#58091F] bg-white border-2 border-[#58091F] rounded focus:ring-[#58091F] focus:ring-2"
+                  >
+                  <span class="text-sm font-medium text-[#58091F]">Select All</span>
+                </label>
+              </div>
+              <div class="text-sm text-gray-600">
+                {{ selectedItemsCount }} of {{ cartStore.itemCount }} selected
+              </div>
+            </div>
+          </div>
 
           <div class="cart-items">
             <ion-item-sliding v-for="item in cartStore.items" :key="item.id">
-              <ion-item class="cart-item">
+              <ion-item class="cart-item" :class="{ 'selected-item': isItemSelected(item.id) }">
+                <!-- Checkbox for item selection -->
+                <div class="item-checkbox mr-3">
+                  <label class="flex items-center justify-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      :checked="isItemSelected(item.id)" 
+                      @change="toggleItemSelection(item.id)"
+                      class="w-5 h-5 text-[#58091F] bg-white border-2 border-[#58091F] rounded focus:ring-[#58091F] focus:ring-2"
+                    >
+                  </label>
+                </div>
+                
                 <div v-if="item.imageUrl" class="item-image p-2 rounded-lg mr-3">
                   <img :src="item.imageUrl" :alt="item.name" class="w-full p-1 rounded-lg">
                 </div>
@@ -155,16 +182,23 @@
                 <span>Total Items</span>
                 <span class="summary-value">{{ cartStore.itemCount }}</span>
               </div>
+              <div class="summary-item" v-if="hasSelectedItems">
+                <span>Selected Items</span>
+                <span class="summary-value">{{ selectedItemsCount }}</span>
+              </div>
               <div class="summary-item total">
-                <span>Sub Total</span>
+                <span>{{ hasSelectedItems ? 'Selected Total' : 'Sub Total' }}</span>
                 <span class="total-price">
-                  ₱{{ Number(cartStore.cartTotal).toFixed(2) }}
+                  ₱{{ hasSelectedItems ? Number(selectedItemsTotal).toFixed(2) : Number(cartStore.cartTotal).toFixed(2) }}
                 </span>
               </div>
+              <div v-if="!hasSelectedItems" class="summary-item text-center text-gray-500 text-sm py-2 border-t border-gray-200 mt-2">
+                <span>💡 Select items above to checkout</span>
+              </div>
             </div>
-            <button @click="proceedToCheckout" :disabled="cartStore.items.length === 0"
+            <button @click="proceedToCheckout" :disabled="!hasSelectedItems"
               class="flex items-center justify-center gap-2 px-6 py-4 md:py-3 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-bold text-lg md:text-base uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[56px] md:min-h-[48px] shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation w-full disabled:opacity-50 disabled:cursor-not-allowed">
-              <span>Proceed to Checkout</span>
+              <span>{{ hasSelectedItems ? `Checkout ${selectedItemsCount} Item${selectedItemsCount > 1 ? 's' : ''}` : 'Select Items to Checkout' }}</span>
             </button>
           </div>
         </template>
@@ -330,6 +364,10 @@ const errorMessage = ref('');
 // Add loading state
 const isLoading = ref(true);
 
+// Add checkbox state for item selection
+const selectedItems = ref<Set<string>>(new Set());
+const isAllSelected = ref(false);
+
 // Add debug logging
 watch(() => cartStore.items, (items) => {
   console.log('Cart Items:', items);
@@ -407,6 +445,13 @@ const handleSuccessModalDismiss = () => {
 
 const proceedToCheckout = async () => {
   try {
+    // Check if any items are selected
+    if (!hasSelectedItems.value) {
+      errorMessage.value = 'Please select at least one item to checkout.';
+      showErrorModal.value = true;
+      return;
+    }
+
     // Check if user profile is completed
     const isProfileCompleted = await cartStore.checkUserProfileCompletion();
     if (!isProfileCompleted) {
@@ -414,7 +459,8 @@ const proceedToCheckout = async () => {
       return;
     }
 
-    // If profile is completed, proceed to checkout
+    // Store selected items for checkout (you might want to pass this to the checkout page)
+    // For now, we'll proceed to checkout and let the checkout page handle the selected items
     router.push('/checkout');
   } catch (error) {
     console.error('Error checking profile completion:', error);
@@ -428,6 +474,46 @@ const proceedToCheckout = async () => {
 const hasCustomItemsOnly = computed(() => {
   return cartStore.items.length > 0 && cartStore.items.every(item => (item as CartItem).isCustomCake);
 });
+
+// Computed properties for selected items
+const selectedItemsCount = computed(() => selectedItems.value.size);
+const selectedItemsTotal = computed(() => {
+  return cartStore.items
+    .filter(item => selectedItems.value.has(item.id))
+    .reduce((total, item) => total + (item.totalPrice || 0), 0);
+});
+
+const hasSelectedItems = computed(() => selectedItems.value.size > 0);
+
+// Methods for item selection
+const toggleItemSelection = (itemId: string) => {
+  if (selectedItems.value.has(itemId)) {
+    selectedItems.value.delete(itemId);
+  } else {
+    selectedItems.value.add(itemId);
+  }
+  updateSelectAllState();
+};
+
+const toggleSelectAll = () => {
+  if (isAllSelected.value) {
+    selectedItems.value.clear();
+  } else {
+    selectedItems.value.clear();
+    cartStore.items.forEach(item => {
+      selectedItems.value.add(item.id);
+    });
+  }
+  isAllSelected.value = !isAllSelected.value;
+};
+
+const updateSelectAllState = () => {
+  isAllSelected.value = cartStore.items.length > 0 && selectedItems.value.size === cartStore.items.length;
+};
+
+const isItemSelected = (itemId: string) => {
+  return selectedItems.value.has(itemId);
+};
 </script>
 
 <style scoped>
@@ -525,8 +611,22 @@ ion-header {
   --border-width: 0;
   --border-color: transparent;
   margin: 1px 0;
+  transition: all 0.2s ease;
 
   box-shadow: 0 32px 8px rgba(0, 0, 0, 0.08);
+}
+
+.cart-item.selected-item {
+  background: rgba(240, 230, 141, 0.1);
+  border: 2px solid rgba(88, 9, 31, 0.2);
+  box-shadow: 0 4px 12px rgba(88, 9, 31, 0.1);
+}
+
+.item-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
 }
 
 .item-image {
