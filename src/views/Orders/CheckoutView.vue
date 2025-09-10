@@ -189,7 +189,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCartStore } from '../../stores/cartStore';
 import { useAuthStore } from '../../stores/authStore';
-import { database, ref as dbRef, set, get, remove } from '../../config/firebase';
+import { database, ref as dbRef, set, get } from '../../config/firebase';
 import { createPayPalOrder, capturePayPalOrder } from '@/api/paypal';
 
 // PayPal configuration
