@@ -111,29 +111,29 @@
                 <label class="flex items-center gap-2 cursor-pointer">
                   <input 
                     type="checkbox" 
-                    :checked="isAllSelected" 
-                    @change="toggleSelectAll"
+                    :checked="cartStore.isAllSelected" 
+                    @change="cartStore.toggleSelectAll"
                     class="w-5 h-5 text-[#58091F] bg-white border-2 border-[#58091F] rounded focus:ring-[#58091F] focus:ring-2"
                   >
                   <span class="text-sm font-medium text-[#58091F]">Select All</span>
                 </label>
               </div>
               <div class="text-sm text-gray-600">
-                {{ selectedItemsCount }} of {{ cartStore.itemCount }} selected
+                {{ cartStore.selectedItemsCount }} of {{ cartStore.itemCount }} selected
               </div>
             </div>
           </div>
 
           <div class="cart-items">
             <ion-item-sliding v-for="item in cartStore.items" :key="item.id">
-              <ion-item class="cart-item" :class="{ 'selected-item': isItemSelected(item.id) }">
+              <ion-item class="cart-item" :class="{ 'selected-item': cartStore.isItemSelected(item.id) }">
                 <!-- Checkbox for item selection -->
                 <div class="item-checkbox mr-3">
                   <label class="flex items-center justify-center cursor-pointer">
                     <input 
                       type="checkbox" 
-                      :checked="isItemSelected(item.id)" 
-                      @change="toggleItemSelection(item.id)"
+                      :checked="cartStore.isItemSelected(item.id)" 
+                      @change="cartStore.toggleItemSelection(item.id)"
                       class="w-5 h-5 text-[#58091F] bg-white border-2 border-[#58091F] rounded focus:ring-[#58091F] focus:ring-2"
                     >
                   </label>
@@ -182,23 +182,23 @@
                 <span>Total Items</span>
                 <span class="summary-value">{{ cartStore.itemCount }}</span>
               </div>
-              <div class="summary-item" v-if="hasSelectedItems">
+              <div class="summary-item" v-if="cartStore.hasSelectedItems">
                 <span>Selected Items</span>
-                <span class="summary-value">{{ selectedItemsCount }}</span>
+                <span class="summary-value">{{ cartStore.selectedItemsCount }}</span>
               </div>
               <div class="summary-item total">
-                <span>{{ hasSelectedItems ? 'Selected Total' : 'Sub Total' }}</span>
+                <span>{{ cartStore.hasSelectedItems ? 'Selected Total' : 'Sub Total' }}</span>
                 <span class="total-price">
-                  ₱{{ hasSelectedItems ? Number(selectedItemsTotal).toFixed(2) : Number(cartStore.cartTotal).toFixed(2) }}
+                  ₱{{ cartStore.hasSelectedItems ? Number(cartStore.selectedItemsTotal).toFixed(2) : Number(cartStore.cartTotal).toFixed(2) }}
                 </span>
               </div>
-              <div v-if="!hasSelectedItems" class="summary-item text-center text-gray-500 text-sm py-2 border-t border-gray-200 mt-2">
+              <div v-if="!cartStore.hasSelectedItems" class="summary-item text-center text-gray-500 text-sm py-2 border-t border-gray-200 mt-2">
                 <span>💡 Select items above to checkout</span>
               </div>
             </div>
-            <button @click="proceedToCheckout" :disabled="!hasSelectedItems"
+            <button @click="proceedToCheckout" :disabled="!cartStore.hasSelectedItems"
               class="flex items-center justify-center gap-2 px-6 py-4 md:py-3 bg-gradient-to-r from-[#58091F] to-[#7A0C29] text-white font-bold text-lg md:text-base uppercase tracking-wide rounded-2xl md:rounded-xl min-h-[56px] md:min-h-[48px] shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation w-full disabled:opacity-50 disabled:cursor-not-allowed">
-              <span>{{ hasSelectedItems ? `Checkout ${selectedItemsCount} Item${selectedItemsCount > 1 ? 's' : ''}` : 'Select Items to Checkout' }}</span>
+              <span>{{ cartStore.hasSelectedItems ? `Checkout ${cartStore.selectedItemsCount} Item${cartStore.selectedItemsCount > 1 ? 's' : ''}` : 'Select Items to Checkout' }}</span>
             </button>
           </div>
         </template>
@@ -313,6 +313,7 @@ import {
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
+  IonIcon,
 } from '@ionic/vue';
 // @ts-ignore - These icons are used in the template
 import { cartOutline, addOutline, removeOutline, trashOutline, arrowForward, checkmarkCircle, closeOutline, cashOutline, chevronBackOutline, bagOutline, pricetagOutline, personCircleOutline, alertCircleOutline } from 'ionicons/icons';
@@ -364,9 +365,7 @@ const errorMessage = ref('');
 // Add loading state
 const isLoading = ref(true);
 
-// Add checkbox state for item selection
-const selectedItems = ref<Set<string>>(new Set());
-const isAllSelected = ref(false);
+// Remove local checkbox state - now using cart store
 
 // Add debug logging
 watch(() => cartStore.items, (items) => {
@@ -446,7 +445,7 @@ const handleSuccessModalDismiss = () => {
 const proceedToCheckout = async () => {
   try {
     // Check if any items are selected
-    if (!hasSelectedItems.value) {
+    if (!cartStore.hasSelectedItems) {
       errorMessage.value = 'Please select at least one item to checkout.';
       showErrorModal.value = true;
       return;
@@ -459,8 +458,7 @@ const proceedToCheckout = async () => {
       return;
     }
 
-    // Store selected items for checkout (you might want to pass this to the checkout page)
-    // For now, we'll proceed to checkout and let the checkout page handle the selected items
+    // Proceed to checkout - selected items are now managed by cart store
     router.push('/checkout');
   } catch (error) {
     console.error('Error checking profile completion:', error);
@@ -475,45 +473,7 @@ const hasCustomItemsOnly = computed(() => {
   return cartStore.items.length > 0 && cartStore.items.every(item => (item as CartItem).isCustomCake);
 });
 
-// Computed properties for selected items
-const selectedItemsCount = computed(() => selectedItems.value.size);
-const selectedItemsTotal = computed(() => {
-  return cartStore.items
-    .filter(item => selectedItems.value.has(item.id))
-    .reduce((total, item) => total + (item.totalPrice || 0), 0);
-});
-
-const hasSelectedItems = computed(() => selectedItems.value.size > 0);
-
-// Methods for item selection
-const toggleItemSelection = (itemId: string) => {
-  if (selectedItems.value.has(itemId)) {
-    selectedItems.value.delete(itemId);
-  } else {
-    selectedItems.value.add(itemId);
-  }
-  updateSelectAllState();
-};
-
-const toggleSelectAll = () => {
-  if (isAllSelected.value) {
-    selectedItems.value.clear();
-  } else {
-    selectedItems.value.clear();
-    cartStore.items.forEach(item => {
-      selectedItems.value.add(item.id);
-    });
-  }
-  isAllSelected.value = !isAllSelected.value;
-};
-
-const updateSelectAllState = () => {
-  isAllSelected.value = cartStore.items.length > 0 && selectedItems.value.size === cartStore.items.length;
-};
-
-const isItemSelected = (itemId: string) => {
-  return selectedItems.value.has(itemId);
-};
+// Selected items functionality now handled by cart store
 </script>
 
 <style scoped>

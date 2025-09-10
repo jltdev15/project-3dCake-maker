@@ -8,7 +8,7 @@
                     <ion-icon :icon="home" />
                     <ion-label>Home</ion-label>
                 </ion-tab-button>
-                <ion-tab-button tab="cart" @click="$router.push('/cart')">
+                <ion-tab-button tab="cart" href="/cart">
                     <div class="cart-button-wrapper">
                         <ion-icon :icon="cart" />
                         <ion-label>Cart</ion-label>

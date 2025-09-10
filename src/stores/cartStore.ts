@@ -41,6 +41,7 @@ interface Order {
 
 export const useCartStore = defineStore('cart', () => {
   const items = ref<CartItem[]>([])
+  const selectedItems = ref<Set<string>>(new Set())
   const authStore = useAuthStore()
   let userStatusUnsubscribe: (() => void) | null = null
 
@@ -306,11 +307,64 @@ export const useCartStore = defineStore('cart', () => {
     return items.value.reduce((count, item) => count + item.quantity, 0)
   })
 
+  // Selected items computed properties
+  const selectedItemsList = computed(() => {
+    return items.value.filter(item => selectedItems.value.has(item.id))
+  })
+
+  const selectedItemsCount = computed(() => {
+    return selectedItemsList.value.reduce((count, item) => count + item.quantity, 0)
+  })
+
+  const selectedItemsTotal = computed(() => {
+    return selectedItemsList.value.reduce((total, item) => {
+      if (item.totalPrice) {
+        return total + item.totalPrice
+      }
+      return total
+    }, 0)
+  })
+
+  const hasSelectedItems = computed(() => selectedItems.value.size > 0)
+
+  const isAllSelected = computed(() => {
+    return items.value.length > 0 && selectedItems.value.size === items.value.length
+  })
+
+  // Selected items methods
+  const toggleItemSelection = (itemId: string) => {
+    if (selectedItems.value.has(itemId)) {
+      selectedItems.value.delete(itemId)
+    } else {
+      selectedItems.value.add(itemId)
+    }
+  }
+
+  const toggleSelectAll = () => {
+    if (isAllSelected.value) {
+      selectedItems.value.clear()
+    } else {
+      selectedItems.value.clear()
+      items.value.forEach(item => {
+        selectedItems.value.add(item.id)
+      })
+    }
+  }
+
+  const isItemSelected = (itemId: string) => {
+    return selectedItems.value.has(itemId)
+  }
+
+  const clearSelectedItems = () => {
+    selectedItems.value.clear()
+  }
+
   const cleanup = () => {
     if (userStatusUnsubscribe) {
       userStatusUnsubscribe()
       userStatusUnsubscribe = null
     }
+    selectedItems.value.clear()
   }
 
   // Watch for auth state changes to setup/cleanup listener
@@ -331,11 +385,21 @@ export const useCartStore = defineStore('cart', () => {
 
   return {
     items,
+    selectedItems,
     addItem,
     removeItem,
     updateItemQuantity,
     cartTotal,
     itemCount,
+    selectedItemsList,
+    selectedItemsCount,
+    selectedItemsTotal,
+    hasSelectedItems,
+    isAllSelected,
+    toggleItemSelection,
+    toggleSelectAll,
+    isItemSelected,
+    clearSelectedItems,
     loadCartItems,
     checkout,
     cleanup,

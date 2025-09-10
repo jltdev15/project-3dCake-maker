@@ -50,7 +50,7 @@
         <div class="mb-4">
           <p class="text- font-bold text-[#58091F] mb-2">Order Summary</p>
           <div class="bg-white space-y-1 border-2 border-gray-200 rounded-xl p-1">
-            <div v-for="item in cartStore.items" :key="item.id"
+            <div v-for="item in cartStore.selectedItemsList" :key="item.id"
               class="flex items-center gap-2 p-2 bg-gray-50 rounded-xl">
               <div class="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0" v-if="item.imageUrl">
                 <img :src="item.imageUrl" :alt="item.name" class="w-full h-full object-cover">
@@ -122,12 +122,12 @@
           <div class="rounded-2xl p-3 mb-3">
             <div class="flex justify-between items-center py-0.5 text-sm text-[#58091F]">
               <span>Subtotal</span>
-              <span class="font-semibold">₱{{ Number(cartStore.cartTotal).toFixed(2) }}</span>
+              <span class="font-semibold">₱{{ Number(cartStore.selectedItemsTotal).toFixed(2) }}</span>
             </div>
             <div
               class="flex justify-between items-center pt-1 mt-1.5 border-t border-[#58091F]/20 text-base font-bold text-[#58091F]">
               <span>Total Amount</span>
-              <span>₱{{ Number(cartStore.cartTotal).toFixed(2) }}</span>
+              <span>₱{{ Number(cartStore.selectedItemsTotal).toFixed(2) }}</span>
             </div>
           </div>
           <button @click="placeOrder" :disabled="!canPlaceOrder || isPlacingOrder"
@@ -226,7 +226,7 @@ const resetCheckoutState = () => {
 const canPlaceOrder = computed(() => {
   const conditions = {
     hasPaymentMethod: !!selectedPaymentMethod.value,
-    hasItems: cartStore.items.length > 0,
+    hasSelectedItems: cartStore.hasSelectedItems,
     hasAddress: !!authStore.user?.address,
     hasContact: !!authStore.user?.contact
   };
@@ -237,7 +237,7 @@ const canPlaceOrder = computed(() => {
   console.log('User Contact:', authStore.user?.contact);
   
   return conditions.hasPaymentMethod && 
-         conditions.hasItems && 
+         conditions.hasSelectedItems && 
          conditions.hasAddress && 
          conditions.hasContact;
 });
@@ -308,8 +308,8 @@ const placeOrder = async () => {
       customerName: authStore.user?.name,
       customerAddress: authStore.user.address, // Ensure we use the validated address
       customerContact: authStore.user.contact, // Ensure we use the validated contact
-      items: cartStore.items,
-      total: cartStore.cartTotal,
+      items: cartStore.selectedItemsList,
+      total: cartStore.selectedItemsTotal,
       paymentMethod: selectedPaymentMethod.value,
       paymentStatus:'unpaid',
       status: 'pending',
@@ -331,15 +331,13 @@ const placeOrder = async () => {
       console.log(`Order reference ${orderId} saved for user ${authStore.user.uid}`);
     }
 
-    // Clear cart in Pinia store
-    cartStore.$patch({ items: [] });
+    // Remove selected items from cart in Pinia store
+    cartStore.selectedItemsList.forEach(item => {
+      cartStore.removeItem(item.id);
+    });
 
-    // Clear cart in Firebase
-    if (authStore.user?.uid) {
-      const cartRef = dbRef(database, `users/${authStore.user.uid}/cart`);
-      await remove(cartRef); // Use remove() to delete the cart node
-      console.log('User cart cleared from Firebase for COD order.');
-    }
+    // Clear selected items
+    cartStore.clearSelectedItems();
 
     // Reset checkout state
     resetCheckoutState();
@@ -446,11 +444,11 @@ const initializePayPalButtons = async () => {
       fundingSource: paypal.FUNDING.PAYPAL,
       createOrder: async () => {
         try {
-          if (!cartStore.cartTotal || cartStore.cartTotal <= 0) {
-            throw new Error('Invalid cart total');
+          if (!cartStore.selectedItemsTotal || cartStore.selectedItemsTotal <= 0) {
+            throw new Error('Invalid selected items total');
           }
           const order = await createPayPalOrder(
-            cartStore.cartTotal.toFixed(2),
+            cartStore.selectedItemsTotal.toFixed(2),
             'PHP',
             '3D Cake Maker Order'
           );
@@ -547,8 +545,8 @@ const handleSuccessfulPayment = async (captureData: any) => {
       customerName: authStore.user?.name,
       customerAddress: authStore.user.address, // Use validated address
       customerContact: authStore.user.contact, // Use validated contact
-      items: cartStore.items,
-      total: cartStore.cartTotal,
+      items: cartStore.selectedItemsList,
+      total: cartStore.selectedItemsTotal,
       paymentMethod: 'paypal',
       status: 'pending',
       paymentDetails: {
@@ -577,15 +575,13 @@ const handleSuccessfulPayment = async (captureData: any) => {
       console.log(`Order reference ${orderId} saved for user ${authStore.user.uid}`);
     }
 
-    // Clear cart in Pinia store
-    cartStore.$patch({ items: [] });
+    // Remove selected items from cart in Pinia store
+    cartStore.selectedItemsList.forEach(item => {
+      cartStore.removeItem(item.id);
+    });
 
-    // Clear cart in Firebase
-    if (authStore.user?.uid) {
-      const cartRef = dbRef(database, `users/${authStore.user.uid}/cart`);
-      await remove(cartRef); // Use remove() to delete the cart node
-      console.log('User cart cleared from Firebase for PayPal order.');
-    }
+    // Clear selected items
+    cartStore.clearSelectedItems();
 
     // Reset checkout state
     resetCheckoutState();
@@ -618,7 +614,7 @@ const goToHome = (): void => {
 
 // Lifecycle
 onMounted(async () => {
-  if (cartStore.items.length === 0) {
+  if (!cartStore.hasSelectedItems) {
     router.push('/cart');
     return;
   }
@@ -657,12 +653,12 @@ onUnmounted(() => {
   paypalLoaded.value = false;
 });
 
-// Add watch for cart changes
-watch(() => cartStore.items.length, async (newLength) => {
-  if (newLength === 0) {
+// Add watch for selected items changes
+watch(() => cartStore.hasSelectedItems, async (hasSelected) => {
+  if (!hasSelected) {
     router.push('/cart');
   } else {
-    // Reinitialize PayPal when cart has items
+    // Reinitialize PayPal when there are selected items
     try {
       await loadPayPalSDK();
       await initializePayPalButtons();
